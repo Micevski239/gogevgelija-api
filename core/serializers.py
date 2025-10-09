@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -389,6 +389,47 @@ class HelpSupportCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = HelpSupport
         fields = ['name', 'email', 'category', 'subject', 'message', 'priority']
+    
+    def create(self, validated_data):
+        # Auto-assign the current user
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class CollaborationContactSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    reviewed_by = serializers.StringRelatedField(read_only=True)
+    collaboration_type_display = serializers.CharField(source='get_collaboration_type_display', read_only=True)
+    company_size_display = serializers.CharField(source='get_company_size_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = CollaborationContact
+        fields = [
+            'id', 'user', 'name', 'email', 'phone', 'company_name', 'website',
+            'collaboration_type', 'collaboration_type_display', 'company_size', 'company_size_display',
+            'proposal', 'budget_range', 'timeline', 'instagram_url', 'facebook_url', 
+            'linkedin_url', 'portfolio_url', 'status', 'status_display', 'admin_notes', 
+            'reviewed_by', 'created_at', 'updated_at', 'review_date'
+        ]
+        read_only_fields = ('user', 'admin_notes', 'reviewed_by', 'status', 'review_date', 'created_at', 'updated_at')
+    
+    def create(self, validated_data):
+        # Auto-assign the current user
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class CollaborationContactCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating collaboration contact requests"""
+    
+    class Meta:
+        model = CollaborationContact
+        fields = [
+            'name', 'email', 'phone', 'company_name', 'website',
+            'collaboration_type', 'company_size', 'proposal', 'budget_range', 'timeline',
+            'instagram_url', 'facebook_url', 'linkedin_url', 'portfolio_url'
+        ]
     
     def create(self, validated_data):
         # Auto-assign the current user

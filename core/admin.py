@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db import models
 from django.forms import Textarea
 # from modeltranslation.admin import TranslationAdmin
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact
 
 class MultilingualAdminMixin:
     """Mixin for multilingual admin interfaces with tabbed layout"""
@@ -295,3 +295,60 @@ class HelpSupportAdmin(admin.ModelAdmin):
         updated = queryset.update(status='in_progress')
         self.message_user(request, f"{updated} help requests marked as in progress.")
     mark_as_in_progress.short_description = "Mark selected requests as in progress"
+
+
+@admin.register(CollaborationContact)
+class CollaborationContactAdmin(admin.ModelAdmin):
+    list_display = ('company_name', 'name', 'collaboration_type', 'company_size', 'status', 'created_at', 'review_date')
+    list_filter = ('collaboration_type', 'company_size', 'status', 'created_at')
+    search_fields = ('company_name', 'name', 'email', 'proposal', 'user__username')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at', 'updated_at', 'review_date')
+    
+    fieldsets = (
+        ('Contact Information', {
+            'fields': ('user', 'name', 'email', 'phone', 'company_name', 'website'),
+            'classes': ('wide',),
+        }),
+        ('Collaboration Details', {
+            'fields': ('collaboration_type', 'company_size', 'proposal', 'budget_range', 'timeline'),
+            'classes': ('wide',),
+        }),
+        ('Social Media & Portfolio', {
+            'fields': ('instagram_url', 'facebook_url', 'linkedin_url', 'portfolio_url'),
+            'classes': ('collapse',),
+        }),
+        ('Admin Management', {
+            'fields': ('status', 'admin_notes', 'reviewed_by'),
+            'classes': ('wide',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at', 'review_date'),
+            'classes': ('collapse',),
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if obj.admin_notes and not obj.reviewed_by:
+            obj.reviewed_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'reviewed_by')
+    
+    actions = ['mark_as_interested', 'mark_as_reviewing', 'mark_as_scheduled']
+    
+    def mark_as_interested(self, request, queryset):
+        updated = queryset.update(status='interested')
+        self.message_user(request, f"{updated} collaboration requests marked as interested.")
+    mark_as_interested.short_description = "Mark selected requests as interested"
+    
+    def mark_as_reviewing(self, request, queryset):
+        updated = queryset.update(status='reviewing')
+        self.message_user(request, f"{updated} collaboration requests marked as under review.")
+    mark_as_reviewing.short_description = "Mark selected requests as under review"
+    
+    def mark_as_scheduled(self, request, queryset):
+        updated = queryset.update(status='scheduled')
+        self.message_user(request, f"{updated} collaboration requests marked as meeting scheduled.")
+    mark_as_scheduled.short_description = "Mark selected requests as meeting scheduled"

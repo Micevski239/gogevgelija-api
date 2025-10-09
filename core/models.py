@@ -252,3 +252,81 @@ class HelpSupport(models.Model):
             from django.utils import timezone
             self.resolved_at = timezone.now()
         super().save(*args, **kwargs)
+
+
+class CollaborationContact(models.Model):
+    COLLABORATION_TYPE_CHOICES = [
+        ('business', 'Business Partnership'),
+        ('event', 'Event Collaboration'),
+        ('marketing', 'Marketing Partnership'),
+        ('sponsorship', 'Sponsorship'),
+        ('content', 'Content Creation'),
+        ('tourism', 'Tourism Partnership'),
+        ('restaurant', 'Restaurant/Food Business'),
+        ('retail', 'Retail/Shopping'),
+        ('services', 'Professional Services'),
+        ('other', 'Other Collaboration'),
+    ]
+    
+    COMPANY_SIZE_CHOICES = [
+        ('individual', 'Individual/Freelancer'),
+        ('small', 'Small Business (1-10 employees)'),
+        ('medium', 'Medium Business (11-50 employees)'),
+        ('large', 'Large Business (50+ employees)'),
+        ('government', 'Government/Public Sector'),
+        ('nonprofit', 'Non-profit Organization'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('new', 'New'),
+        ('reviewing', 'Under Review'),
+        ('interested', 'Interested'),
+        ('scheduled', 'Meeting Scheduled'),
+        ('declined', 'Declined'),
+        ('completed', 'Collaboration Started'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='collaboration_requests', help_text="User who submitted the collaboration request")
+    
+    # Contact Information
+    name = models.CharField(max_length=100, help_text="Contact person's name")
+    email = models.EmailField(help_text="Contact email address")
+    phone = models.CharField(max_length=20, blank=True, help_text="Phone number (optional)")
+    company_name = models.CharField(max_length=150, help_text="Company or organization name")
+    website = models.URLField(max_length=500, blank=True, help_text="Company website (optional)")
+    
+    # Collaboration Details
+    collaboration_type = models.CharField(max_length=20, choices=COLLABORATION_TYPE_CHOICES, help_text="Type of collaboration")
+    company_size = models.CharField(max_length=15, choices=COMPANY_SIZE_CHOICES, help_text="Size of your organization")
+    proposal = models.TextField(help_text="Detailed collaboration proposal")
+    budget_range = models.CharField(max_length=100, blank=True, help_text="Budget range (if applicable)")
+    timeline = models.CharField(max_length=100, blank=True, help_text="Preferred timeline")
+    
+    # Social Media & Portfolio
+    instagram_url = models.URLField(max_length=500, blank=True, help_text="Instagram profile")
+    facebook_url = models.URLField(max_length=500, blank=True, help_text="Facebook page")
+    linkedin_url = models.URLField(max_length=500, blank=True, help_text="LinkedIn profile")
+    portfolio_url = models.URLField(max_length=500, blank=True, help_text="Portfolio or additional work samples")
+    
+    # Admin Management
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='new', help_text="Current status of the collaboration request")
+    admin_notes = models.TextField(blank=True, help_text="Internal admin notes")
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_collaborations', help_text="Admin who reviewed this request")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    review_date = models.DateTimeField(null=True, blank=True, help_text="When the request was reviewed")
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Collaboration Contact"
+        verbose_name_plural = "Collaboration Contacts"
+    
+    def __str__(self):
+        return f"{self.company_name} - {self.name} ({self.collaboration_type})"
+    
+    def save(self, *args, **kwargs):
+        # Auto-set review_date when status changes from 'new'
+        if self.status != 'new' and not self.review_date:
+            from django.utils import timezone
+            self.review_date = timezone.now()
+        super().save(*args, **kwargs)

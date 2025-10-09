@@ -6,8 +6,8 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport
-from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact
+from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -540,3 +540,56 @@ class HelpSupportViewSet(viewsets.ModelViewSet):
             for choice in HelpSupport.PRIORITY_CHOICES
         ]
         return Response(priorities)
+
+
+class CollaborationContactViewSet(viewsets.ModelViewSet):
+    """ViewSet for Collaboration Contact requests"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Users can only see their own collaboration requests
+        return CollaborationContact.objects.filter(user=self.request.user)
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CollaborationContactCreateSerializer
+        return CollaborationContactSerializer
+    
+    def perform_create(self, serializer):
+        # Pre-fill name and email from user profile if available
+        user = self.request.user
+        defaults = {}
+        
+        # Get name from user profile or username
+        if hasattr(user, 'profile'):
+            defaults['name'] = f"{user.first_name} {user.last_name}".strip() or user.username
+        else:
+            defaults['name'] = user.username
+            
+        # Get email
+        defaults['email'] = user.email or ''
+        
+        # Apply defaults if not provided in request data
+        for field, default_value in defaults.items():
+            if field not in serializer.validated_data or not serializer.validated_data[field]:
+                serializer.validated_data[field] = default_value
+        
+        serializer.save(user=user)
+    
+    @action(detail=False, methods=['get'])
+    def collaboration_types(self, request):
+        """Get available collaboration types"""
+        types = [
+            {'value': choice[0], 'label': choice[1]} 
+            for choice in CollaborationContact.COLLABORATION_TYPE_CHOICES
+        ]
+        return Response(types)
+    
+    @action(detail=False, methods=['get'])
+    def company_sizes(self, request):
+        """Get available company sizes"""
+        sizes = [
+            {'value': choice[0], 'label': choice[1]} 
+            for choice in CollaborationContact.COMPANY_SIZE_CHOICES
+        ]
+        return Response(sizes)
