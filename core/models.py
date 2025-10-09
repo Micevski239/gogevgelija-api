@@ -259,22 +259,8 @@ class CollaborationContact(models.Model):
         ('business', 'Business Partnership'),
         ('event', 'Event Collaboration'),
         ('marketing', 'Marketing Partnership'),
-        ('sponsorship', 'Sponsorship'),
-        ('content', 'Content Creation'),
         ('tourism', 'Tourism Partnership'),
-        ('restaurant', 'Restaurant/Food Business'),
-        ('retail', 'Retail/Shopping'),
-        ('services', 'Professional Services'),
         ('other', 'Other Collaboration'),
-    ]
-    
-    COMPANY_SIZE_CHOICES = [
-        ('individual', 'Individual/Freelancer'),
-        ('small', 'Small Business (1-10 employees)'),
-        ('medium', 'Medium Business (11-50 employees)'),
-        ('large', 'Large Business (50+ employees)'),
-        ('government', 'Government/Public Sector'),
-        ('nonprofit', 'Non-profit Organization'),
     ]
     
     STATUS_CHOICES = [
@@ -293,20 +279,11 @@ class CollaborationContact(models.Model):
     email = models.EmailField(help_text="Contact email address")
     phone = models.CharField(max_length=20, blank=True, help_text="Phone number (optional)")
     company_name = models.CharField(max_length=150, help_text="Company or organization name")
-    website = models.URLField(max_length=500, blank=True, help_text="Company website (optional)")
     
     # Collaboration Details
     collaboration_type = models.CharField(max_length=20, choices=COLLABORATION_TYPE_CHOICES, help_text="Type of collaboration")
-    company_size = models.CharField(max_length=15, choices=COMPANY_SIZE_CHOICES, help_text="Size of your organization")
     proposal = models.TextField(help_text="Detailed collaboration proposal")
-    budget_range = models.CharField(max_length=100, blank=True, help_text="Budget range (if applicable)")
     timeline = models.CharField(max_length=100, blank=True, help_text="Preferred timeline")
-    
-    # Social Media & Portfolio
-    instagram_url = models.URLField(max_length=500, blank=True, help_text="Instagram profile")
-    facebook_url = models.URLField(max_length=500, blank=True, help_text="Facebook page")
-    linkedin_url = models.URLField(max_length=500, blank=True, help_text="LinkedIn profile")
-    portfolio_url = models.URLField(max_length=500, blank=True, help_text="Portfolio or additional work samples")
     
     # Admin Management
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='new', help_text="Current status of the collaboration request")

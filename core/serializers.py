@@ -400,16 +400,14 @@ class CollaborationContactSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
     reviewed_by = serializers.StringRelatedField(read_only=True)
     collaboration_type_display = serializers.CharField(source='get_collaboration_type_display', read_only=True)
-    company_size_display = serializers.CharField(source='get_company_size_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     
     class Meta:
         model = CollaborationContact
         fields = [
-            'id', 'user', 'name', 'email', 'phone', 'company_name', 'website',
-            'collaboration_type', 'collaboration_type_display', 'company_size', 'company_size_display',
-            'proposal', 'budget_range', 'timeline', 'instagram_url', 'facebook_url', 
-            'linkedin_url', 'portfolio_url', 'status', 'status_display', 'admin_notes', 
+            'id', 'user', 'name', 'email', 'phone', 'company_name',
+            'collaboration_type', 'collaboration_type_display',
+            'proposal', 'timeline', 'status', 'status_display', 'admin_notes', 
             'reviewed_by', 'created_at', 'updated_at', 'review_date'
         ]
         read_only_fields = ('user', 'admin_notes', 'reviewed_by', 'status', 'review_date', 'created_at', 'updated_at')
@@ -426,9 +424,8 @@ class CollaborationContactCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CollaborationContact
         fields = [
-            'name', 'email', 'phone', 'company_name', 'website',
-            'collaboration_type', 'company_size', 'proposal', 'budget_range', 'timeline',
-            'instagram_url', 'facebook_url', 'linkedin_url', 'portfolio_url'
+            'name', 'email', 'phone', 'company_name',
+            'collaboration_type', 'proposal', 'timeline'
         ]
     
     def create(self, validated_data):

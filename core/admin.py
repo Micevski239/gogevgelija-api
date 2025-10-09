@@ -299,24 +299,20 @@ class HelpSupportAdmin(admin.ModelAdmin):
 
 @admin.register(CollaborationContact)
 class CollaborationContactAdmin(admin.ModelAdmin):
-    list_display = ('company_name', 'name', 'collaboration_type', 'company_size', 'status', 'created_at', 'review_date')
-    list_filter = ('collaboration_type', 'company_size', 'status', 'created_at')
+    list_display = ('company_name', 'name', 'collaboration_type', 'status', 'created_at', 'review_date')
+    list_filter = ('collaboration_type', 'status', 'created_at')
     search_fields = ('company_name', 'name', 'email', 'proposal', 'user__username')
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'updated_at', 'review_date')
     
     fieldsets = (
         ('Contact Information', {
-            'fields': ('user', 'name', 'email', 'phone', 'company_name', 'website'),
+            'fields': ('user', 'name', 'email', 'phone', 'company_name'),
             'classes': ('wide',),
         }),
         ('Collaboration Details', {
-            'fields': ('collaboration_type', 'company_size', 'proposal', 'budget_range', 'timeline'),
+            'fields': ('collaboration_type', 'proposal', 'timeline'),
             'classes': ('wide',),
-        }),
-        ('Social Media & Portfolio', {
-            'fields': ('instagram_url', 'facebook_url', 'linkedin_url', 'portfolio_url'),
-            'classes': ('collapse',),
         }),
         ('Admin Management', {
             'fields': ('status', 'admin_notes', 'reviewed_by'),

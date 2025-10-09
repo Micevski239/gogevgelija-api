@@ -584,12 +584,3 @@ class CollaborationContactViewSet(viewsets.ModelViewSet):
             for choice in CollaborationContact.COLLABORATION_TYPE_CHOICES
         ]
         return Response(types)
-    
-    @action(detail=False, methods=['get'])
-    def company_sizes(self, request):
-        """Get available company sizes"""
-        sizes = [
-            {'value': choice[0], 'label': choice[1]} 
-            for choice in CollaborationContact.COMPANY_SIZE_CHOICES
-        ]
-        return Response(sizes)
