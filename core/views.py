@@ -525,18 +525,72 @@ class HelpSupportViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def categories(self, request):
-        """Get available help support categories"""
+        """Get available help support categories with translations"""
+        # Get language preference from user profile
+        language = 'en'
+        if request.user.is_authenticated and hasattr(request.user, 'profile'):
+            language = request.user.profile.language_preference
+        
+        # Define translations
+        category_translations = {
+            'en': {
+                'general': 'General Inquiry',
+                'technical': 'Technical Issue',
+                'listing': 'Listing Problem',
+                'event': 'Event Issue',
+                'account': 'Account Problem',
+                'feedback': 'Feedback',
+                'bug': 'Bug Report',
+                'feature': 'Feature Request',
+                'other': 'Other',
+            },
+            'mk': {
+                'general': 'Општо прашање',
+                'technical': 'Технички проблем',
+                'listing': 'Проблем со листинг',
+                'event': 'Проблем со настан',
+                'account': 'Проблем со сметка',
+                'feedback': 'Повратни информации',
+                'bug': 'Пријава на грешка',
+                'feature': 'Барање за функција',
+                'other': 'Друго',
+            }
+        }
+        
+        translations = category_translations.get(language, category_translations['en'])
         categories = [
-            {'value': choice[0], 'label': choice[1]} 
+            {'value': choice[0], 'label': translations.get(choice[0], choice[1])} 
             for choice in HelpSupport.CATEGORY_CHOICES
         ]
         return Response(categories)
     
     @action(detail=False, methods=['get'])
     def priorities(self, request):
-        """Get available priority levels"""
+        """Get available priority levels with translations"""
+        # Get language preference from user profile
+        language = 'en'
+        if request.user.is_authenticated and hasattr(request.user, 'profile'):
+            language = request.user.profile.language_preference
+        
+        # Define translations
+        priority_translations = {
+            'en': {
+                'low': 'Low',
+                'medium': 'Medium',
+                'high': 'High',
+                'urgent': 'Urgent',
+            },
+            'mk': {
+                'low': 'Низок',
+                'medium': 'Среден',
+                'high': 'Висок',
+                'urgent': 'Итен',
+            }
+        }
+        
+        translations = priority_translations.get(language, priority_translations['en'])
         priorities = [
-            {'value': choice[0], 'label': choice[1]} 
+            {'value': choice[0], 'label': translations.get(choice[0], choice[1])} 
             for choice in HelpSupport.PRIORITY_CHOICES
         ]
         return Response(priorities)
@@ -578,9 +632,33 @@ class CollaborationContactViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def collaboration_types(self, request):
-        """Get available collaboration types"""
+        """Get available collaboration types with translations"""
+        # Get language preference from user profile
+        language = 'en'
+        if request.user.is_authenticated and hasattr(request.user, 'profile'):
+            language = request.user.profile.language_preference
+        
+        # Define translations
+        collaboration_type_translations = {
+            'en': {
+                'business': 'Business Partnership',
+                'event': 'Event Collaboration',
+                'marketing': 'Marketing Partnership',
+                'tourism': 'Tourism Partnership',
+                'other': 'Other Collaboration',
+            },
+            'mk': {
+                'business': 'Деловно партнерство',
+                'event': 'Колаборација за настани',
+                'marketing': 'Маркетинг партнерство',
+                'tourism': 'Туристичко партнерство',
+                'other': 'Друга колаборација',
+            }
+        }
+        
+        translations = collaboration_type_translations.get(language, collaboration_type_translations['en'])
         types = [
-            {'value': choice[0], 'label': choice[1]} 
+            {'value': choice[0], 'label': translations.get(choice[0], choice[1])} 
             for choice in CollaborationContact.COLLABORATION_TYPE_CHOICES
         ]
         return Response(types)
