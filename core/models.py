@@ -195,3 +195,60 @@ class UserPermission(models.Model):
     
     def __str__(self):
         return f"{self.user.username} can edit {self.listing.title}"
+
+
+class HelpSupport(models.Model):
+    CATEGORY_CHOICES = [
+        ('general', 'General Inquiry'),
+        ('technical', 'Technical Issue'),
+        ('listing', 'Listing Problem'),
+        ('event', 'Event Issue'),
+        ('account', 'Account Problem'),
+        ('feedback', 'Feedback'),
+        ('bug', 'Bug Report'),
+        ('feature', 'Feature Request'),
+        ('other', 'Other'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='help_requests', help_text="User who submitted the request")
+    name = models.CharField(max_length=100, help_text="User's name")
+    email = models.EmailField(help_text="User's email address")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='general', help_text="Type of help request")
+    subject = models.CharField(max_length=255, help_text="Brief subject/title of the issue")
+    message = models.TextField(help_text="Detailed description of the issue or request")
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium', help_text="Priority level")
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='open', help_text="Current status of the request")
+    admin_response = models.TextField(blank=True, help_text="Admin response to the request")
+    responded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='help_responses', help_text="Admin who responded")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True, help_text="When the issue was resolved")
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Help & Support Request"
+        verbose_name_plural = "Help & Support Requests"
+    
+    def __str__(self):
+        return f"{self.subject} - {self.user.username} ({self.status})"
+    
+    def save(self, *args, **kwargs):
+        # Auto-set resolved_at when status changes to resolved
+        if self.status == 'resolved' and not self.resolved_at:
+            from django.utils import timezone
+            self.resolved_at = timezone.now()
+        super().save(*args, **kwargs)

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
-from core.views import CategoryViewSet, ListingViewSet, EventViewSet, PromotionViewSet, BlogViewSet, WishlistViewSet, UserPermissionViewSet, health, Register, Me, LanguageView, EditListingView, AdminUsersView
+from core.views import CategoryViewSet, ListingViewSet, EventViewSet, PromotionViewSet, BlogViewSet, WishlistViewSet, UserPermissionViewSet, HelpSupportViewSet, health, Register, Me, LanguageView, EditListingView, AdminUsersView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 router = DefaultRouter()
@@ -13,6 +13,7 @@ router.register(r"promotions", PromotionViewSet, basename="promotion")
 router.register(r"blogs", BlogViewSet, basename="blog")
 router.register(r"wishlist", WishlistViewSet, basename="wishlist")
 router.register(r"admin/permissions", UserPermissionViewSet, basename="permissions")
+router.register(r"help-support", HelpSupportViewSet, basename="help-support")
 
 urlpatterns = [
     path('api/', include(router.urls)),

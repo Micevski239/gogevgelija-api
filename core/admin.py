@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db import models
 from django.forms import Textarea
 # from modeltranslation.admin import TranslationAdmin
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport
 
 class MultilingualAdminMixin:
     """Mixin for multilingual admin interfaces with tabbed layout"""
@@ -247,3 +247,51 @@ class UserPermissionAdmin(admin.ModelAdmin):
         if not change:  # Only set granted_by when creating new permission
             obj.granted_by = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(HelpSupport)
+class HelpSupportAdmin(admin.ModelAdmin):
+    list_display = ('subject', 'user', 'category', 'priority', 'status', 'created_at', 'resolved_at')
+    list_filter = ('category', 'priority', 'status', 'created_at')
+    search_fields = ('subject', 'user__username', 'user__email', 'name', 'email', 'message')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at', 'updated_at', 'resolved_at')
+    
+    fieldsets = (
+        ('Request Information', {
+            'fields': ('user', 'name', 'email', 'category', 'subject', 'message'),
+            'classes': ('wide',),
+        }),
+        ('Status & Priority', {
+            'fields': ('status', 'priority'),
+            'classes': ('wide',),
+        }),
+        ('Admin Response', {
+            'fields': ('admin_response', 'responded_by'),
+            'classes': ('wide',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at', 'resolved_at'),
+            'classes': ('collapse',),
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if obj.admin_response and not obj.responded_by:
+            obj.responded_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'responded_by')
+    
+    actions = ['mark_as_resolved', 'mark_as_in_progress']
+    
+    def mark_as_resolved(self, request, queryset):
+        updated = queryset.update(status='resolved')
+        self.message_user(request, f"{updated} help requests marked as resolved.")
+    mark_as_resolved.short_description = "Mark selected requests as resolved"
+    
+    def mark_as_in_progress(self, request, queryset):
+        updated = queryset.update(status='in_progress')
+        self.message_user(request, f"{updated} help requests marked as in progress.")
+    mark_as_in_progress.short_description = "Mark selected requests as in progress"

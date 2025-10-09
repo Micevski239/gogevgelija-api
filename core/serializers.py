@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -358,3 +358,39 @@ class EditListingSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class HelpSupportSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    responded_by = serializers.StringRelatedField(read_only=True)
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    priority_display = serializers.CharField(source='get_priority_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = HelpSupport
+        fields = [
+            'id', 'user', 'name', 'email', 'category', 'category_display',
+            'subject', 'message', 'priority', 'priority_display', 
+            'status', 'status_display', 'admin_response', 'responded_by',
+            'created_at', 'updated_at', 'resolved_at'
+        ]
+        read_only_fields = ('user', 'admin_response', 'responded_by', 'status', 'resolved_at', 'created_at', 'updated_at')
+    
+    def create(self, validated_data):
+        # Auto-assign the current user
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class HelpSupportCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating help support requests"""
+    
+    class Meta:
+        model = HelpSupport
+        fields = ['name', 'email', 'category', 'subject', 'message', 'priority']
+    
+    def create(self, validated_data):
+        # Auto-assign the current user
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)

@@ -6,8 +6,8 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission
-from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport
+from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -487,3 +487,56 @@ class AdminUsersView(APIView):
         users = User.objects.all().order_by('username')
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
+
+
+class HelpSupportViewSet(viewsets.ModelViewSet):
+    """ViewSet for Help & Support requests"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Users can only see their own help requests
+        return HelpSupport.objects.filter(user=self.request.user)
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return HelpSupportCreateSerializer
+        return HelpSupportSerializer
+    
+    def perform_create(self, serializer):
+        # Pre-fill name and email from user profile if available
+        user = self.request.user
+        defaults = {}
+        
+        # Get name from user profile or username
+        if hasattr(user, 'profile'):
+            defaults['name'] = f"{user.first_name} {user.last_name}".strip() or user.username
+        else:
+            defaults['name'] = user.username
+            
+        # Get email
+        defaults['email'] = user.email or ''
+        
+        # Apply defaults if not provided in request data
+        for field, default_value in defaults.items():
+            if field not in serializer.validated_data or not serializer.validated_data[field]:
+                serializer.validated_data[field] = default_value
+        
+        serializer.save(user=user)
+    
+    @action(detail=False, methods=['get'])
+    def categories(self, request):
+        """Get available help support categories"""
+        categories = [
+            {'value': choice[0], 'label': choice[1]} 
+            for choice in HelpSupport.CATEGORY_CHOICES
+        ]
+        return Response(categories)
+    
+    @action(detail=False, methods=['get'])
+    def priorities(self, request):
+        """Get available priority levels"""
+        priorities = [
+            {'value': choice[0], 'label': choice[1]} 
+            for choice in HelpSupport.PRIORITY_CHOICES
+        ]
+        return Response(priorities)
