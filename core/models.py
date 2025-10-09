@@ -1,0 +1,197 @@
+from django.db import models
+from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    language_preference = models.CharField(
+        max_length=2, 
+        choices=[('en', 'English'), ('mk', 'Macedonian')], 
+        default='en',
+        help_text="User's preferred language"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.language_preference}"
+    
+
+class Category(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    icon = models.CharField(max_length=50, help_text="Ionicon name (e.g., 'restaurant-outline')")
+    image_url = models.URLField(max_length=1000, blank=True, null=True, help_text="Optional category image URL")
+    trending = models.BooleanField(default=False, help_text="Show as trending category")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name_plural = "Categories"
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+    
+class Listing(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, help_text="Listing description")
+    address = models.CharField(max_length=500)
+    open_time = models.CharField(max_length=100, help_text="e.g., 'Open until 23:00' or 'Mon-Fri 9:00-18:00'")
+    working_hours = models.JSONField(
+        default=dict, 
+        help_text="Working hours structure, e.g., {'monday': '09:00-18:00', 'tuesday': '09:00-18:00', ...}"
+    )
+    working_hours_mk = models.JSONField(
+        default=dict, 
+        help_text="Working hours in Macedonian, e.g., {'понedelник': '09:00-18:00', 'вторник': '09:00-18:00', ...}"
+    )
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select category from available categories")
+    tags = models.JSONField(default=list, help_text="List of tags, e.g., ['Grill', 'Family', 'Outdoor']")
+    tags_mk = models.JSONField(default=list, help_text="List of tags in Macedonian, e.g., ['Скара', 'Семејно', 'Надворешно']")
+    image = models.URLField(max_length=1000, help_text="URL to the listing image")
+    phone_number = models.CharField(max_length=20, blank=True, null=True, help_text="Contact phone number")
+    facebook_url = models.URLField(max_length=500, blank=True, null=True, help_text="Facebook page URL")
+    instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
+    website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official website URL")
+    featured = models.BooleanField(default=False, help_text="Show in featured section")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.title
+
+
+class Event(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, help_text="Event description")
+    date_time = models.CharField(max_length=100, help_text="e.g., 'Fri, 20:00' or 'Dec 25, 18:00'")
+    location = models.CharField(max_length=255, help_text="Event venue/location")
+    cover_image = models.URLField(max_length=1000, help_text="URL to the event cover image")
+    entry_price = models.CharField(max_length=50, default="Free", help_text="Entry price (e.g., 'Free', '10 EUR', '500 MKD')")
+    entry_price_mk = models.CharField(max_length=50, blank=True, help_text="Entry price in Macedonian (e.g., 'Бесплатно', '10 ЕУР', '500 МКД')")
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select category from available categories")
+    age_limit = models.CharField(max_length=50, default="All ages welcome", help_text="Age restriction (e.g., 'All ages welcome', '18+', '21+')")
+    age_limit_mk = models.CharField(max_length=50, blank=True, help_text="Age restriction in Macedonian (e.g., 'Добредојдени се сите возрасти', '18+', '21+')")
+    expectations = models.JSONField(default=list, help_text="List of expectations with icons, e.g., [{'icon': 'musical-notes', 'text': 'Live entertainment'}, {'icon': 'restaurant', 'text': 'Food available'}]")
+    expectations_mk = models.JSONField(default=list, help_text="List of expectations in Macedonian with icons, e.g., [{'icon': 'musical-notes', 'text': 'Музика во живо'}, {'icon': 'restaurant', 'text': 'Достапна храна'}]")
+    join_count = models.PositiveIntegerField(default=0, help_text="Number of users who joined this event")
+    featured = models.BooleanField(default=False, help_text="Show in featured events")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.date_time}"
+
+
+class Promotion(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, help_text="Promotion description")
+    has_discount_code = models.BooleanField(default=False, help_text="Whether this promotion has a discount code")
+    discount_code = models.CharField(max_length=50, blank=True, help_text="Promo code for discount (only used if has_discount_code is True)")
+    tags = models.JSONField(default=list, help_text="List of tags, e.g., ['Today', 'Dine-in', '50% off']")
+    tags_mk = models.JSONField(default=list, help_text="List of tags in Macedonian, e.g., ['Денес', 'За јадење', '50% попуст']")
+    image = models.URLField(max_length=1000, help_text="URL to the promotion image")
+    valid_until = models.DateField(null=True, blank=True, help_text="Promotion expiry date")
+    featured = models.BooleanField(default=False, help_text="Show in featured promotions")
+    website = models.URLField(max_length=500, blank=True, help_text="Website URL")
+    phone_number = models.CharField(max_length=20, blank=True, null=True, help_text="Contact phone number")
+    facebook_url = models.URLField(max_length=500, blank=True, help_text="Facebook page URL")
+    instagram_url = models.URLField(max_length=500, blank=True, help_text="Instagram profile URL")
+    address = models.CharField(max_length=500, blank=True, help_text="Physical address")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.discount_code}"
+
+
+class Blog(models.Model):
+    CATEGORY_CHOICES = [
+        ('guide', 'Travel Guide'),
+        ('food', 'Food & Dining'),
+        ('culture', 'Culture & History'),
+        ('events', 'Events & Activities'),
+        ('tips', 'Travel Tips'),
+        ('news', 'Local News'),
+        ('lifestyle', 'Lifestyle'),
+        ('other', 'Other'),
+    ]
+    
+    title = models.CharField(max_length=255)
+    subtitle = models.CharField(max_length=500, blank=True, help_text="Brief subtitle or summary")
+    content = models.TextField(help_text="Full blog post content")
+    author = models.CharField(max_length=100, default="GoGevgelija Team")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
+    tags = models.JSONField(default=list, help_text="List of tags, e.g., ['Travel', 'Food', 'Culture']")
+    cover_image = models.URLField(max_length=1000, help_text="URL to the blog cover image")
+    read_time_minutes = models.PositiveIntegerField(default=5, help_text="Estimated reading time in minutes")
+    featured = models.BooleanField(default=False, help_text="Show in featured blogs")
+    published = models.BooleanField(default=True, help_text="Whether the blog is published")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.title
+
+
+class EventJoin(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_joins')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='joined_users')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'event')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} joined {self.event.title}"
+
+
+class Wishlist(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlist_items')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'content_type', 'object_id')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.content_object}"
+    
+    @property
+    def item_type(self):
+        return self.content_type.model
+    
+    @property
+    def item_data(self):
+        return self.content_object
+
+class UserPermission(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='listing_permissions')
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='user_permissions')
+    can_edit = models.BooleanField(default=True, help_text="Whether user can edit this listing")
+    granted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='granted_permissions', help_text="Admin who granted this permission")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('user', 'listing')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} can edit {self.listing.title}"

@@ -1,0 +1,144 @@
+/* Multilingual Tabs CSS */
+.lang-tabs {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+    background: #f8f8f8;
+    padding: 0;
+    overflow: hidden;
+}
+
+.lang-tab-header {
+    display: inline-block;
+    padding: 12px 20px;
+    margin-right: 2px;
+    background: #e0e0e0;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: #666;
+    transition: all 0.3s ease;
+    border-radius: 5px 5px 0 0;
+}
+
+.lang-tab-header:hover {
+    background: #d0d0d0;
+    color: #333;
+}
+
+.lang-tab-header.active {
+    background: #fff;
+    color: #333;
+    border-bottom: 1px solid #fff;
+    margin-bottom: -1px;
+    z-index: 1;
+    position: relative;
+}
+
+.lang-tab-content {
+    display: none;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-top: none;
+    margin-bottom: 20px;
+}
+
+.lang-tab-content.active {
+    display: block;
+}
+
+.lang-tab-content .form-row {
+    margin-bottom: 15px;
+}
+
+.lang-tab-content .form-row label {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.lang-tab-content .form-row input,
+.lang-tab-content .form-row textarea,
+.lang-tab-content .form-row select {
+    width: 100%;
+    max-width: 600px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.lang-tab-content .form-row textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.lang-tab-header::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 15px;
+    margin-right: 8px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+}
+
+.lang-tab-header.lang-en::before {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30"><rect width="60" height="30" fill="%23012169"/><g stroke="%23fff" stroke-width="6"><path d="m0,0 60,30 m0-30L0,30"/></g><g stroke="%23C8102E" stroke-width="4"><path d="m0,0 60,30 m0-30L0,30"/></g><path stroke="%23fff" stroke-width="10" d="M30,0v30M0,15H60"/><path stroke="%23C8102E" stroke-width="6" d="M30,0v30M0,15H60"/></svg>');
+}
+
+.lang-tab-header.lang-mk::before {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30"><rect width="60" height="30" fill="%23D20000"/><circle cx="15" cy="7.5" r="3" fill="%23FFE600"/></svg>');
+}
+
+.lang-tab-content .module {
+    border: none;
+    box-shadow: none;
+    margin: 0;
+}
+
+.lang-tab-content .module h2 {
+    display: none;
+}
+
+.lang-tab-content .vJSONFieldWidget {
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 12px;
+}
+
+@media (max-width: 768px) {
+    .lang-tab-header {
+        display: block;
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 2px;
+        border-radius: 5px;
+        text-align: center;
+    }
+    
+    .lang-tabs {
+        border-bottom: none;
+    }
+    
+    .lang-tab-content {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+}
+
+.lang-tab-content .messagelist {
+    margin: 0 0 15px 0;
+}
+
+.lang-tab-content .messagelist .success {
+    background: #dfd;
+    border-color: #6c6;
+}
+
+.lang-tab-content .messagelist .error {
+    background: #fdd;
+    border-color: #c66;
+}

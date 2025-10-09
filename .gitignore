@@ -1,0 +1,8 @@
+node_modules/
+.expo/
+.venv/
+__pycache__/
+db.sqlite3
+.env
+mobile/
+.DS_Store
