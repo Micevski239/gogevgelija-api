@@ -10,6 +10,14 @@ from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishli
 from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer
 
 
+class IsSuperUser(permissions.BasePermission):
+    """
+    Permission class that only allows access to superusers.
+    """
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
+
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -373,12 +381,12 @@ class WishlistViewSet(viewsets.ModelViewSet):
 
 
 class UserPermissionViewSet(viewsets.ModelViewSet):
-    """ViewSet for managing user permissions (admin only)."""
+    """ViewSet for managing user permissions (superuser only)."""
     serializer_class = UserPermissionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsSuperUser]
     
     def get_queryset(self):
-        """Return all permissions. In production, add admin check here."""
+        """Return all permissions. Only accessible by superusers."""
         return UserPermission.objects.all()
     
     def create(self, request, *args, **kwargs):
@@ -479,11 +487,11 @@ class EditListingView(APIView):
 
 
 class AdminUsersView(APIView):
-    """View for getting all users (admin functionality)."""
-    permission_classes = [permissions.IsAuthenticated]
+    """View for getting all users (superuser only)."""
+    permission_classes = [IsSuperUser]
     
     def get(self, request):
-        """Get all users. In production, add admin check here."""
+        """Get all users. Only accessible by superusers."""
         users = User.objects.all().order_by('username')
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
@@ -494,7 +502,9 @@ class HelpSupportViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        # Users can only see their own help requests
+        # Superusers can see all requests, regular users only see their own
+        if self.request.user.is_superuser:
+            return HelpSupport.objects.all()
         return HelpSupport.objects.filter(user=self.request.user)
     
     def get_serializer_class(self):
@@ -522,6 +532,15 @@ class HelpSupportViewSet(viewsets.ModelViewSet):
                 serializer.validated_data[field] = default_value
         
         serializer.save(user=user)
+    
+    def perform_update(self, serializer):
+        # Only superusers can update admin-specific fields
+        if not self.request.user.is_superuser:
+            # Remove admin fields from validated_data for regular users
+            admin_fields = ['status', 'admin_response', 'responded_by', 'resolved_at']
+            for field in admin_fields:
+                serializer.validated_data.pop(field, None)
+        serializer.save()
     
     @action(detail=False, methods=['get'])
     def categories(self, request):
@@ -601,7 +620,9 @@ class CollaborationContactViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        # Users can only see their own collaboration requests
+        # Superusers can see all requests, regular users only see their own
+        if self.request.user.is_superuser:
+            return CollaborationContact.objects.all()
         return CollaborationContact.objects.filter(user=self.request.user)
     
     def get_serializer_class(self):
@@ -629,6 +650,15 @@ class CollaborationContactViewSet(viewsets.ModelViewSet):
                 serializer.validated_data[field] = default_value
         
         serializer.save(user=user)
+    
+    def perform_update(self, serializer):
+        # Only superusers can update admin-specific fields
+        if not self.request.user.is_superuser:
+            # Remove admin fields from validated_data for regular users
+            admin_fields = ['status', 'admin_notes', 'reviewed_by', 'review_date']
+            for field in admin_fields:
+                serializer.validated_data.pop(field, None)
+        serializer.save()
     
     @action(detail=False, methods=['get'])
     def collaboration_types(self, request):
