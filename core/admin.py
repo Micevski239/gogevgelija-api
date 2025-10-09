@@ -74,10 +74,10 @@ class MultilingualAdminMixin:
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'icon', 'trending', 'created_at')
-    list_filter = ('trending', 'created_at')
+    list_display = ('name', 'icon', 'trending', 'show_in_events', 'created_at')
+    list_filter = ('trending', 'show_in_events', 'created_at')
     search_fields = ('name', 'icon')
-    list_editable = ('trending',)
+    list_editable = ('trending', 'show_in_events')
     ordering = ('name',)
 
 @admin.register(Listing)

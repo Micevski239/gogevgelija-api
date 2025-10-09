@@ -31,6 +31,13 @@ class CategoryViewSet(viewsets.ModelViewSet):
             language = self.request.user.profile.language_preference
         context['language'] = language
         return context
+    
+    @action(detail=False, methods=['get'])
+    def for_events(self, request):
+        """Get categories that should be shown for events"""
+        categories = Category.objects.filter(show_in_events=True).order_by('name')
+        serializer = self.get_serializer(categories, many=True)
+        return Response(serializer.data)
 
 class ListingViewSet(viewsets.ModelViewSet):
     queryset = Listing.objects.all()
