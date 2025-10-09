@@ -238,7 +238,7 @@ class Me(APIView):
 
 class LanguageView(APIView):
     """View for handling user language preferences"""
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
         """Get current user's language preference"""
@@ -275,7 +275,7 @@ class LanguageView(APIView):
 
 class WishlistViewSet(viewsets.ModelViewSet):
     serializer_class = WishlistSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
         """Return wishlist items for the current user only."""
@@ -375,7 +375,7 @@ class WishlistViewSet(viewsets.ModelViewSet):
 class UserPermissionViewSet(viewsets.ModelViewSet):
     """ViewSet for managing user permissions (admin only)."""
     serializer_class = UserPermissionSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
         """Return all permissions. In production, add admin check here."""
@@ -422,7 +422,7 @@ class UserPermissionViewSet(viewsets.ModelViewSet):
 
 class EditListingView(APIView):
     """View for editing listings (requires permission)."""
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request, listing_id):
         """Get listing details for editing."""
@@ -480,7 +480,7 @@ class EditListingView(APIView):
 
 class AdminUsersView(APIView):
     """View for getting all users (admin functionality)."""
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
         """Get all users. In production, add admin check here."""
