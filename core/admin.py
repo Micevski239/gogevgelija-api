@@ -158,10 +158,10 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'fields': ('featured', 'image', 'valid_until', 'has_discount_code', 'discount_code', 'website', 'phone_number', 'facebook_url', 'instagram_url', 'address'),
             'classes': ('wide',),
         }),
-           ('listings', {
+        ('Associated Listings', {
             'fields': ('listings',),
             'classes': ('wide',),
-            'description': 'Select promotions associated with this listing (optional)',
+            'description': 'Select listings where this promotion is available (optional)',
         }),
         ('English Content', {
             'fields': ('title', 'description', 'tags'),
@@ -176,7 +176,7 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'classes': ('collapse',),
         }),
     )
-    
+
     readonly_fields = ('created_at', 'updated_at')
 
 @admin.register(Blog)
