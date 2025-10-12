@@ -55,7 +55,7 @@ class Category(models.Model):
     
 def listing_image_upload_to(instance, filename):
     """Generate a unique path for listing images."""
-    base, ext = os.path.splitext(filename)
+    _, ext = os.path.splitext(filename)
     ext = ext.lower() or '.jpg'
     return f"listings/{uuid.uuid4().hex}{ext}"
 

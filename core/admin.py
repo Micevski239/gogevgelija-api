@@ -87,11 +87,17 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     search_fields = ('title', 'address', 'category__name')
     list_editable = ('featured',)
     ordering = ('-created_at',)
-    
+    filter_horizontal = ('promotions',)
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('category', 'featured', 'image', 'phone_number', 'website_url', 'facebook_url', 'instagram_url'),
             'classes': ('wide',),
+        }),
+        ('Promotions', {
+            'fields': ('promotions',),
+            'classes': ('wide',),
+            'description': 'Select promotions associated with this listing (optional)',
         }),
         ('English Content', {
             'fields': ('title', 'description', 'address', 'open_time', 'tags', 'working_hours'),
@@ -106,7 +112,7 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'classes': ('collapse',),
         }),
     )
-    
+
     readonly_fields = ('created_at', 'updated_at')
 
 @admin.register(Event)
