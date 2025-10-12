@@ -26,14 +26,15 @@ class ListingSerializer(serializers.ModelSerializer):
     can_edit = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
-    
+    promotions = serializers.SerializerMethodField()
+
     class Meta:
         model = Listing
         fields = [
-            "id", "title", "description", "address", "open_time", 
-            "category", "tags", "working_hours", "image", "phone_number", 
-            "facebook_url", "instagram_url", "website_url", 
-            "featured", "created_at", "updated_at", "can_edit"
+            "id", "title", "description", "address", "open_time",
+            "category", "tags", "working_hours", "image", "phone_number",
+            "facebook_url", "instagram_url", "website_url",
+            "featured", "promotions", "created_at", "updated_at", "can_edit"
         ]
     
     def get_title(self, obj):
@@ -89,6 +90,14 @@ class ListingSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(url)
         return url
+
+    def get_promotions(self, obj):
+        """Return serialized promotions associated with this listing."""
+        promotions = obj.promotions.all()
+        if not promotions.exists():
+            return []
+        # Use PromotionSerializer but need to pass context for language support
+        return PromotionSerializer(promotions, many=True, context=self.context).data
 
 class EventSerializer(serializers.ModelSerializer):
     has_joined = serializers.SerializerMethodField()

@@ -66,11 +66,11 @@ class Listing(models.Model):
     address = models.CharField(max_length=500)
     open_time = models.CharField(max_length=100, help_text="e.g., 'Open until 23:00' or 'Mon-Fri 9:00-18:00'")
     working_hours = models.JSONField(
-        default=dict, 
+        default=dict,
         help_text="Working hours structure, e.g., {'monday': '09:00-18:00', 'tuesday': '09:00-18:00', ...}"
     )
     working_hours_mk = models.JSONField(
-        default=dict, 
+        default=dict,
         help_text="Working hours in Macedonian, e.g., {'понedelник': '09:00-18:00', 'вторник': '09:00-18:00', ...}"
     )
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select category from available categories")
@@ -87,6 +87,7 @@ class Listing(models.Model):
     instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
     website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official website URL")
     featured = models.BooleanField(default=False, help_text="Show in featured section")
+    promotions = models.ManyToManyField('Promotion', blank=True, related_name='listings', help_text="Select promotions associated with this listing (optional)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
