@@ -151,11 +151,17 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     search_fields = ('title', 'discount_code', 'description')
     list_editable = ('featured',)
     ordering = ('-created_at',)
+    filter_horizontal = ('listings',)
     
     fieldsets = (
         ('Basic Information', {
             'fields': ('featured', 'image', 'valid_until', 'has_discount_code', 'discount_code', 'website', 'phone_number', 'facebook_url', 'instagram_url', 'address'),
             'classes': ('wide',),
+        }),
+           ('listings', {
+            'fields': ('promotions',),
+            'classes': ('wide',),
+            'description': 'Select promotions associated with this listing (optional)',
         }),
         ('English Content', {
             'fields': ('title', 'description', 'tags'),
