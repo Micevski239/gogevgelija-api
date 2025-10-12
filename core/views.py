@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser
 from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer
 
@@ -43,6 +44,7 @@ class ListingViewSet(viewsets.ModelViewSet):
     queryset = Listing.objects.all()
     serializer_class = ListingSerializer
     permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -519,6 +521,7 @@ class UserPermissionViewSet(viewsets.ModelViewSet):
 class EditListingView(APIView):
     """View for editing listings (requires permission)."""
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     
     def get(self, request, listing_id):
         """Get listing details for editing."""
@@ -541,7 +544,7 @@ class EditListingView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        serializer = EditListingSerializer(listing)
+        serializer = EditListingSerializer(listing, context={'request': request})
         return Response(serializer.data)
     
     def patch(self, request, listing_id):
@@ -565,7 +568,12 @@ class EditListingView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        serializer = EditListingSerializer(listing, data=request.data, partial=True)
+        serializer = EditListingSerializer(
+            listing,
+            data=request.data,
+            partial=True,
+            context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
         updated_listing = serializer.save()
         

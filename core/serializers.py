@@ -25,6 +25,7 @@ class ListingSerializer(serializers.ModelSerializer):
     working_hours = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
+    image = serializers.SerializerMethodField()
     
     class Meta:
         model = Listing
@@ -62,7 +63,7 @@ class ListingSerializer(serializers.ModelSerializer):
         if language == 'mk' and obj.working_hours_mk:
             return obj.working_hours_mk
         return obj.working_hours
-    
+
     def get_can_edit(self, obj):
         """Check if the current user has permission to edit this listing."""
         request = self.context.get('request')
@@ -75,6 +76,19 @@ class ListingSerializer(serializers.ModelSerializer):
             listing=obj,
             can_edit=True
         ).exists()
+
+    def get_image(self, obj):
+        if not obj.image:
+            return None
+        try:
+            url = obj.image.url
+        except ValueError:
+            # Image exists in DB but file missing
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
 class EventSerializer(serializers.ModelSerializer):
     has_joined = serializers.SerializerMethodField()
@@ -327,12 +341,13 @@ class CreateUserPermissionSerializer(serializers.Serializer):
 class EditListingSerializer(serializers.ModelSerializer):
     working_hours_mk = serializers.JSONField(required=False)
     tags_mk = serializers.ListField(required=False, allow_empty=True)
-    
+    image = serializers.ImageField(required=False, allow_null=True)
+
     class Meta:
         model = Listing
         fields = [
             # Base fields (non-translatable)
-            "working_hours", "category", "tags", "phone_number", 
+            "image", "working_hours", "category", "tags", "phone_number", 
             "facebook_url", "instagram_url", "website_url",
             # Bilingual fields
             "title_en", "title_mk", "description_en", "description_mk",
@@ -343,6 +358,16 @@ class EditListingSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Include current bilingual field values in response."""
         data = super().to_representation(instance)
+        request = self.context.get('request')
+        image_url = ''
+        if instance.image:
+            try:
+                image_url = instance.image.url
+            except ValueError:
+                image_url = ''
+        if image_url and request:
+            image_url = request.build_absolute_uri(image_url)
+        data['image'] = image_url
         
         # Add current values for bilingual fields with proper None handling
         data['title_en'] = getattr(instance, 'title_en', None) or ''
@@ -360,8 +385,15 @@ class EditListingSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         """Update listing with validation for bilingual fields."""
+        image = validated_data.pop('image', serializers.empty)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+        if image is not serializers.empty:
+            if image is None:
+                instance.image.delete(save=False)
+                instance.image = None
+            else:
+                instance.image = image
         instance.save()
         return instance
 

@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 import uuid
+import os
 
 class GuestUser(models.Model):
     """Model for guest users who browse without registering"""
@@ -52,6 +53,13 @@ class Category(models.Model):
     def __str__(self):
         return self.name
     
+def listing_image_upload_to(instance, filename):
+    """Generate a unique path for listing images."""
+    base, ext = os.path.splitext(filename)
+    ext = ext.lower() or '.jpg'
+    return f"listings/{uuid.uuid4().hex}{ext}"
+
+
 class Listing(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, help_text="Listing description")
@@ -68,7 +76,12 @@ class Listing(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select category from available categories")
     tags = models.JSONField(default=list, help_text="List of tags, e.g., ['Grill', 'Family', 'Outdoor']")
     tags_mk = models.JSONField(default=list, help_text="List of tags in Macedonian, e.g., ['Скара', 'Семејно', 'Надворешно']")
-    image = models.URLField(max_length=1000, help_text="URL to the listing image")
+    image = models.ImageField(
+        upload_to=listing_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Listing image stored in the media bucket"
+    )
     phone_number = models.CharField(max_length=20, blank=True, null=True, help_text="Contact phone number")
     facebook_url = models.URLField(max_length=500, blank=True, null=True, help_text="Facebook page URL")
     instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
