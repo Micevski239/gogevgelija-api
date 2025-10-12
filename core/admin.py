@@ -152,14 +152,14 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     list_editable = ('featured',)
     ordering = ('-created_at',)
     filter_horizontal = ('listings',)
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('featured', 'image', 'valid_until', 'has_discount_code', 'discount_code', 'website', 'phone_number', 'facebook_url', 'instagram_url', 'address'),
             'classes': ('wide',),
         }),
            ('listings', {
-            'fields': ('promotions',),
+            'fields': ('listings',),
             'classes': ('wide',),
             'description': 'Select promotions associated with this listing (optional)',
         }),
