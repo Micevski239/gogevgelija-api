@@ -160,32 +160,77 @@ class PromotionSerializer(serializers.ModelSerializer):
     description = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
-    
+    image = serializers.SerializerMethodField()
+    listings = serializers.SerializerMethodField()
+
     class Meta:
         model = Promotion
         fields = [
-            "id", "title", "description", "has_discount_code", "discount_code", "tags", 
-            "image", "valid_until", "featured", "website", "phone_number", "facebook_url", 
-            "instagram_url", "address", "created_at", "updated_at"
+            "id", "title", "description", "has_discount_code", "discount_code", "tags",
+            "image", "valid_until", "featured", "website", "phone_number", "facebook_url",
+            "instagram_url", "address", "listings", "created_at", "updated_at"
         ]
-    
+
     def get_title(self, obj):
         language = self.context.get('language', 'en')
         return getattr(obj, f'title_{language}', obj.title_en or obj.title)
-    
+
     def get_description(self, obj):
         language = self.context.get('language', 'en')
         return getattr(obj, f'description_{language}', obj.description_en or obj.description)
-    
+
     def get_address(self, obj):
         language = self.context.get('language', 'en')
         return getattr(obj, f'address_{language}', obj.address_en or obj.address)
-    
+
     def get_tags(self, obj):
         language = self.context.get('language', 'en')
         if language == 'mk' and obj.tags_mk:
             return obj.tags_mk
         return obj.tags
+
+    def get_image(self, obj):
+        """Return full URL for promotion image."""
+        if not obj.image:
+            return None
+        try:
+            url = obj.image.url
+        except ValueError:
+            # Image exists in DB but file missing
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
+    def get_listings(self, obj):
+        """Return serialized listings associated with this promotion."""
+        # To avoid circular import, we'll return minimal listing info
+        listings = obj.listings.all()
+        if not listings.exists():
+            return []
+        return [
+            {
+                'id': listing.id,
+                'title': getattr(listing, f'title_{self.context.get("language", "en")}', listing.title),
+                'address': getattr(listing, f'address_{self.context.get("language", "en")}', listing.address),
+                'image': self._get_listing_image(listing),
+            }
+            for listing in listings
+        ]
+
+    def _get_listing_image(self, listing):
+        """Helper to get listing image URL."""
+        if not listing.image:
+            return None
+        try:
+            url = listing.image.url
+        except ValueError:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
 class BlogSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()

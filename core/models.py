@@ -59,6 +59,12 @@ def listing_image_upload_to(instance, filename):
     ext = ext.lower() or '.jpg'
     return f"listings/{uuid.uuid4().hex}{ext}"
 
+def promotion_image_upload_to(instance, filename):
+    """Generate a unique path for promotion images."""
+    _, ext = os.path.splitext(filename)
+    ext = ext.lower() or '.jpg'
+    return f"promotions/{uuid.uuid4().hex}{ext}"
+
 
 class Listing(models.Model):
     title = models.CharField(max_length=255)
@@ -130,7 +136,12 @@ class Promotion(models.Model):
     discount_code = models.CharField(max_length=50, blank=True, help_text="Promo code for discount (only used if has_discount_code is True)")
     tags = models.JSONField(default=list, help_text="List of tags, e.g., ['Today', 'Dine-in', '50% off']")
     tags_mk = models.JSONField(default=list, help_text="List of tags in Macedonian, e.g., ['Денес', 'За јадење', '50% попуст']")
-    image = models.URLField(max_length=1000, help_text="URL to the promotion image")
+    image = models.ImageField(
+        upload_to=promotion_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Promotion image stored in the media bucket"
+    )
     valid_until = models.DateField(null=True, blank=True, help_text="Promotion expiry date")
     featured = models.BooleanField(default=False, help_text="Show in featured promotions")
     website = models.URLField(max_length=500, blank=True, help_text="Website URL")
