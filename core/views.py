@@ -6,8 +6,8 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact
-from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser
+from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer
 
 
 class IsSuperUser(permissions.BasePermission):
@@ -83,61 +83,62 @@ class EventViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
     def join(self, request, pk=None):
-        """Join an event with proper user tracking"""
+        """Join an event - requires authenticated user (not guest)"""
         event = self.get_object()
-        
-        # Check if user is authenticated
-        if request.user.is_authenticated:
-            # Check if user already joined
-            existing_join = EventJoin.objects.filter(event=event, user=request.user).first()
-            if existing_join:
-                return Response({
-                    'error': 'You have already joined this event'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Create join record
-            EventJoin.objects.create(event=event, user=request.user)
-            
-            # Update join count
-            event.join_count = EventJoin.objects.filter(event=event).count()
-            event.save()
-        else:
-            # For non-authenticated users, just increment count
-            event.join_count += 1
-            event.save()
-        
+
+        # Block guest users and unauthenticated users
+        if not request.user.is_authenticated:
+            return Response({
+                'error': 'You must be logged in to join events',
+                'requires_auth': True
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Check if user already joined
+        existing_join = EventJoin.objects.filter(event=event, user=request.user).first()
+        if existing_join:
+            return Response({
+                'error': 'You have already joined this event'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create join record
+        EventJoin.objects.create(event=event, user=request.user)
+
+        # Update join count
+        event.join_count = EventJoin.objects.filter(event=event).count()
+        event.save()
+
         serializer = self.get_serializer(event)
         return Response({
             'message': 'Successfully joined the event!',
             'event': serializer.data
         }, status=status.HTTP_200_OK)
-    
+
     @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
     def unjoin(self, request, pk=None):
-        """Unjoin an event (leave the event)"""
+        """Unjoin an event (leave the event) - requires authenticated user"""
         event = self.get_object()
-        
-        # Check if user is authenticated
-        if request.user.is_authenticated:
-            # Check if user has joined
-            existing_join = EventJoin.objects.filter(event=event, user=request.user).first()
-            if not existing_join:
-                return Response({
-                    'error': 'You have not joined this event'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Remove join record
-            existing_join.delete()
-            
-            # Update join count
-            event.join_count = EventJoin.objects.filter(event=event).count()
-            event.save()
-        else:
-            # For non-authenticated users, just decrement count (but not below 0)
-            if event.join_count > 0:
-                event.join_count -= 1
-                event.save()
-        
+
+        # Block guest users and unauthenticated users
+        if not request.user.is_authenticated:
+            return Response({
+                'error': 'You must be logged in to unjoin events',
+                'requires_auth': True
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Check if user has joined
+        existing_join = EventJoin.objects.filter(event=event, user=request.user).first()
+        if not existing_join:
+            return Response({
+                'error': 'You have not joined this event'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Remove join record
+        existing_join.delete()
+
+        # Update join count
+        event.join_count = EventJoin.objects.filter(event=event).count()
+        event.save()
+
         serializer = self.get_serializer(event)
         return Response({
             'message': 'Successfully left the event!',
@@ -204,6 +205,41 @@ class Register(APIView):
             "refresh": str(refresh),
         }, status = status.HTTP_201_CREATED)
 
+class GuestLoginView(APIView):
+    """View for creating guest user sessions"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        """Create a new guest user and return guest_id"""
+        guest_user = GuestUser.objects.create()
+        serializer = GuestUserSerializer(guest_user)
+        return Response({
+            "guest_id": str(guest_user.guest_id),
+            "language_preference": guest_user.language_preference,
+            "is_guest": True
+        }, status=status.HTTP_201_CREATED)
+
+    def get(self, request):
+        """Get guest user info by guest_id from query params"""
+        guest_id = request.query_params.get('guest_id')
+        if not guest_id:
+            return Response(
+                {"error": "guest_id parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            guest_user = GuestUser.objects.get(guest_id=guest_id)
+            # Update last_active timestamp
+            guest_user.save()
+            serializer = GuestUserSerializer(guest_user)
+            return Response(serializer.data)
+        except GuestUser.DoesNotExist:
+            return Response(
+                {"error": "Guest user not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
 class Me(APIView):
     permission_classes = [permissions.AllowAny]
     
@@ -252,41 +288,86 @@ class Me(APIView):
         })
 
 class LanguageView(APIView):
-    """View for handling user language preferences"""
-    permission_classes = [permissions.IsAuthenticated]
-    
+    """View for handling user and guest language preferences"""
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
-        """Get current user's language preference"""
-        try:
-            profile = request.user.profile
-            return Response({'language': profile.language_preference})
-        except UserProfile.DoesNotExist:
-            # Create profile if it doesn't exist
-            profile = UserProfile.objects.create(user=request.user)
-            return Response({'language': profile.language_preference})
-    
+        """Get current user's or guest's language preference"""
+        # Check if it's a guest user
+        guest_id = request.query_params.get('guest_id')
+        if guest_id:
+            try:
+                guest_user = GuestUser.objects.get(guest_id=guest_id)
+                return Response({'language': guest_user.language_preference, 'is_guest': True})
+            except GuestUser.DoesNotExist:
+                return Response(
+                    {'error': 'Guest user not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+        # Authenticated user
+        if request.user.is_authenticated:
+            try:
+                profile = request.user.profile
+                return Response({'language': profile.language_preference, 'is_guest': False})
+            except UserProfile.DoesNotExist:
+                # Create profile if it doesn't exist
+                profile = UserProfile.objects.create(user=request.user)
+                return Response({'language': profile.language_preference, 'is_guest': False})
+
+        return Response(
+            {'error': 'No user or guest_id provided'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     def post(self, request):
-        """Update user's language preference"""
+        """Update user's or guest's language preference"""
         language = request.data.get('language')
-        
+
         if language not in ['en', 'mk']:
             return Response(
-                {'error': 'Invalid language. Must be "en" or "mk"'}, 
+                {'error': 'Invalid language. Must be "en" or "mk"'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        try:
-            profile = request.user.profile
-        except UserProfile.DoesNotExist:
-            profile = UserProfile.objects.create(user=request.user)
-        
-        profile.language_preference = language
-        profile.save()
-        
-        return Response({
-            'message': 'Language preference updated successfully',
-            'language': language
-        })
+
+        # Check if it's a guest user
+        guest_id = request.data.get('guest_id')
+        if guest_id:
+            try:
+                guest_user = GuestUser.objects.get(guest_id=guest_id)
+                guest_user.language_preference = language
+                guest_user.save()
+                return Response({
+                    'message': 'Language preference updated successfully',
+                    'language': language,
+                    'is_guest': True
+                })
+            except GuestUser.DoesNotExist:
+                return Response(
+                    {'error': 'Guest user not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+        # Authenticated user
+        if request.user.is_authenticated:
+            try:
+                profile = request.user.profile
+            except UserProfile.DoesNotExist:
+                profile = UserProfile.objects.create(user=request.user)
+
+            profile.language_preference = language
+            profile.save()
+
+            return Response({
+                'message': 'Language preference updated successfully',
+                'language': language,
+                'is_guest': False
+            })
+
+        return Response(
+            {'error': 'No user or guest_id provided'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 class WishlistViewSet(viewsets.ModelViewSet):
     serializer_class = WishlistSerializer

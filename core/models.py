@@ -2,18 +2,37 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+import uuid
+
+class GuestUser(models.Model):
+    """Model for guest users who browse without registering"""
+    guest_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, help_text="Unique identifier for guest user")
+    language_preference = models.CharField(
+        max_length=2,
+        choices=[('en', 'English'), ('mk', 'Macedonian')],
+        default='en',
+        help_text="Guest user's preferred language"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_active = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-last_active']
+
+    def __str__(self):
+        return f"Guest {self.guest_id} - {self.language_preference}"
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     language_preference = models.CharField(
-        max_length=2, 
-        choices=[('en', 'English'), ('mk', 'Macedonian')], 
+        max_length=2,
+        choices=[('en', 'English'), ('mk', 'Macedonian')],
         default='en',
         help_text="User's preferred language"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"{self.user.username} - {self.language_preference}"
     

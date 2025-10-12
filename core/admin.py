@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db import models
 from django.forms import Textarea
 # from modeltranslation.admin import TranslationAdmin
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser
 
 class MultilingualAdminMixin:
     """Mixin for multilingual admin interfaces with tabbed layout"""
@@ -211,6 +211,14 @@ class WishlistAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'user__email')
     ordering = ('-created_at',)
     readonly_fields = ('created_at',)
+
+@admin.register(GuestUser)
+class GuestUserAdmin(admin.ModelAdmin):
+    list_display = ('guest_id', 'language_preference', 'created_at', 'last_active')
+    list_filter = ('language_preference', 'created_at', 'last_active')
+    search_fields = ('guest_id',)
+    ordering = ('-last_active',)
+    readonly_fields = ('guest_id', 'created_at', 'last_active')
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):

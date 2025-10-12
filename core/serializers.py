@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -193,6 +193,12 @@ class BlogSerializer(serializers.ModelSerializer):
     def get_author(self, obj):
         language = self.context.get('language', 'en')
         return getattr(obj, f'author_{language}', obj.author_en or obj.author)
+
+class GuestUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GuestUser
+        fields = ["guest_id", "language_preference", "created_at", "last_active"]
+        read_only_fields = ["guest_id", "created_at", "last_active"]
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
-from core.views import CategoryViewSet, ListingViewSet, EventViewSet, PromotionViewSet, BlogViewSet, WishlistViewSet, UserPermissionViewSet, HelpSupportViewSet, CollaborationContactViewSet, health, Register, Me, LanguageView, EditListingView, AdminUsersView
+from core.views import CategoryViewSet, ListingViewSet, EventViewSet, PromotionViewSet, BlogViewSet, WishlistViewSet, UserPermissionViewSet, HelpSupportViewSet, CollaborationContactViewSet, health, Register, Me, LanguageView, EditListingView, AdminUsersView, GuestLoginView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 router = DefaultRouter()
@@ -19,6 +19,7 @@ router.register(r"collaboration-contact", CollaborationContactViewSet, basename=
 urlpatterns = [
     path('api/', include(router.urls)),
     path("api/auth/register/", Register.as_view()),
+    path("api/auth/guest/", GuestLoginView.as_view(), name="guest_login"),
     path("api/auth/me/", Me.as_view()),
     path("api/auth/profile/", Me.as_view()),
     path("api/auth/language/", LanguageView.as_view()),
