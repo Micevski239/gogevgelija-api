@@ -14,6 +14,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser
 from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer
 from .utils import get_preferred_language
+from .pagination import StandardResultsSetPagination
 
 
 class IsSuperUser(permissions.BasePermission):
@@ -28,16 +29,21 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
-    
+    pagination_class = StandardResultsSetPagination
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
         return context
-    
+
     @action(detail=False, methods=['get'])
     def for_events(self, request):
         """Get categories that should be shown for events"""
         categories = Category.objects.filter(show_in_events=True).order_by('name')
+        page = self.paginate_queryset(categories)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)
 
@@ -46,15 +52,16 @@ class ListingViewSet(viewsets.ModelViewSet):
     serializer_class = ListingSerializer
     permission_classes = [permissions.AllowAny]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    
+    pagination_class = StandardResultsSetPagination
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
         return context
-    
+
     @action(detail=False, methods=['get'])
     def featured(self, request):
-        """Get only featured listings"""
+        """Get only featured listings (no pagination for featured items)"""
         featured_listings = Listing.objects.filter(featured=True)
         serializer = self.get_serializer(featured_listings, many=True)
         return Response(serializer.data)
@@ -63,15 +70,16 @@ class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     permission_classes = [permissions.AllowAny]
-    
+    pagination_class = StandardResultsSetPagination
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
         return context
-    
+
     @action(detail=False, methods=['get'])
     def featured(self, request):
-        """Get only featured events"""
+        """Get only featured events (no pagination for featured items)"""
         featured_events = Event.objects.filter(featured=True)
         serializer = self.get_serializer(featured_events, many=True)
         return Response(serializer.data)
@@ -144,15 +152,16 @@ class PromotionViewSet(viewsets.ModelViewSet):
     queryset = Promotion.objects.all()
     serializer_class = PromotionSerializer
     permission_classes = [permissions.AllowAny]
-    
+    pagination_class = StandardResultsSetPagination
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
         return context
-    
+
     @action(detail=False, methods=['get'])
     def featured(self, request):
-        """Get only featured promotions"""
+        """Get only featured promotions (no pagination for featured items)"""
         featured_promotions = Promotion.objects.filter(featured=True)
         serializer = self.get_serializer(featured_promotions, many=True)
         return Response(serializer.data)
@@ -161,15 +170,16 @@ class BlogViewSet(viewsets.ModelViewSet):
     queryset = Blog.objects.filter(published=True)
     serializer_class = BlogSerializer
     permission_classes = [permissions.AllowAny]
-    
+    pagination_class = StandardResultsSetPagination
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
         return context
-    
+
     @action(detail=False, methods=['get'])
     def featured(self, request):
-        """Get only featured blogs"""
+        """Get only featured blogs (no pagination for featured items)"""
         featured_blogs = Blog.objects.filter(featured=True, published=True)
         serializer = self.get_serializer(featured_blogs, many=True)
         return Response(serializer.data)
