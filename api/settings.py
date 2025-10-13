@@ -157,6 +157,9 @@ LANGUAGES = [("en", "English"), ("mk", "Macedonian")]
 MODELTRANSLATION_DEFAULT_LANGUAGE = "en"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Directory that holds shared translation resources
+TRANSLATIONS_DIR = BASE_DIR.parent / "translations"
+
 # -------------------- Admin toggle --------------------
 ADMIN_ENABLED = os.getenv("DJANGO_ADMIN_ENABLED", "1" if DEBUG else "0") == "1"
 

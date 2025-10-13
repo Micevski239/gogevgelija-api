@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes, action
@@ -5,10 +8,12 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import authenticate
+from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser
 from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer
+from .utils import get_preferred_language
 
 
 class IsSuperUser(permissions.BasePermission):
@@ -26,11 +31,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        # Get language from user profile or default to 'en'
-        language = 'en'
-        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile'):
-            language = self.request.user.profile.language_preference
-        context['language'] = language
+        context['language'] = get_preferred_language(self.request)
         return context
     
     @action(detail=False, methods=['get'])
@@ -48,11 +49,7 @@ class ListingViewSet(viewsets.ModelViewSet):
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        # Get language from user profile or default to 'en'
-        language = 'en'
-        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile'):
-            language = self.request.user.profile.language_preference
-        context['language'] = language
+        context['language'] = get_preferred_language(self.request)
         return context
     
     @action(detail=False, methods=['get'])
@@ -69,11 +66,7 @@ class EventViewSet(viewsets.ModelViewSet):
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        # Get language from user profile or default to 'en'
-        language = 'en'
-        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile'):
-            language = self.request.user.profile.language_preference
-        context['language'] = language
+        context['language'] = get_preferred_language(self.request)
         return context
     
     @action(detail=False, methods=['get'])
@@ -154,11 +147,7 @@ class PromotionViewSet(viewsets.ModelViewSet):
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        # Get language from user profile or default to 'en'
-        language = 'en'
-        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile'):
-            language = self.request.user.profile.language_preference
-        context['language'] = language
+        context['language'] = get_preferred_language(self.request)
         return context
     
     @action(detail=False, methods=['get'])
@@ -175,11 +164,7 @@ class BlogViewSet(viewsets.ModelViewSet):
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        # Get language from user profile or default to 'en'
-        language = 'en'
-        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile'):
-            language = self.request.user.profile.language_preference
-        context['language'] = language
+        context['language'] = get_preferred_language(self.request)
         return context
     
     @action(detail=False, methods=['get'])
@@ -321,6 +306,39 @@ class LanguageView(APIView):
             {'error': 'No user or guest_id provided'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class TranslationResourceView(APIView):
+    """Expose translation resources so the mobile app can load them dynamically."""
+    permission_classes = [permissions.AllowAny]
+
+    _ALLOWED_NAMESPACES = {"common", "screens", "navigation"}
+
+    def get(self, request, language_code: str, namespace: str):
+        available_languages = {code for code, _ in settings.LANGUAGES}
+        language = language_code.lower()
+        ns = namespace.lower()
+
+        if language not in available_languages:
+            return Response({'error': 'Language not supported'}, status=status.HTTP_404_NOT_FOUND)
+
+        if ns not in self._ALLOWED_NAMESPACES:
+            return Response({'error': 'Namespace not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        translations_root = getattr(settings, 'TRANSLATIONS_DIR', None)
+        if not translations_root:
+            return Response({'error': 'Translations directory not configured'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        resource_path = Path(translations_root) / language / f'{ns}.json'
+        if not resource_path.exists():
+            return Response({'error': 'Resource not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            payload = json.loads(resource_path.read_text(encoding='utf-8'))
+        except json.JSONDecodeError:
+            return Response({'error': 'Invalid translation resource'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(payload)
 
     def post(self, request):
         """Update user's or guest's language preference"""
@@ -641,10 +659,7 @@ class HelpSupportViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def categories(self, request):
         """Get available help support categories with translations"""
-        # Get language preference from user profile
-        language = 'en'
-        if request.user.is_authenticated and hasattr(request.user, 'profile'):
-            language = request.user.profile.language_preference
+        language = get_preferred_language(request)
         
         # Define translations
         category_translations = {
@@ -682,10 +697,7 @@ class HelpSupportViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def priorities(self, request):
         """Get available priority levels with translations"""
-        # Get language preference from user profile
-        language = 'en'
-        if request.user.is_authenticated and hasattr(request.user, 'profile'):
-            language = request.user.profile.language_preference
+        language = get_preferred_language(request)
         
         # Define translations
         priority_translations = {

@@ -2,7 +2,25 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
-from core.views import CategoryViewSet, ListingViewSet, EventViewSet, PromotionViewSet, BlogViewSet, WishlistViewSet, UserPermissionViewSet, HelpSupportViewSet, CollaborationContactViewSet, health, Register, Me, LanguageView, EditListingView, AdminUsersView, GuestLoginView
+from core.views import (
+    CategoryViewSet,
+    ListingViewSet,
+    EventViewSet,
+    PromotionViewSet,
+    BlogViewSet,
+    WishlistViewSet,
+    UserPermissionViewSet,
+    HelpSupportViewSet,
+    CollaborationContactViewSet,
+    TranslationResourceView,
+    health,
+    Register,
+    Me,
+    LanguageView,
+    EditListingView,
+    AdminUsersView,
+    GuestLoginView,
+)
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 router = DefaultRouter()
@@ -23,6 +41,7 @@ urlpatterns = [
     path("api/auth/me/", Me.as_view()),
     path("api/auth/profile/", Me.as_view()),
     path("api/auth/language/", LanguageView.as_view()),
+    path("api/i18n/<str:language_code>/<str:namespace>/", TranslationResourceView.as_view(), name="i18n_resource"),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/listings/<int:listing_id>/edit/", EditListingView.as_view(), name="edit_listing"),
