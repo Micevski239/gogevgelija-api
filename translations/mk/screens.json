@@ -47,7 +47,7 @@
     "facebookPage": "Facebook страна",
     "instagramProfile": "Instagram профил",
     "openIn": "Отвори во",
-    "callNumber": "Повикај",
+    "callNumber": "Повикај"
   },
   "events": {
     "title": "Откријте настани",
@@ -174,7 +174,7 @@
     "noResultsMessage": "Пронајдете ресторани, кафулиња, места за забава",
     "searchStartMessage": "Започнете со пребарување",
     "seeAll": "Види ги сите",
-    "home": "Дома",
+    "home": "Дома"
   },
   "overlays": {
     "upcomingEvents": "Претстојни настани",

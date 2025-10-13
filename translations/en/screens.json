@@ -46,7 +46,7 @@
     "facebookPage": "Facebook Page",
     "instagramProfile": "Instagram Profile",
     "openIn": "Open in",
-    "callNumber": "Call",
+    "callNumber": "Call"
   },
   "events": {
     "title": "Discover Events",
@@ -173,7 +173,7 @@
     "noResultsMessage": "Find restaurants, cafes, music venues and places",
     "searchStartMessage": "Start searching",
     "seeAll": "See All",
-    "home": "Home",
+    "home": "Home"
   },
   "overlays": {
     "upcomingEvents": "Upcoming Events",
