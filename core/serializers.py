@@ -33,7 +33,7 @@ class ListingSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "description", "address", "open_time",
             "category", "tags", "working_hours", "image", "phone_number",
-            "facebook_url", "instagram_url", "website_url",
+            "facebook_url", "instagram_url", "website_url", "google_maps_url",
             "featured", "promotions", "created_at", "updated_at", "can_edit"
         ]
     
@@ -112,9 +112,9 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = [
-            "id", "title", "description", "date_time", "location", 
-            "cover_image", "entry_price", "category", "age_limit", "expectations", 
-            "join_count", "has_joined", "featured", "created_at", "updated_at"
+            "id", "title", "description", "date_time", "location",
+            "cover_image", "entry_price", "category", "age_limit", "expectations",
+            "join_count", "has_joined", "google_maps_url", "featured", "created_at", "updated_at"
         ]
     
     def get_has_joined(self, obj):
@@ -168,7 +168,7 @@ class PromotionSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "description", "has_discount_code", "discount_code", "tags",
             "image", "valid_until", "featured", "website", "phone_number", "facebook_url",
-            "instagram_url", "address", "listings", "created_at", "updated_at"
+            "instagram_url", "google_maps_url", "address", "listings", "created_at", "updated_at"
         ]
 
     def get_title(self, obj):

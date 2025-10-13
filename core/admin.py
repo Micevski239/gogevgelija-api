@@ -91,7 +91,7 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('category', 'featured', 'image', 'phone_number', 'website_url', 'facebook_url', 'instagram_url'),
+            'fields': ('category', 'featured', 'image', 'phone_number', 'website_url', 'facebook_url', 'instagram_url', 'google_maps_url'),
             'classes': ('wide',),
         }),
         ('Promotions', {
@@ -125,7 +125,7 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('category', 'featured', 'date_time', 'cover_image', 'join_count'),
+            'fields': ('category', 'featured', 'date_time', 'cover_image', 'join_count', 'google_maps_url'),
             'classes': ('wide',),
         }),
         ('English Content', {
@@ -154,7 +154,7 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('featured', 'image', 'valid_until', 'has_discount_code', 'discount_code', 'website', 'phone_number', 'facebook_url', 'instagram_url', 'address'),
+            'fields': ('featured', 'image', 'valid_until', 'has_discount_code', 'discount_code', 'website', 'phone_number', 'facebook_url', 'instagram_url', 'google_maps_url', 'address'),
             'classes': ('wide',),
         }),
         ('English Content', {
