@@ -1,0 +1,20 @@
+{
+  "tabs": {
+    "home": "Дома",
+    "events": "Настани",
+    "promotions": "Промоции",
+    "blog": "Блог",
+    "profile": "Профил"
+  },
+  "headers": {
+    "home": "ГоГевгелија",
+    "events": "Настани",
+    "promotions": "Промоции",
+    "blog": "Блог",
+    "profile": "Профил",
+    "wishlist": "Листа на желби",
+    "search": "Пребарај",
+    "featured": "Препорачано",
+    "settings": "Подесувања"
+  }
+}

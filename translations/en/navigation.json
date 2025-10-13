@@ -1,0 +1,20 @@
+{
+  "tabs": {
+    "home": "Home",
+    "events": "Events",
+    "promotions": "Promotions",
+    "blog": "Blog",
+    "profile": "Profile"
+  },
+  "headers": {
+    "home": "GoGevgelija",
+    "events": "Events",
+    "promotions": "Promotions",
+    "blog": "Blog",
+    "profile": "Profile",
+    "wishlist": "Wishlist",
+    "search": "Search",
+    "featured": "Featured",
+    "settings": "Settings"
+  }
+}
