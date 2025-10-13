@@ -96,7 +96,6 @@ class Listing(models.Model):
     promotions = models.ManyToManyField('Promotion', blank=True, related_name='listings', help_text="Select promotions associated with this listing (optional)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    google_maps_url = models.URLField(max_length=500, blank=True, null=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -122,8 +121,7 @@ class Event(models.Model):
     featured = models.BooleanField(default=False, help_text="Show in featured events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    google_maps_url = models.URLField(max_length=500, blank=True, null=True)
-    
+
     class Meta:
         ordering = ['-created_at']
     
@@ -153,7 +151,6 @@ class Promotion(models.Model):
     address = models.CharField(max_length=500, blank=True, help_text="Physical address")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    google_maps_url = models.URLField(max_length=500, blank=True, null=True)
 
     class Meta:
         ordering = ['-created_at']
