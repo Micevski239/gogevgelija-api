@@ -16,5 +16,9 @@
     "search": "Search",
     "featured": "Featured",
     "settings": "Settings"
+  },
+  "search": {
+    "label": "Search",
+    "hint": "Navigate to search screen"
   }
 }
