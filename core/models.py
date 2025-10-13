@@ -88,6 +88,36 @@ class Listing(models.Model):
         null=True,
         help_text="Listing image stored in the media bucket"
     )
+    image_1 = models.ImageField(
+        upload_to=listing_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional listing image"
+    )
+    image_2 = models.ImageField(
+        upload_to=listing_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional listing image"
+    )
+    image_3 = models.ImageField(
+        upload_to=listing_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional listing image"
+    )
+    image_4 = models.ImageField(
+        upload_to=listing_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional listing image"
+    )
+    image_5 = models.ImageField(
+        upload_to=listing_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional listing image"
+    )
     phone_number = models.CharField(max_length=20, blank=True, null=True, help_text="Contact phone number")
     facebook_url = models.URLField(max_length=500, blank=True, null=True, help_text="Facebook page URL")
     instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")

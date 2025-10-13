@@ -26,13 +26,14 @@ class ListingSerializer(serializers.ModelSerializer):
     can_edit = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
     promotions = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
         fields = [
             "id", "title", "description", "address", "open_time",
-            "category", "tags", "working_hours", "image", "phone_number",
+            "category", "tags", "working_hours", "image", "images", "phone_number",
             "facebook_url", "instagram_url", "website_url",
             "featured", "promotions", "created_at", "updated_at", "can_edit"
         ]
@@ -79,17 +80,28 @@ class ListingSerializer(serializers.ModelSerializer):
         ).exists()
 
     def get_image(self, obj):
-        if not obj.image:
-            return None
-        try:
-            url = obj.image.url
-        except ValueError:
-            # Image exists in DB but file missing
-            return None
+        images = self._build_image_urls(obj)
+        return images[0] if images else None
+
+    def get_images(self, obj):
+        return self._build_image_urls(obj)
+
+    def _build_image_urls(self, obj):
         request = self.context.get('request')
-        if request:
-            return request.build_absolute_uri(url)
-        return url
+        urls = []
+        for field_name in ["image", "image_1", "image_2", "image_3", "image_4", "image_5"]:
+            image_field = getattr(obj, field_name, None)
+            if not image_field:
+                continue
+            try:
+                url = image_field.url
+            except ValueError:
+                continue
+            if request:
+                urls.append(request.build_absolute_uri(url))
+            else:
+                urls.append(url)
+        return urls
 
     def get_promotions(self, obj):
         """Return serialized promotions associated with this listing."""
@@ -396,12 +408,18 @@ class EditListingSerializer(serializers.ModelSerializer):
     working_hours_mk = serializers.JSONField(required=False)
     tags_mk = serializers.ListField(required=False, allow_empty=True)
     image = serializers.ImageField(required=False, allow_null=True)
+    image_1 = serializers.ImageField(required=False, allow_null=True)
+    image_2 = serializers.ImageField(required=False, allow_null=True)
+    image_3 = serializers.ImageField(required=False, allow_null=True)
+    image_4 = serializers.ImageField(required=False, allow_null=True)
+    image_5 = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Listing
         fields = [
             # Base fields (non-translatable)
-            "image", "working_hours", "category", "tags", "phone_number", 
+            "image", "image_1", "image_2", "image_3", "image_4", "image_5",
+            "working_hours", "category", "tags", "phone_number", 
             "facebook_url", "instagram_url", "website_url",
             # Bilingual fields
             "title_en", "title_mk", "description_en", "description_mk",
@@ -413,16 +431,18 @@ class EditListingSerializer(serializers.ModelSerializer):
         """Include current bilingual field values in response."""
         data = super().to_representation(instance)
         request = self.context.get('request')
-        image_url = ''
-        if instance.image:
-            try:
-                image_url = instance.image.url
-            except ValueError:
-                image_url = ''
-        if image_url and request:
-            image_url = request.build_absolute_uri(image_url)
-        data['image'] = image_url
-        
+        for field_name in ["image", "image_1", "image_2", "image_3", "image_4", "image_5"]:
+            url = ''
+            image_field = getattr(instance, field_name)
+            if image_field:
+                try:
+                    url = image_field.url
+                except ValueError:
+                    url = ''
+            if url and request:
+                url = request.build_absolute_uri(url)
+            data[field_name] = url
+
         # Add current values for bilingual fields with proper None handling
         data['title_en'] = getattr(instance, 'title_en', None) or ''
         data['title_mk'] = getattr(instance, 'title_mk', None) or ''
@@ -439,15 +459,22 @@ class EditListingSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         """Update listing with validation for bilingual fields."""
-        image = validated_data.pop('image', serializers.empty)
+        image_fields = {
+            field_name: validated_data.pop(field_name, serializers.empty)
+            for field_name in ["image", "image_1", "image_2", "image_3", "image_4", "image_5"]
+        }
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        if image is not serializers.empty:
-            if image is None:
-                instance.image.delete(save=False)
-                instance.image = None
+        for field_name, value in image_fields.items():
+            if value is serializers.empty:
+                continue
+            if value is None:
+                existing = getattr(instance, field_name)
+                if existing:
+                    existing.delete(save=False)
+                setattr(instance, field_name, None)
             else:
-                instance.image = image
+                setattr(instance, field_name, value)
         instance.save()
         return instance
 

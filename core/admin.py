@@ -91,7 +91,15 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('category', 'featured', 'image', 'phone_number', 'website_url', 'facebook_url', 'instagram_url'),
+            'fields': (
+                'category',
+                'featured',
+                'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
+                'phone_number',
+                'website_url',
+                'facebook_url',
+                'instagram_url'
+            ),
             'classes': ('wide',),
         }),
         ('Promotions', {
