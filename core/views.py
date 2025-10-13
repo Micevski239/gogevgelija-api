@@ -317,41 +317,16 @@ class LanguageView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-
-class TranslationResourceView(APIView):
-    """Expose translation resources so the mobile app can load them dynamically."""
-    permission_classes = [permissions.AllowAny]
-
-    _ALLOWED_NAMESPACES = {"common", "screens", "navigation"}
-
-    def get(self, request, language_code: str, namespace: str):
-        available_languages = {code for code, _ in settings.LANGUAGES}
-        language = language_code.lower()
-        ns = namespace.lower()
-
-        if language not in available_languages:
-            return Response({'error': 'Language not supported'}, status=status.HTTP_404_NOT_FOUND)
-
-        if ns not in self._ALLOWED_NAMESPACES:
-            return Response({'error': 'Namespace not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        translations_root = getattr(settings, 'TRANSLATIONS_DIR', None)
-        if not translations_root:
-            return Response({'error': 'Translations directory not configured'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        resource_path = Path(translations_root) / language / f'{ns}.json'
-        if not resource_path.exists():
-            return Response({'error': 'Resource not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        try:
-            payload = json.loads(resource_path.read_text(encoding='utf-8'))
-        except json.JSONDecodeError:
-            return Response({'error': 'Invalid translation resource'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        return Response(payload)
-
     def post(self, request):
         """Update user's or guest's language preference"""
+        return self._handle_update(request)
+
+    def put(self, request):
+        """Allow PUT as an alias for POST for clients expecting RESTful updates."""
+        return self._handle_update(request)
+
+    def _handle_update(self, request):
+        """Shared logic for mutating language preference."""
         language = request.data.get('language')
 
         if language not in ['en', 'mk']:
@@ -398,6 +373,39 @@ class TranslationResourceView(APIView):
             {'error': 'No user or guest_id provided'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class TranslationResourceView(APIView):
+    """Expose translation resources so the mobile app can load them dynamically."""
+    permission_classes = [permissions.AllowAny]
+
+    _ALLOWED_NAMESPACES = {"common", "screens", "navigation"}
+
+    def get(self, request, language_code: str, namespace: str):
+        available_languages = {code for code, _ in settings.LANGUAGES}
+        language = language_code.lower()
+        ns = namespace.lower()
+
+        if language not in available_languages:
+            return Response({'error': 'Language not supported'}, status=status.HTTP_404_NOT_FOUND)
+
+        if ns not in self._ALLOWED_NAMESPACES:
+            return Response({'error': 'Namespace not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        translations_root = getattr(settings, 'TRANSLATIONS_DIR', None)
+        if not translations_root:
+            return Response({'error': 'Translations directory not configured'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        resource_path = Path(translations_root) / language / f'{ns}.json'
+        if not resource_path.exists():
+            return Response({'error': 'Resource not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            payload = json.loads(resource_path.read_text(encoding='utf-8'))
+        except json.JSONDecodeError:
+            return Response({'error': 'Invalid translation resource'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(payload)
 
 class WishlistViewSet(viewsets.ModelViewSet):
     serializer_class = WishlistSerializer
