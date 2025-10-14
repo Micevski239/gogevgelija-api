@@ -57,14 +57,14 @@ class ListingSerializer(serializers.ModelSerializer):
     def get_tags(self, obj):
         language = self.context.get('language', 'en')
         if language == 'mk' and obj.tags_mk:
-            return obj.tags_mk
-        return obj.tags
-    
+            return obj.tags_mk or []
+        return obj.tags or []
+
     def get_working_hours(self, obj):
         language = self.context.get('language', 'en')
         if language == 'mk' and obj.working_hours_mk:
-            return obj.working_hours_mk
-        return obj.working_hours
+            return obj.working_hours_mk or {}
+        return obj.working_hours or {}
 
     def get_can_edit(self, obj):
         """Check if the current user has permission to edit this listing."""
@@ -464,6 +464,12 @@ class EditListingSerializer(serializers.ModelSerializer):
             for field_name in ["image", "image_1", "image_2", "image_3", "image_4", "image_5"]
         }
         for attr, value in validated_data.items():
+            if attr in {"working_hours", "working_hours_mk"}:
+                if value in (None, ""):
+                    value = {}
+            if attr in {"tags", "tags_mk"}:
+                if value in (None, ""):
+                    value = []
             setattr(instance, attr, value)
         for field_name, value in image_fields.items():
             if value is serializers.empty:
