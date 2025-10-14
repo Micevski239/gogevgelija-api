@@ -70,7 +70,12 @@ class Listing(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, help_text="Listing description")
     address = models.CharField(max_length=500)
-    open_time = models.CharField(max_length=100, help_text="e.g., 'Open until 23:00' or 'Mon-Fri 9:00-18:00'")
+    open_time = models.CharField(
+        max_length=100,
+        help_text="e.g., 'Open until 23:00' or 'Mon-Fri 9:00-18:00'",
+        blank=True,
+        null=True,
+    )
     working_hours = models.JSONField(
         default=dict,
         help_text="Working hours structure, e.g., {'monday': '09:00-18:00', 'tuesday': '09:00-18:00', ...}",

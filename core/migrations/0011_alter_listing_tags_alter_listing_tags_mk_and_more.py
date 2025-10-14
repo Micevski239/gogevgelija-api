@@ -12,6 +12,11 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterField(
             model_name='listing',
+            name='open_time',
+            field=models.CharField(blank=True, help_text="e.g., 'Open until 23:00' or 'Mon-Fri 9:00-18:00'", max_length=100, null=True),
+        ),
+        migrations.AlterField(
+            model_name='listing',
             name='tags',
             field=models.JSONField(blank=True, default=list, help_text="List of tags, e.g., ['Grill', 'Family', 'Outdoor']", null=True),
         ),

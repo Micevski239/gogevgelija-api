@@ -52,7 +52,11 @@ class ListingSerializer(serializers.ModelSerializer):
     
     def get_open_time(self, obj):
         language = self.context.get('language', 'en')
-        return getattr(obj, f'open_time_{language}', obj.open_time_en or obj.open_time)
+        translated_value = getattr(obj, f'open_time_{language}', None)
+        if translated_value:
+            return translated_value
+        fallback = getattr(obj, 'open_time_en', None) or obj.open_time
+        return fallback or ''
     
     def get_tags(self, obj):
         language = self.context.get('language', 'en')
@@ -470,6 +474,9 @@ class EditListingSerializer(serializers.ModelSerializer):
             if attr in {"tags", "tags_mk"}:
                 if value in (None, ""):
                     value = []
+            if attr in {"open_time", "open_time_en", "open_time_mk"}:
+                if value is None:
+                    value = ''
             setattr(instance, attr, value)
         for field_name, value in image_fields.items():
             if value is serializers.empty:
