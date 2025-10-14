@@ -22,6 +22,7 @@ class ListingSerializer(serializers.ModelSerializer):
     address = serializers.SerializerMethodField()
     open_time = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
+    amenities = serializers.SerializerMethodField()
     working_hours = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
@@ -33,7 +34,7 @@ class ListingSerializer(serializers.ModelSerializer):
         model = Listing
         fields = [
             "id", "title", "description", "address", "open_time",
-            "category", "tags", "working_hours", "image", "images", "phone_number",
+            "category", "tags", "amenities", "working_hours", "image", "images", "phone_number",
             "facebook_url", "instagram_url", "website_url",
             "featured", "promotions", "created_at", "updated_at", "can_edit"
         ]
@@ -63,6 +64,12 @@ class ListingSerializer(serializers.ModelSerializer):
         if language == 'mk' and obj.tags_mk:
             return obj.tags_mk or []
         return obj.tags or []
+
+    def get_amenities(self, obj):
+        language = self.context.get('language', 'en')
+        if language == 'mk' and obj.amenities_mk:
+            return obj.amenities_mk or []
+        return obj.amenities or []
 
     def get_working_hours(self, obj):
         language = self.context.get('language', 'en')
@@ -411,6 +418,7 @@ class CreateUserPermissionSerializer(serializers.Serializer):
 class EditListingSerializer(serializers.ModelSerializer):
     working_hours_mk = serializers.JSONField(required=False)
     tags_mk = serializers.ListField(required=False, allow_empty=True)
+    amenities_mk = serializers.JSONField(required=False)
     image = serializers.ImageField(required=False, allow_null=True)
     image_1 = serializers.ImageField(required=False, allow_null=True)
     image_2 = serializers.ImageField(required=False, allow_null=True)
@@ -423,12 +431,12 @@ class EditListingSerializer(serializers.ModelSerializer):
         fields = [
             # Base fields (non-translatable)
             "image", "image_1", "image_2", "image_3", "image_4", "image_5",
-            "working_hours", "category", "tags", "phone_number", 
+            "working_hours", "category", "tags", "amenities", "phone_number", 
             "facebook_url", "instagram_url", "website_url",
             # Bilingual fields
             "title_en", "title_mk", "description_en", "description_mk",
             "address_en", "address_mk", "open_time_en", "open_time_mk",
-            "working_hours_mk", "tags_mk"
+            "working_hours_mk", "tags_mk", "amenities_mk"
         ]
     
     def to_representation(self, instance):
@@ -458,6 +466,7 @@ class EditListingSerializer(serializers.ModelSerializer):
         data['open_time_mk'] = getattr(instance, 'open_time_mk', None) or ''
         data['working_hours_mk'] = getattr(instance, 'working_hours_mk', None) or {}
         data['tags_mk'] = getattr(instance, 'tags_mk', None) or []
+        data['amenities_mk'] = getattr(instance, 'amenities_mk', None) or []
         
         return data
     
@@ -471,7 +480,7 @@ class EditListingSerializer(serializers.ModelSerializer):
             if attr in {"working_hours", "working_hours_mk"}:
                 if value in (None, ""):
                     value = {}
-            if attr in {"tags", "tags_mk"}:
+            if attr in {"tags", "tags_mk", "amenities", "amenities_mk"}:
                 if value in (None, ""):
                     value = []
             if attr in {"open_time", "open_time_en", "open_time_mk"}:

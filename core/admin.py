@@ -108,11 +108,11 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'description': 'Select promotions associated with this listing (optional)',
         }),
         ('English Content', {
-            'fields': ('title', 'description', 'address', 'open_time', 'tags', 'working_hours'),
+            'fields': ('title', 'description', 'address', 'open_time', 'tags', 'amenities', 'working_hours'),
             'classes': ('lang-tab', 'lang-en'),
         }),
         ('Macedonian Content', {
-            'fields': ('title_mk', 'description_mk', 'address_mk', 'open_time_mk', 'tags_mk', 'working_hours_mk'),
+            'fields': ('title_mk', 'description_mk', 'address_mk', 'open_time_mk', 'tags_mk', 'amenities_mk', 'working_hours_mk'),
             'classes': ('lang-tab', 'lang-mk'),
         }),
         ('Timestamps', {

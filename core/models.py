@@ -91,6 +91,18 @@ class Listing(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select category from available categories")
     tags = models.JSONField(default=list, help_text="List of tags, e.g., ['Grill', 'Family', 'Outdoor']", blank=True, null=True)
     tags_mk = models.JSONField(default=list, help_text="List of tags in Macedonian, e.g., ['Скара', 'Семејно', 'Надворешно']", blank=True, null=True)
+    amenities = models.JSONField(
+        default=list,
+        help_text="List of amenities with optional icon, e.g., [{'icon': 'wifi', 'text': 'Free Wi-Fi'}]",
+        blank=True,
+        null=True,
+    )
+    amenities_mk = models.JSONField(
+        default=list,
+        help_text="List of amenities in Macedonian, e.g., [{'icon': 'wifi', 'text': 'Бесплатен Wi-Fi'}]",
+        blank=True,
+        null=True,
+    )
     image = models.ImageField(
         upload_to=listing_image_upload_to,
         blank=True,
