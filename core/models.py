@@ -88,6 +88,10 @@ class Listing(models.Model):
         blank=True,
         null=True,
     )
+    show_open_status = models.BooleanField(
+        default=False,
+        help_text="Enable this to show Open/Closed status based on working hours"
+    )
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select category from available categories")
     tags = models.JSONField(default=list, help_text="List of tags, e.g., ['Grill', 'Family', 'Outdoor']", blank=True, null=True)
     tags_mk = models.JSONField(default=list, help_text="List of tags in Macedonian, e.g., ['Скара', 'Семејно', 'Надворешно']", blank=True, null=True)
