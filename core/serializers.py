@@ -71,8 +71,8 @@ class ListingSerializer(serializers.ModelSerializer):
     def get_amenities_title(self, obj):
         language = self.context.get('language', 'en')
         if language == 'mk':
-            return getattr(obj, 'amenities_title_mk', None) or obj.amenities_title or 'Погодности'
-        return obj.amenities_title or 'Amenities'
+            return getattr(obj, 'amenities_title_mk', 'Погодности') or getattr(obj, 'amenities_title', 'Погодности')
+        return getattr(obj, 'amenities_title', 'Amenities')
 
     def get_amenities(self, obj):
         language = self.context.get('language', 'en')
@@ -88,7 +88,8 @@ class ListingSerializer(serializers.ModelSerializer):
 
     def get_is_open(self, obj):
         """Calculate if the listing is currently open based on working hours."""
-        if not obj.show_open_status:
+        # Check if the field exists (migration might not have been run yet)
+        if not hasattr(obj, 'show_open_status') or not obj.show_open_status:
             return None
 
         working_hours = obj.working_hours
