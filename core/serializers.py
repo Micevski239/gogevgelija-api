@@ -36,7 +36,7 @@ class ListingSerializer(serializers.ModelSerializer):
         model = Listing
         fields = [
             "id", "title", "description", "address", "open_time",
-            "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
+            "category", "tags", "amenities_title", "amenities", "working_hours", "is_open",
             "image", "images", "phone_number",
             "facebook_url", "instagram_url", "website_url",
             "featured", "promotions", "created_at", "updated_at", "can_edit"
