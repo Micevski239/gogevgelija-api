@@ -103,6 +103,10 @@ class ListingSerializer(serializers.ModelSerializer):
                 print(f"[is_open] Listing {obj.id} ({obj.title}): No working hours defined")
                 return None
 
+            # Unwrap nested working_hours structure if present
+            if 'working_hours' in working_hours and isinstance(working_hours['working_hours'], dict):
+                working_hours = working_hours['working_hours']
+
             from datetime import datetime
             import pytz
 
