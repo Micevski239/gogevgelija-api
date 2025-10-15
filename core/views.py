@@ -1,5 +1,7 @@
 import json
+import random
 from pathlib import Path
+from datetime import timedelta
 
 from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
@@ -9,9 +11,10 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import authenticate
 from django.conf import settings
+from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode
 from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer
 from .utils import get_preferred_language
 from .pagination import StandardResultsSetPagination
@@ -189,7 +192,148 @@ class BlogViewSet(viewsets.ModelViewSet):
 def health(_request):
     return Response({"status": "ok"})
 
+class SendVerificationCode(APIView):
+    """Send a verification code to the user's email"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        name = request.data.get('name')  # Optional, for registration
+
+        if not email:
+            return Response(
+                {"error": "Email is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Generate a 6-digit code
+        code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+
+        # Set expiration (15 minutes from now)
+        expires_at = timezone.now() + timedelta(minutes=15)
+
+        # Store the verification code
+        VerificationCode.objects.create(
+            email=email,
+            code=code,
+            expires_at=expires_at
+        )
+
+        # TODO: Send email with the code
+        # For now, we'll just log it (in production, use Django's email backend)
+        print(f"Verification code for {email}: {code}")
+
+        return Response({
+            "message": "Verification code sent to your email",
+            "email": email,
+            # TODO: Remove code from response in production
+            "debug_code": code if settings.DEBUG else None
+        }, status=status.HTTP_200_OK)
+
+
+class VerifyCode(APIView):
+    """Verify the code and either log in or register the user"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        name = request.data.get('name')  # For registration
+
+        if not email or not code:
+            return Response(
+                {"error": "Email and code are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Find the most recent unused code for this email
+        try:
+            verification = VerificationCode.objects.filter(
+                email=email,
+                code=code,
+                is_used=False
+            ).latest('created_at')
+        except VerificationCode.DoesNotExist:
+            return Response(
+                {"error": "Invalid verification code"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if code is expired
+        if not verification.is_valid():
+            return Response(
+                {"error": "Verification code has expired"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Mark code as used
+        verification.is_used = True
+        verification.save()
+
+        # Check if user exists
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Register new user
+            if not name:
+                return Response(
+                    {"error": "Name is required for registration"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Create user with email as username (or derive username from email)
+            username = email.split('@')[0]
+            counter = 1
+            original_username = username
+            while User.objects.filter(username=username).exists():
+                username = f"{original_username}{counter}"
+                counter += 1
+
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=name
+            )
+            # No password needed for passwordless auth
+            user.set_unusable_password()
+            user.save()
+
+            # Create user profile
+            UserProfile.objects.create(user=user)
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+
+        # Get profile data
+        profile_data = {}
+        try:
+            profile = user.profile
+            profile_data = {
+                "language_preference": profile.language_preference,
+                "avatar": profile.avatar
+            }
+        except UserProfile.DoesNotExist:
+            # Create profile if it doesn't exist
+            profile = UserProfile.objects.create(user=user)
+            profile_data = {
+                "language_preference": profile.language_preference,
+                "avatar": profile.avatar
+            }
+
+        return Response({
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "profile": profile_data
+            },
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+        }, status=status.HTTP_200_OK)
+
+
 class Register(APIView):
+    """Legacy endpoint - kept for backwards compatibility"""
     permission_classes = [permissions.AllowAny]
     def post(self, request):
         s = UserSerializer(data = request.data)

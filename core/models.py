@@ -23,6 +23,26 @@ class GuestUser(models.Model):
     def __str__(self):
         return f"Guest {self.guest_id} - {self.language_preference}"
 
+class VerificationCode(models.Model):
+    """Model to store email verification codes for passwordless authentication"""
+    email = models.EmailField(help_text="Email address for verification")
+    code = models.CharField(max_length=6, help_text="6-digit verification code")
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(help_text="When the code expires")
+    is_used = models.BooleanField(default=False, help_text="Whether the code has been used")
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.email} - {self.code} - {'used' if self.is_used else 'active'}"
+
+    def is_valid(self):
+        """Check if code is still valid (not expired and not used)"""
+        from django.utils import timezone
+        return not self.is_used and self.expires_at > timezone.now()
+
+
 class UserProfile(models.Model):
     AVATAR_CHOICES = [
         ('avatar1', 'Avatar 1'),

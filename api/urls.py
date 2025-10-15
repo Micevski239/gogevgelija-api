@@ -20,6 +20,8 @@ from core.views import (
     EditListingView,
     AdminUsersView,
     GuestLoginView,
+    SendVerificationCode,
+    VerifyCode,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -37,6 +39,8 @@ router.register(r"collaboration-contact", CollaborationContactViewSet, basename=
 urlpatterns = [
     path('api/', include(router.urls)),
     path("api/auth/register/", Register.as_view()),
+    path("api/auth/send-code/", SendVerificationCode.as_view(), name="send_verification_code"),
+    path("api/auth/verify-code/", VerifyCode.as_view(), name="verify_code"),
     path("api/auth/guest/", GuestLoginView.as_view(), name="guest_login"),
     path("api/auth/me/", Me.as_view()),
     path("api/auth/profile/", Me.as_view()),
