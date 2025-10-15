@@ -22,9 +22,11 @@ class ListingSerializer(serializers.ModelSerializer):
     address = serializers.SerializerMethodField()
     open_time = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
+    amenities_title = serializers.SerializerMethodField()
     amenities = serializers.SerializerMethodField()
     working_hours = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
+    is_open = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
@@ -34,7 +36,8 @@ class ListingSerializer(serializers.ModelSerializer):
         model = Listing
         fields = [
             "id", "title", "description", "address", "open_time",
-            "category", "tags", "amenities", "working_hours", "image", "images", "phone_number",
+            "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
+            "image", "images", "phone_number",
             "facebook_url", "instagram_url", "website_url",
             "featured", "promotions", "created_at", "updated_at", "can_edit"
         ]
@@ -65,6 +68,12 @@ class ListingSerializer(serializers.ModelSerializer):
             return obj.tags_mk or []
         return obj.tags or []
 
+    def get_amenities_title(self, obj):
+        language = self.context.get('language', 'en')
+        if language == 'mk':
+            return getattr(obj, 'amenities_title_mk', None) or obj.amenities_title or 'Погодности'
+        return obj.amenities_title or 'Amenities'
+
     def get_amenities(self, obj):
         language = self.context.get('language', 'en')
         if language == 'mk' and obj.amenities_mk:
@@ -76,6 +85,64 @@ class ListingSerializer(serializers.ModelSerializer):
         if language == 'mk' and obj.working_hours_mk:
             return obj.working_hours_mk or {}
         return obj.working_hours or {}
+
+    def get_is_open(self, obj):
+        """Calculate if the listing is currently open based on working hours."""
+        if not obj.show_open_status:
+            return None
+
+        working_hours = obj.working_hours
+        if not working_hours or not isinstance(working_hours, dict):
+            return None
+
+        from datetime import datetime
+        import pytz
+
+        # Get current time in Macedonia timezone (Europe/Skopje)
+        try:
+            tz = pytz.timezone('Europe/Skopje')
+            now = datetime.now(tz)
+        except:
+            # Fallback to UTC if timezone not available
+            now = datetime.now()
+
+        # Get current day name in lowercase
+        day_name = now.strftime('%A').lower()
+
+        # Check if today's hours exist in working_hours
+        if day_name not in working_hours:
+            # Try short day names (mon, tue, etc.)
+            day_name_short = now.strftime('%a').lower()
+            if day_name_short not in working_hours:
+                return False  # No hours defined for today
+
+        hours_str = working_hours.get(day_name) or working_hours.get(day_name_short)
+        if not hours_str or hours_str.lower() in ['closed', 'затворено']:
+            return False
+
+        # Parse the hours string (e.g., "09:00-18:00" or "09:00 - 18:00")
+        try:
+            hours_str = hours_str.replace(' ', '')
+            if '-' in hours_str:
+                open_time_str, close_time_str = hours_str.split('-')
+                open_hour, open_min = map(int, open_time_str.split(':'))
+                close_hour, close_min = map(int, close_time_str.split(':'))
+
+                current_time = now.hour * 60 + now.minute
+                open_time = open_hour * 60 + open_min
+                close_time = close_hour * 60 + close_min
+
+                # Handle cases where closing time is after midnight
+                if close_time < open_time:
+                    # e.g., 22:00-02:00
+                    return current_time >= open_time or current_time < close_time
+                else:
+                    return open_time <= current_time < close_time
+        except (ValueError, AttributeError):
+            # If parsing fails, return None
+            return None
+
+        return False
 
     def get_can_edit(self, obj):
         """Check if the current user has permission to edit this listing."""
