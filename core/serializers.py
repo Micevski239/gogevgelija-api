@@ -118,6 +118,10 @@ class ListingSerializer(serializers.ModelSerializer):
             day_name = now.strftime('%A').lower()
             day_name_short = now.strftime('%a').lower()
 
+            # Debug: print the working_hours structure
+            print(f"[is_open] Listing {obj.id} ({obj.title}): working_hours keys = {list(working_hours.keys())}")
+            print(f"[is_open] Looking for day: {day_name} or {day_name_short}")
+
             # Check if today's hours exist in working_hours
             if day_name not in working_hours and day_name_short not in working_hours:
                 print(f"[is_open] Listing {obj.id} ({obj.title}): No hours for {day_name}")
