@@ -219,14 +219,16 @@ class SendVerificationCode(APIView):
             expires_at=expires_at
         )
 
-        # Send email with the code
+        # Send email asynchronously in a background thread to avoid blocking the HTTP response
+        import threading
         from django.core.mail import send_mail
-        from django.template.loader import render_to_string
 
-        subject = "Your GoGevgelija Verification Code"
+        def send_verification_email():
+            """Send email in background thread"""
+            subject = "Your GoGevgelija Verification Code"
 
-        # Plain text message
-        message = f"""
+            # Plain text message
+            message = f"""
 Hello{f' {name}' if name else ''},
 
 Your verification code is: {code}
@@ -237,22 +239,26 @@ If you didn't request this code, please ignore this email.
 
 Best regards,
 The GoGevgelija Team
-        """.strip()
+            """.strip()
 
-        try:
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=True,  # Don't crash if email fails
-            )
-            print(f"✅ Verification code email sent to {email}: {code}")
-        except Exception as e:
-            print(f"⚠️ Failed to send email to {email}: {str(e)}")
-            print(f"⚠️ But verification code is stored: {code}")
-            # Don't crash - the code is still saved in database and can be used
+            try:
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=True,
+                )
+                print(f"✅ Verification code email sent to {email}: {code}")
+            except Exception as e:
+                print(f"⚠️ Failed to send email to {email}: {str(e)}")
+                # Email failed but code is still in database
 
+        # Start background thread for email sending
+        email_thread = threading.Thread(target=send_verification_email, daemon=True)
+        email_thread.start()
+
+        # Return response immediately without waiting for email
         return Response({
             "message": "Verification code sent to your email",
             "email": email,
