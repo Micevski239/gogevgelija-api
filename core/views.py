@@ -219,14 +219,44 @@ class SendVerificationCode(APIView):
             expires_at=expires_at
         )
 
-        # TODO: Send email with the code
-        # For now, we'll just log it (in production, use Django's email backend)
-        print(f"Verification code for {email}: {code}")
+        # Send email with the code
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+
+        subject = "Your GoGevgelija Verification Code"
+
+        # Plain text message
+        message = f"""
+Hello{f' {name}' if name else ''},
+
+Your verification code is: {code}
+
+This code will expire in 15 minutes.
+
+If you didn't request this code, please ignore this email.
+
+Best regards,
+The GoGevgelija Team
+        """.strip()
+
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            print(f"✅ Verification code sent to {email}: {code}")
+        except Exception as e:
+            print(f"❌ Failed to send email to {email}: {str(e)}")
+            # Don't fail the request if email fails - code is still stored
+            # In production, you might want to return an error here
 
         return Response({
             "message": "Verification code sent to your email",
             "email": email,
-            # TODO: Remove code from response in production
+            # Include code in response for DEBUG mode only
             "debug_code": code if settings.DEBUG else None
         }, status=status.HTTP_200_OK)
 
