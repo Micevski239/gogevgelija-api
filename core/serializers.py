@@ -389,19 +389,29 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ["language_preference", "avatar"]
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=8, required=False, allow_blank=True)
     profile = UserProfileSerializer(read_only=True)
-    
+
     class Meta:
         model = User
         fields = ["id", "username", "email", "password", "profile"]
-    
+
     def create(self, validated_data):
+        password = validated_data.get("password")
         user = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data.get("email",""),
-            password=validated_data["password"],
         )
+
+        # Set password only if provided (for legacy password-based auth)
+        if password:
+            user.set_password(password)
+        else:
+            # For passwordless auth (magic codes)
+            user.set_unusable_password()
+
+        user.save()
+
         # Create user profile with default language
         UserProfile.objects.create(user=user)
         return user
