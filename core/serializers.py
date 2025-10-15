@@ -88,39 +88,42 @@ class ListingSerializer(serializers.ModelSerializer):
 
     def get_is_open(self, obj):
         """Calculate if the listing is currently open based on working hours."""
-        # Check if the field exists (migration might not have been run yet)
-        if not hasattr(obj, 'show_open_status') or not obj.show_open_status:
-            return None
-
-        working_hours = obj.working_hours
-        if not working_hours or not isinstance(working_hours, dict):
-            return None
-
-        from datetime import datetime
-        import pytz
-
-        # Get current time in Macedonia timezone (Europe/Skopje)
         try:
-            tz = pytz.timezone('Europe/Skopje')
-            now = datetime.now(tz)
-        except:
-            # Fallback to UTC if timezone not available
-            now = datetime.now()
+            # Check if the field exists (migration might not have been run yet)
+            if not hasattr(obj, 'show_open_status') or not obj.show_open_status:
+                return None
 
-        # Get current day name in lowercase
-        day_name = now.strftime('%A').lower()
-        day_name_short = now.strftime('%a').lower()
+            working_hours = obj.working_hours
+            if not working_hours or not isinstance(working_hours, dict):
+                return None
 
-        # Check if today's hours exist in working_hours
-        if day_name not in working_hours and day_name_short not in working_hours:
-            return False  # No hours defined for today
+            from datetime import datetime
+            import pytz
 
-        hours_str = working_hours.get(day_name) or working_hours.get(day_name_short)
-        if not hours_str or hours_str.lower() in ['closed', 'затворено']:
-            return False
+            # Get current time in Macedonia timezone (Europe/Skopje)
+            try:
+                tz = pytz.timezone('Europe/Skopje')
+                now = datetime.now(tz)
+            except:
+                # Fallback to UTC if timezone not available
+                now = datetime.now()
 
-        # Parse the hours string (e.g., "09:00-18:00" or "09:00 - 18:00")
-        try:
+            # Get current day name in lowercase
+            day_name = now.strftime('%A').lower()
+            day_name_short = now.strftime('%a').lower()
+
+            # Check if today's hours exist in working_hours
+            if day_name not in working_hours and day_name_short not in working_hours:
+                return False  # No hours defined for today
+
+            hours_str = working_hours.get(day_name) or working_hours.get(day_name_short)
+            if not hours_str or not isinstance(hours_str, str):
+                return False
+
+            if hours_str.lower() in ['closed', 'затворено']:
+                return False
+
+            # Parse the hours string (e.g., "09:00-18:00" or "09:00 - 18:00")
             hours_str = hours_str.replace(' ', '')
             if '-' in hours_str:
                 open_time_str, close_time_str = hours_str.split('-')
@@ -137,11 +140,11 @@ class ListingSerializer(serializers.ModelSerializer):
                     return current_time >= open_time or current_time < close_time
                 else:
                     return open_time <= current_time < close_time
-        except (ValueError, AttributeError):
-            # If parsing fails, return None
-            return None
 
-        return False
+            return False
+        except Exception as e:
+            # If any error occurs, return None instead of crashing
+            return None
 
     def get_can_edit(self, obj):
         """Check if the current user has permission to edit this listing."""
