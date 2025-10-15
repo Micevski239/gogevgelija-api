@@ -26,6 +26,7 @@ class ListingSerializer(serializers.ModelSerializer):
     amenities = serializers.SerializerMethodField()
     working_hours = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
+    show_open_status = serializers.SerializerMethodField()
     is_open = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
@@ -36,7 +37,7 @@ class ListingSerializer(serializers.ModelSerializer):
         model = Listing
         fields = [
             "id", "title", "description", "address", "open_time",
-            "category", "tags", "amenities_title", "amenities", "working_hours", "is_open",
+            "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
             "image", "images", "phone_number",
             "facebook_url", "instagram_url", "website_url",
             "featured", "promotions", "created_at", "updated_at", "can_edit"
@@ -86,6 +87,10 @@ class ListingSerializer(serializers.ModelSerializer):
             return obj.working_hours_mk or {}
         return obj.working_hours or {}
 
+    def get_show_open_status(self, obj):
+        """Get show_open_status field with safe default."""
+        return getattr(obj, 'show_open_status', False)
+
     def get_is_open(self, obj):
         """Calculate if the listing is currently open based on working hours."""
         try:
@@ -95,6 +100,7 @@ class ListingSerializer(serializers.ModelSerializer):
 
             working_hours = obj.working_hours
             if not working_hours or not isinstance(working_hours, dict):
+                print(f"[is_open] Listing {obj.id} ({obj.title}): No working hours defined")
                 return None
 
             from datetime import datetime
@@ -114,13 +120,16 @@ class ListingSerializer(serializers.ModelSerializer):
 
             # Check if today's hours exist in working_hours
             if day_name not in working_hours and day_name_short not in working_hours:
+                print(f"[is_open] Listing {obj.id} ({obj.title}): No hours for {day_name}")
                 return False  # No hours defined for today
 
             hours_str = working_hours.get(day_name) or working_hours.get(day_name_short)
             if not hours_str or not isinstance(hours_str, str):
+                print(f"[is_open] Listing {obj.id} ({obj.title}): Invalid hours format: {hours_str}")
                 return False
 
             if hours_str.lower() in ['closed', 'затворено']:
+                print(f"[is_open] Listing {obj.id} ({obj.title}): CLOSED (marked as closed)")
                 return False
 
             # Parse the hours string (e.g., "09:00-18:00" or "09:00 - 18:00")
@@ -137,13 +146,19 @@ class ListingSerializer(serializers.ModelSerializer):
                 # Handle cases where closing time is after midnight
                 if close_time < open_time:
                     # e.g., 22:00-02:00
-                    return current_time >= open_time or current_time < close_time
+                    is_open = current_time >= open_time or current_time < close_time
                 else:
-                    return open_time <= current_time < close_time
+                    is_open = open_time <= current_time < close_time
 
+                status = "OPEN" if is_open else "CLOSED"
+                print(f"[is_open] Listing {obj.id} ({obj.title}): {status} (hours: {hours_str}, current: {now.strftime('%H:%M')})")
+                return is_open
+
+            print(f"[is_open] Listing {obj.id} ({obj.title}): Invalid hours format (no dash): {hours_str}")
             return False
         except Exception as e:
             # If any error occurs, return None instead of crashing
+            print(f"[is_open] Listing {obj.id} ERROR: {str(e)}")
             return None
 
     def get_can_edit(self, obj):
