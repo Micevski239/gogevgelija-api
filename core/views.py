@@ -245,13 +245,13 @@ The GoGevgelija Team
                 message=message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
-                fail_silently=False,
+                fail_silently=True,  # Don't crash if email fails
             )
-            print(f"✅ Verification code sent to {email}: {code}")
+            print(f"✅ Verification code email sent to {email}: {code}")
         except Exception as e:
-            print(f"❌ Failed to send email to {email}: {str(e)}")
-            # Don't fail the request if email fails - code is still stored
-            # In production, you might want to return an error here
+            print(f"⚠️ Failed to send email to {email}: {str(e)}")
+            print(f"⚠️ But verification code is stored: {code}")
+            # Don't crash - the code is still saved in database and can be used
 
         return Response({
             "message": "Verification code sent to your email",
