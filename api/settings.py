@@ -210,7 +210,7 @@ HEALTH_CHECK_ENABLED = os.getenv("HEALTH_CHECK_ENABLED", "1") == "1"
 
 # -------------------- Email --------------------
 # Always use SMTP backend (send real emails even in DEBUG mode)
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
@@ -218,7 +218,8 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
 # Common email settings for both DEBUG and production
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "GoGevgelija <noreply@gogevgelija.com>")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "GoGevgelija <gogevgelija@gmail.com>")
+SERVER_EMAIL = os.getenv("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
 _admin = os.getenv("ADMIN_EMAIL")
 ADMINS = [("Admin", _admin)] if _admin else []
 MANAGERS = ADMINS
