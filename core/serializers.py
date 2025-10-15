@@ -109,13 +109,11 @@ class ListingSerializer(serializers.ModelSerializer):
 
         # Get current day name in lowercase
         day_name = now.strftime('%A').lower()
+        day_name_short = now.strftime('%a').lower()
 
         # Check if today's hours exist in working_hours
-        if day_name not in working_hours:
-            # Try short day names (mon, tue, etc.)
-            day_name_short = now.strftime('%a').lower()
-            if day_name_short not in working_hours:
-                return False  # No hours defined for today
+        if day_name not in working_hours and day_name_short not in working_hours:
+            return False  # No hours defined for today
 
         hours_str = working_hours.get(day_name) or working_hours.get(day_name_short)
         if not hours_str or hours_str.lower() in ['closed', 'затворено']:
