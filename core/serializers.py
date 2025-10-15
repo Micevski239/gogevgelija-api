@@ -386,7 +386,7 @@ class GuestUserSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ["language_preference"]
+        fields = ["language_preference", "avatar"]
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)

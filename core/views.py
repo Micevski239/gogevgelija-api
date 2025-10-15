@@ -243,7 +243,23 @@ class Me(APIView):
     def get(self, request):
         if request.user.is_authenticated:
             u = request.user
-            return Response({"id": u.id, "username": u.username, "email": u.email})
+            # Include profile data in response
+            profile_data = {}
+            try:
+                profile = u.profile
+                profile_data = {
+                    "language_preference": profile.language_preference,
+                    "avatar": profile.avatar
+                }
+            except UserProfile.DoesNotExist:
+                pass
+
+            return Response({
+                "id": u.id,
+                "username": u.username,
+                "email": u.email,
+                "profile": profile_data
+            })
         else:
             return Response({"id": None, "username": None, "email": None, "authenticated": False})
     
@@ -251,37 +267,67 @@ class Me(APIView):
         """Update user profile"""
         user = request.user
         data = request.data
-        
+
         # Update username if provided
         if 'username' in data and data['username']:
             # Check if username already exists
             if User.objects.filter(username=data['username']).exclude(id=user.id).exists():
                 return Response(
-                    {"error": "Username already exists"}, 
+                    {"error": "Username already exists"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             user.username = data['username']
-        
+
         # Handle password change if provided
         if 'new_password' in data and data['new_password']:
             # Verify current password if provided
             if 'current_password' in data and data['current_password']:
                 if not user.check_password(data['current_password']):
                     return Response(
-                        {"error": "Current password is incorrect"}, 
+                        {"error": "Current password is incorrect"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-            
+
             # Set new password
             user.set_password(data['new_password'])
-        
+
+        # Handle avatar change if provided
+        if 'avatar' in data:
+            try:
+                profile = user.profile
+            except UserProfile.DoesNotExist:
+                profile = UserProfile.objects.create(user=user)
+
+            # Validate avatar choice
+            valid_avatars = [choice[0] for choice in UserProfile.AVATAR_CHOICES]
+            if data['avatar'] in valid_avatars:
+                profile.avatar = data['avatar']
+                profile.save()
+            else:
+                return Response(
+                    {"error": f"Invalid avatar. Must be one of: {', '.join(valid_avatars)}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         # Save user changes
         user.save()
-        
+
+        # Include profile data in response
+        profile_data = {}
+        try:
+            profile = user.profile
+            profile_data = {
+                "language_preference": profile.language_preference,
+                "avatar": profile.avatar
+            }
+        except UserProfile.DoesNotExist:
+            pass
+
         return Response({
-            "id": user.id, 
-            "username": user.username, 
-            "email": user.email
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "profile": profile_data
         })
 
 class LanguageView(APIView):

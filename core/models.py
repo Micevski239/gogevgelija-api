@@ -24,12 +24,31 @@ class GuestUser(models.Model):
         return f"Guest {self.guest_id} - {self.language_preference}"
 
 class UserProfile(models.Model):
+    AVATAR_CHOICES = [
+        ('avatar1', 'Avatar 1'),
+        ('avatar2', 'Avatar 2'),
+        ('avatar3', 'Avatar 3'),
+        ('avatar4', 'Avatar 4'),
+        ('avatar5', 'Avatar 5'),
+        ('avatar6', 'Avatar 6'),
+        ('avatar7', 'Avatar 7'),
+        ('avatar8', 'Avatar 8'),
+        ('avatar9', 'Avatar 9'),
+        ('avatar10', 'Avatar 10'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     language_preference = models.CharField(
         max_length=2,
         choices=[('en', 'English'), ('mk', 'Macedonian')],
         default='en',
         help_text="User's preferred language"
+    )
+    avatar = models.CharField(
+        max_length=20,
+        choices=AVATAR_CHOICES,
+        default='avatar1',
+        help_text="Selected profile avatar"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
