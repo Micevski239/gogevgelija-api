@@ -209,8 +209,11 @@ os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
 HEALTH_CHECK_ENABLED = os.getenv("HEALTH_CHECK_ENABLED", "1") == "1"
 
 # -------------------- Email --------------------
-# Always use SMTP backend (send real emails even in DEBUG mode)
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+# Use Resend API backend (no SMTP needed)
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "core.email_backend.ResendEmailBackend")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+
+# Fallback SMTP settings (if using SMTP backend)
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
