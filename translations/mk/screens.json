@@ -192,6 +192,44 @@
     "signUp": "Регистрирај се",
     "signIn": "Најави се"
   },
+  "welcome": {
+    "title": "Добредојдовте",
+    "subtitle": "Истражете ја убавината на Гевгелија",
+    "getStarted": "Започнете",
+    "signIn": "Најавете се"
+  },
+  "login": {
+    "title": "Добредојдовте назад.",
+    "emailLabel": "Е-пошта",
+    "emailPlaceholder": "vasha@email.com",
+    "codeLabel": "Верификационен код",
+    "codePlaceholder": "Внесете 6-цифрен код",
+    "continueButton": "Продолжи",
+    "sendingCode": "Се испраќа код...",
+    "verifyButton": "Верифицирај и најави се",
+    "verifying": "Се верификува...",
+    "resendCode": "Испрати повторно",
+    "guestButton": "Продолжи како гостин",
+    "signUpPrompt": "Немате профил? ",
+    "signUpLink": "Регистрирајте се"
+  },
+  "register": {
+    "title": "Регистрација",
+    "nameLabel": "Целосно име",
+    "namePlaceholder": "Јован Јовановски",
+    "emailLabel": "Е-пошта",
+    "emailPlaceholder": "vasha@email.com",
+    "codeLabel": "Верификационен код",
+    "codePlaceholder": "Внесете 6-цифрен код",
+    "termsLabel": "Се согласувам со Условите за користење",
+    "continueButton": "Продолжи",
+    "sendingCode": "Се испраќа код...",
+    "verifyButton": "Верифицирај и креирај профил",
+    "verifying": "Се верификува...",
+    "resendCode": "Испрати повторно",
+    "signInPrompt": "Веќе имате профил? ",
+    "signInLink": "Најавете се"
+  },
   "editListing": {
     "title": "Уреди листинг"
   }

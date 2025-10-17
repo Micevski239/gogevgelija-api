@@ -191,6 +191,44 @@
     "signUp": "Sign Up",
     "signIn": "Sign In"
   },
+  "welcome": {
+    "title": "Welcome",
+    "subtitle": "Explore the beauty of Gevgelija",
+    "getStarted": "Get Started",
+    "signIn": "Sign In"
+  },
+  "login": {
+    "title": "Welcome back.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "your@email.com",
+    "codeLabel": "Verification Code",
+    "codePlaceholder": "Enter 6-digit code",
+    "continueButton": "Continue",
+    "sendingCode": "Sending code...",
+    "verifyButton": "Verify & Sign In",
+    "verifying": "Verifying...",
+    "resendCode": "Resend Code",
+    "guestButton": "Continue as Guest",
+    "signUpPrompt": "Don't have an account? ",
+    "signUpLink": "Sign up"
+  },
+  "register": {
+    "title": "Sign Up",
+    "nameLabel": "Full Name",
+    "namePlaceholder": "John Doe",
+    "emailLabel": "Email",
+    "emailPlaceholder": "your@email.com",
+    "codeLabel": "Verification Code",
+    "codePlaceholder": "Enter 6-digit code",
+    "termsLabel": "I agree to the Terms and Conditions",
+    "continueButton": "Continue",
+    "sendingCode": "Sending code...",
+    "verifyButton": "Verify & Create Account",
+    "verifying": "Verifying...",
+    "resendCode": "Resend Code",
+    "signInPrompt": "Already a member? ",
+    "signInLink": "Sign in"
+  },
   "editListing": {
     "title": "Edit Listing"
   }
