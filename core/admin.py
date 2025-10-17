@@ -1,8 +1,94 @@
+from collections import defaultdict
+
 from django.contrib import admin
 from django.db import models
 from django.forms import Textarea
 # from modeltranslation.admin import TranslationAdmin
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode
+
+
+class GroupedAdminSite(admin.AdminSite):
+    site_header = "GoGevgelija Admin"
+    site_title = "GoGevgelija Admin"
+    index_title = "Management"
+
+    model_groups = {
+        "MAIN": [Listing, Blog, Event, Promotion, Category],
+        "USERS": [GuestUser, UserPermission, UserProfile, VerificationCode],
+        "INTERACTIONS": [Wishlist, HelpSupport, CollaborationContact, EventJoin],
+    }
+
+    def get_app_list(self, request):
+        original = super().get_app_list(request)
+
+        model_lookup = {}
+        for app in original:
+            for model in app["models"]:
+                key = (app["app_label"], model["object_name"])
+                entry = model.copy()
+                entry["_app_name"] = app["name"]
+                entry["_app_label"] = app["app_label"]
+                entry["_app_url"] = app["app_url"]
+                entry["_has_module_perms"] = app["has_module_perms"]
+                model_lookup[key] = entry
+
+        grouped_apps = []
+        used_keys = set()
+
+        for group_name, model_classes in self.model_groups.items():
+            grouped_models = []
+            for model_class in model_classes:
+                key = (model_class._meta.app_label, model_class.__name__)
+                entry = model_lookup.get(key)
+                if not entry:
+                    continue
+                grouped_models.append({
+                    "name": entry["name"],
+                    "object_name": entry["object_name"],
+                    "admin_url": entry["admin_url"],
+                    "add_url": entry.get("add_url"),
+                    "perms": entry["perms"],
+                    "view_only": entry.get("view_only", False),
+                })
+                used_keys.add(key)
+
+            if grouped_models:
+                grouped_apps.append({
+                    "name": group_name,
+                    "app_label": group_name.lower(),
+                    "app_url": "",
+                    "has_module_perms": True,
+                    "models": grouped_models,
+                })
+
+        remaining_apps = defaultdict(lambda: {
+            "name": "Other",
+            "app_label": "other",
+            "app_url": "",
+            "has_module_perms": True,
+            "models": [],
+        })
+
+        for app in original:
+            for model in app["models"]:
+                key = (app["app_label"], model["object_name"])
+                if key in used_keys:
+                    continue
+                app_entry = remaining_apps[app["name"]]
+                app_entry.update({
+                    "name": app["name"],
+                    "app_label": app["app_label"],
+                    "app_url": app["app_url"],
+                    "has_module_perms": app["has_module_perms"],
+                })
+                app_entry["models"].append(model)
+
+        grouped_apps.extend(entry for entry in remaining_apps.values() if entry["models"])
+        return grouped_apps
+
+
+admin_site = GroupedAdminSite()
+admin.site = admin_site
 
 class MultilingualAdminMixin:
     """Mixin for multilingual admin interfaces with tabbed layout"""
@@ -72,7 +158,7 @@ class MultilingualAdminMixin:
 
 
 
-@admin.register(Category)
+@admin.register(Category, site=admin_site)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'icon', 'trending', 'show_in_events', 'created_at')
     list_filter = ('trending', 'show_in_events', 'created_at')
@@ -80,7 +166,7 @@ class CategoryAdmin(admin.ModelAdmin):
     list_editable = ('trending', 'show_in_events')
     ordering = ('name',)
 
-@admin.register(Listing)
+@admin.register(Listing, site=admin_site)
 class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     list_display = ('title', 'category', 'featured', 'created_at', 'phone_number')
     list_filter = ('category', 'featured', 'created_at')
@@ -123,7 +209,7 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
     readonly_fields = ('created_at', 'updated_at')
 
-@admin.register(Event)
+@admin.register(Event, site=admin_site)
 class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     list_display = ('title', 'date_time', 'location', 'category', 'featured', 'join_count', 'created_at')
     list_filter = ('category', 'featured', 'created_at')
@@ -158,7 +244,7 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     
     readonly_fields = ('created_at', 'updated_at')
 
-@admin.register(Promotion)
+@admin.register(Promotion, site=admin_site)
 class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     list_display = ('title', 'discount_code', 'valid_until', 'featured', 'created_at')
     list_filter = ('featured', 'has_discount_code', 'valid_until', 'created_at')
@@ -198,7 +284,7 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
     readonly_fields = ('created_at', 'updated_at')
 
-@admin.register(Blog)
+@admin.register(Blog, site=admin_site)
 class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     list_display = ('title', 'author', 'category', 'read_time_minutes', 'featured', 'published', 'created_at')
     list_filter = ('category', 'featured', 'published', 'created_at')
@@ -234,7 +320,7 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     
     readonly_fields = ('created_at', 'updated_at')
 
-@admin.register(EventJoin)
+@admin.register(EventJoin, site=admin_site)
 class EventJoinAdmin(admin.ModelAdmin):
     list_display = ('user', 'event', 'created_at')
     list_filter = ('created_at', 'event')
@@ -242,7 +328,7 @@ class EventJoinAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
     readonly_fields = ('created_at',)
 
-@admin.register(Wishlist)
+@admin.register(Wishlist, site=admin_site)
 class WishlistAdmin(admin.ModelAdmin):
     list_display = ('user', 'content_type', 'content_object', 'item_type', 'created_at')
     list_filter = ('content_type', 'created_at')
@@ -250,7 +336,7 @@ class WishlistAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
     readonly_fields = ('created_at',)
 
-@admin.register(VerificationCode)
+@admin.register(VerificationCode, site=admin_site)
 class VerificationCodeAdmin(admin.ModelAdmin):
     list_display = ('email', 'code', 'is_used', 'created_at', 'expires_at')
     list_filter = ('is_used', 'created_at', 'expires_at')
@@ -258,7 +344,7 @@ class VerificationCodeAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
     readonly_fields = ('created_at',)
 
-@admin.register(GuestUser)
+@admin.register(GuestUser, site=admin_site)
 class GuestUserAdmin(admin.ModelAdmin):
     list_display = ('guest_id', 'language_preference', 'created_at', 'last_active')
     list_filter = ('language_preference', 'created_at', 'last_active')
@@ -266,7 +352,7 @@ class GuestUserAdmin(admin.ModelAdmin):
     ordering = ('-last_active',)
     readonly_fields = ('guest_id', 'created_at', 'last_active')
 
-@admin.register(UserProfile)
+@admin.register(UserProfile, site=admin_site)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'language_preference', 'created_at', 'updated_at')
     list_filter = ('language_preference', 'created_at')
@@ -274,7 +360,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'updated_at')
 
-@admin.register(UserPermission)
+@admin.register(UserPermission, site=admin_site)
 class UserPermissionAdmin(admin.ModelAdmin):
     list_display = ('user', 'listing', 'can_edit', 'granted_by', 'created_at')
     list_filter = ('can_edit', 'created_at', 'granted_by')
@@ -303,7 +389,7 @@ class UserPermissionAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-@admin.register(HelpSupport)
+@admin.register(HelpSupport, site=admin_site)
 class HelpSupportAdmin(admin.ModelAdmin):
     list_display = ('subject', 'user', 'category', 'priority', 'status', 'created_at', 'resolved_at')
     list_filter = ('category', 'priority', 'status', 'created_at')
@@ -351,7 +437,7 @@ class HelpSupportAdmin(admin.ModelAdmin):
     mark_as_in_progress.short_description = "Mark selected requests as in progress"
 
 
-@admin.register(CollaborationContact)
+@admin.register(CollaborationContact, site=admin_site)
 class CollaborationContactAdmin(admin.ModelAdmin):
     list_display = ('company_name', 'name', 'collaboration_type', 'status', 'created_at', 'review_date')
     list_filter = ('collaboration_type', 'status', 'created_at')
