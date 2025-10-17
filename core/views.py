@@ -360,6 +360,8 @@ class VerifyCode(APIView):
             "user": {
                 "id": user.id,
                 "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
                 "email": user.email,
                 "profile": profile_data
             },
@@ -377,7 +379,13 @@ class Register(APIView):
         user = s.save()
         refresh = RefreshToken.for_user(user)
         return Response({
-            "user": {"id": user.id, "username": user.username, "email": user.email},
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email
+            },
             "access": str(refresh.access_token),
             "refresh": str(refresh),
         }, status = status.HTTP_201_CREATED)
@@ -437,6 +445,8 @@ class Me(APIView):
             return Response({
                 "id": u.id,
                 "username": u.username,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
                 "email": u.email,
                 "profile": profile_data
             })
@@ -506,6 +516,8 @@ class Me(APIView):
         return Response({
             "id": user.id,
             "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
             "email": user.email,
             "profile": profile_data
         })
