@@ -7,7 +7,7 @@
     "noFeaturedItems": "Нема достапни препорачани ставки",
     "featuredListings": "Препорачани места",
     "featuredEvents": "Препорачани настани",
-    "featuredPromotions": "Врели понуди",
+    "featuredPromotions": "Промоции",
     "featuredBlogs": "Најнови статии",
     "viewAll": "Види ги сите",
     "seeAll": "Види ги сите",
@@ -196,7 +196,8 @@
     "title": "Добредојдовте",
     "subtitle": "Истражете ја убавината на Гевгелија",
     "getStarted": "Започнете",
-    "signIn": "Најавете се"
+    "signIn": "Најавете се",
+    "guestButton": "Продолжи како гостин"
   },
   "login": {
     "title": "Добредојдовте назад.",

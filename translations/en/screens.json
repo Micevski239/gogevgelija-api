@@ -195,7 +195,8 @@
     "title": "Welcome",
     "subtitle": "Explore the beauty of Gevgelija",
     "getStarted": "Get Started",
-    "signIn": "Sign In"
+    "signIn": "Sign In",
+    "guestButton": "Continue as Guest"
   },
   "login": {
     "title": "Welcome back.",
