@@ -1,6 +1,8 @@
 from collections import defaultdict
 
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin, GroupAdmin
+from django.contrib.auth.models import User, Group
 from django.db import models
 from django.forms import Textarea
 # from modeltranslation.admin import TranslationAdmin
@@ -14,7 +16,7 @@ class GroupedAdminSite(admin.AdminSite):
 
     model_groups = {
         "MAIN": [Listing, Blog, Event, Promotion, Category],
-        "USERS": [GuestUser, UserPermission, UserProfile, VerificationCode],
+        "USERS": [User, Group, GuestUser, UserPermission, UserProfile, VerificationCode],
         "INTERACTIONS": [Wishlist, HelpSupport, CollaborationContact, EventJoin],
     }
 
@@ -89,6 +91,8 @@ class GroupedAdminSite(admin.AdminSite):
 
 admin_site = GroupedAdminSite()
 admin.site = admin_site
+admin_site.register(User, UserAdmin)
+admin_site.register(Group, GroupAdmin)
 
 class MultilingualAdminMixin:
     """Mixin for multilingual admin interfaces with tabbed layout"""
