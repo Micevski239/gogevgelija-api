@@ -133,7 +133,13 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('category', 'featured', 'date_time', 'cover_image', 'join_count'),
+            'fields': (
+                'category',
+                'featured',
+                'date_time',
+                'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
+                'join_count'
+            ),
             'classes': ('wide',),
         }),
         ('English Content', {
@@ -162,7 +168,18 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('featured', 'image', 'valid_until', 'has_discount_code', 'discount_code', 'website', 'phone_number', 'facebook_url', 'instagram_url', 'address'),
+            'fields': (
+                'featured',
+                'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
+                'valid_until',
+                'has_discount_code',
+                'discount_code',
+                'website',
+                'phone_number',
+                'facebook_url',
+                'instagram_url',
+                'address'
+            ),
             'classes': ('wide',),
         }),
         ('English Content', {
@@ -191,7 +208,14 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('category', 'featured', 'published', 'cover_image', 'read_time_minutes', 'tags'),
+            'fields': (
+                'category',
+                'featured',
+                'published',
+                'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
+                'read_time_minutes',
+                'tags'
+            ),
             'classes': ('wide',),
         }),
         ('English Content', {

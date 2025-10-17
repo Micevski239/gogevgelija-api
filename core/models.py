@@ -92,17 +92,31 @@ class Category(models.Model):
     def __str__(self):
         return self.name
     
-def listing_image_upload_to(instance, filename):
-    """Generate a unique path for listing images."""
+def _image_upload_path(prefix: str, filename: str) -> str:
+    """Generate a unique path for uploaded images under the given prefix."""
     _, ext = os.path.splitext(filename)
     ext = ext.lower() or '.jpg'
-    return f"listings/{uuid.uuid4().hex}{ext}"
+    return f"{prefix}/{uuid.uuid4().hex}{ext}"
+
+
+def listing_image_upload_to(instance, filename):
+    """Generate a unique path for listing images."""
+    return _image_upload_path("listings", filename)
+
 
 def promotion_image_upload_to(instance, filename):
     """Generate a unique path for promotion images."""
-    _, ext = os.path.splitext(filename)
-    ext = ext.lower() or '.jpg'
-    return f"promotions/{uuid.uuid4().hex}{ext}"
+    return _image_upload_path("promotions", filename)
+
+
+def event_image_upload_to(instance, filename):
+    """Generate a unique path for event images."""
+    return _image_upload_path("events", filename)
+
+
+def blog_image_upload_to(instance, filename):
+    """Generate a unique path for blog images."""
+    return _image_upload_path("blogs", filename)
 
 
 class Listing(models.Model):
@@ -215,7 +229,42 @@ class Event(models.Model):
     description = models.TextField(blank=True, help_text="Event description")
     date_time = models.CharField(max_length=100, help_text="e.g., 'Fri, 20:00' or 'Dec 25, 18:00'")
     location = models.CharField(max_length=255, help_text="Event venue/location")
-    cover_image = models.URLField(max_length=1000, help_text="URL to the event cover image")
+    image = models.ImageField(
+        upload_to=event_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Primary event image stored in the media bucket"
+    )
+    image_1 = models.ImageField(
+        upload_to=event_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional event image"
+    )
+    image_2 = models.ImageField(
+        upload_to=event_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional event image"
+    )
+    image_3 = models.ImageField(
+        upload_to=event_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional event image"
+    )
+    image_4 = models.ImageField(
+        upload_to=event_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional event image"
+    )
+    image_5 = models.ImageField(
+        upload_to=event_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional event image"
+    )
     entry_price = models.CharField(max_length=50, default="Free", help_text="Entry price (e.g., 'Free', '10 EUR', '500 MKD')")
     entry_price_mk = models.CharField(max_length=50, blank=True, help_text="Entry price in Macedonian (e.g., 'Бесплатно', '10 ЕУР', '500 МКД')")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select category from available categories")
@@ -246,7 +295,37 @@ class Promotion(models.Model):
         upload_to=promotion_image_upload_to,
         blank=True,
         null=True,
-        help_text="Promotion image stored in the media bucket"
+        help_text="Primary promotion image stored in the media bucket"
+    )
+    image_1 = models.ImageField(
+        upload_to=promotion_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional promotion image"
+    )
+    image_2 = models.ImageField(
+        upload_to=promotion_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional promotion image"
+    )
+    image_3 = models.ImageField(
+        upload_to=promotion_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional promotion image"
+    )
+    image_4 = models.ImageField(
+        upload_to=promotion_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional promotion image"
+    )
+    image_5 = models.ImageField(
+        upload_to=promotion_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional promotion image"
     )
     valid_until = models.DateField(null=True, blank=True, help_text="Promotion expiry date")
     featured = models.BooleanField(default=False, help_text="Show in featured promotions")
@@ -283,7 +362,42 @@ class Blog(models.Model):
     author = models.CharField(max_length=100, default="GoGevgelija Team")
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
     tags = models.JSONField(default=list, help_text="List of tags, e.g., ['Travel', 'Food', 'Culture']")
-    cover_image = models.URLField(max_length=1000, help_text="URL to the blog cover image")
+    image = models.ImageField(
+        upload_to=blog_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Primary blog image stored in the media bucket"
+    )
+    image_1 = models.ImageField(
+        upload_to=blog_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional blog image"
+    )
+    image_2 = models.ImageField(
+        upload_to=blog_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional blog image"
+    )
+    image_3 = models.ImageField(
+        upload_to=blog_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional blog image"
+    )
+    image_4 = models.ImageField(
+        upload_to=blog_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional blog image"
+    )
+    image_5 = models.ImageField(
+        upload_to=blog_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional additional blog image"
+    )
     read_time_minutes = models.PositiveIntegerField(default=5, help_text="Estimated reading time in minutes")
     featured = models.BooleanField(default=False, help_text="Show in featured blogs")
     published = models.BooleanField(default=True, help_text="Whether the blog is published")

@@ -5,6 +5,22 @@ from django.utils import translation
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser
 
 
+def _build_image_urls(obj, request, field_names):
+    """Collect absolute URLs for a set of optional ImageFields."""
+    urls = []
+    for field_name in field_names:
+        image_field = getattr(obj, field_name, None)
+        if not image_field:
+            continue
+        try:
+            url = image_field.url
+        except ValueError:
+            # File exists in DB but not in storage
+            continue
+        urls.append(request.build_absolute_uri(url) if request else url)
+    return urls
+
+
 class CategorySerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     
@@ -191,20 +207,7 @@ class ListingSerializer(serializers.ModelSerializer):
 
     def _build_image_urls(self, obj):
         request = self.context.get('request')
-        urls = []
-        for field_name in ["image", "image_1", "image_2", "image_3", "image_4", "image_5"]:
-            image_field = getattr(obj, field_name, None)
-            if not image_field:
-                continue
-            try:
-                url = image_field.url
-            except ValueError:
-                continue
-            if request:
-                urls.append(request.build_absolute_uri(url))
-            else:
-                urls.append(url)
-        return urls
+        return _build_image_urls(obj, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
 
     def get_promotions(self, obj):
         """Return serialized promotions associated with this listing."""
@@ -223,12 +226,14 @@ class EventSerializer(serializers.ModelSerializer):
     age_limit = serializers.SerializerMethodField()
     expectations = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
-    
+    image = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+
     class Meta:
         model = Event
         fields = [
             "id", "title", "description", "date_time", "location",
-            "cover_image", "entry_price", "category", "age_limit", "expectations",
+            "image", "images", "entry_price", "category", "age_limit", "expectations",
             "join_count", "has_joined", "featured", "created_at", "updated_at"
         ]
     
@@ -270,19 +275,28 @@ class EventSerializer(serializers.ModelSerializer):
             return obj.expectations_mk
         return obj.expectations
 
+    def get_image(self, obj):
+        images = self.get_images(obj)
+        return images[0] if images else None
+
+    def get_images(self, obj):
+        request = self.context.get('request')
+        return _build_image_urls(obj, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
+
 class PromotionSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
     listings = serializers.SerializerMethodField()
 
     class Meta:
         model = Promotion
         fields = [
             "id", "title", "description", "has_discount_code", "discount_code", "tags",
-            "image", "valid_until", "featured", "website", "phone_number", "facebook_url",
+            "image", "images", "valid_until", "featured", "website", "phone_number", "facebook_url",
             "instagram_url", "address", "listings", "created_at", "updated_at"
         ]
 
@@ -305,18 +319,12 @@ class PromotionSerializer(serializers.ModelSerializer):
         return obj.tags
 
     def get_image(self, obj):
-        """Return full URL for promotion image."""
-        if not obj.image:
-            return None
-        try:
-            url = obj.image.url
-        except ValueError:
-            # Image exists in DB but file missing
-            return None
+        images = self.get_images(obj)
+        return images[0] if images else None
+
+    def get_images(self, obj):
         request = self.context.get('request')
-        if request:
-            return request.build_absolute_uri(url)
-        return url
+        return _build_image_urls(obj, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
 
     def get_listings(self, obj):
         """Return serialized listings associated with this promotion."""
@@ -336,28 +344,23 @@ class PromotionSerializer(serializers.ModelSerializer):
 
     def _get_listing_image(self, listing):
         """Helper to get listing image URL."""
-        if not listing.image:
-            return None
-        try:
-            url = listing.image.url
-        except ValueError:
-            return None
         request = self.context.get('request')
-        if request:
-            return request.build_absolute_uri(url)
-        return url
+        images = _build_image_urls(listing, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
+        return images[0] if images else None
 
 class BlogSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
     subtitle = serializers.SerializerMethodField()
     content = serializers.SerializerMethodField()
     author = serializers.SerializerMethodField()
-    
+    image = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+
     class Meta:
         model = Blog
         fields = [
             "id", "title", "subtitle", "content", "author", "category", 
-            "tags", "cover_image", "read_time_minutes", "featured", 
+            "tags", "image", "images", "read_time_minutes", "featured", 
             "published", "created_at", "updated_at"
         ]
     
@@ -376,6 +379,14 @@ class BlogSerializer(serializers.ModelSerializer):
     def get_author(self, obj):
         language = self.context.get('language', 'en')
         return getattr(obj, f'author_{language}', obj.author_en or obj.author)
+
+    def get_image(self, obj):
+        images = self.get_images(obj)
+        return images[0] if images else None
+
+    def get_images(self, obj):
+        request = self.context.get('request')
+        return _build_image_urls(obj, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
 
 class GuestUserSerializer(serializers.ModelSerializer):
     class Meta:
