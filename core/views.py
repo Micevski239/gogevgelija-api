@@ -648,19 +648,25 @@ class TranslationResourceView(APIView):
 class WishlistViewSet(viewsets.ModelViewSet):
     serializer_class = WishlistSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         """Return wishlist items for the current user only."""
         return Wishlist.objects.filter(user=self.request.user)
-    
+
+    def get_serializer_context(self):
+        """Add language context for nested serializers."""
+        context = super().get_serializer_context()
+        context['language'] = get_preferred_language(self.request)
+        return context
+
     def create(self, request, *args, **kwargs):
         """Add an item to the user's wishlist."""
         serializer = WishlistCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         wishlist_item = serializer.save()
-        
-        # Return the created wishlist item using the main serializer
-        response_serializer = WishlistSerializer(wishlist_item)
+
+        # Return the created wishlist item using the main serializer with language context
+        response_serializer = WishlistSerializer(wishlist_item, context=self.get_serializer_context())
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
     
     @action(detail=False, methods=['post'])

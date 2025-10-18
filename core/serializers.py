@@ -440,13 +440,13 @@ class WishlistSerializer(serializers.ModelSerializer):
         """Serialize the actual content object based on its type."""
         content_object = obj.content_object
         if isinstance(content_object, Listing):
-            return ListingSerializer(content_object).data
+            return ListingSerializer(content_object, context=self.context).data
         elif isinstance(content_object, Event):
-            return EventSerializer(content_object).data
+            return EventSerializer(content_object, context=self.context).data
         elif isinstance(content_object, Promotion):
-            return PromotionSerializer(content_object).data
+            return PromotionSerializer(content_object, context=self.context).data
         elif isinstance(content_object, Blog):
-            return BlogSerializer(content_object).data
+            return BlogSerializer(content_object, context=self.context).data
         return None
 
 class WishlistCreateSerializer(serializers.Serializer):
