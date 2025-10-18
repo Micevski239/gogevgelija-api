@@ -45,6 +45,7 @@ class VerificationCode(models.Model):
 
 class UserProfile(models.Model):
     AVATAR_CHOICES = [
+        ('default', 'Default (Initial)'),
         ('avatar1', 'Avatar 1'),
         ('avatar2', 'Avatar 2'),
         ('avatar3', 'Avatar 3'),
@@ -67,7 +68,7 @@ class UserProfile(models.Model):
     avatar = models.CharField(
         max_length=20,
         choices=AVATAR_CHOICES,
-        default='avatar1',
+        default='default',
         help_text="Selected profile avatar"
     )
     created_at = models.DateTimeField(auto_now_add=True)

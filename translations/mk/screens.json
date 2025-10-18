@@ -252,5 +252,12 @@
   },
   "editListing": {
     "title": "Уреди листинг"
+  },
+  "avatarSelector": {
+    "title": "Избери аватар",
+    "currentSelection": "Тековен избор",
+    "selectAvatar": "Изберете аватар",
+    "saveSuccess": "Аватарот е успешно ажуриран!",
+    "saveError": "Неуспешно ажурирање на аватарот"
   }
 }

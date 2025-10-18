@@ -251,5 +251,12 @@
   },
   "editListing": {
     "title": "Edit Listing"
+  },
+  "avatarSelector": {
+    "title": "Choose Avatar",
+    "currentSelection": "Current Selection",
+    "selectAvatar": "Select an avatar",
+    "saveSuccess": "Avatar updated successfully!",
+    "saveError": "Failed to update avatar"
   }
 }
