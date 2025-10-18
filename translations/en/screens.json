@@ -164,7 +164,26 @@
     "title": "My Wishlist",
     "emptyWishlist": "Your wishlist is empty",
     "emptyWishlistDescription": "Add items to your wishlist to see them here",
-    "loadingWishlist": "Loading wishlist..."
+    "loadingWishlist": "Loading wishlist...",
+    "categories": {
+      "all": "All",
+      "listings": "Listings",
+      "events": "Events",
+      "promotions": "Promotions",
+      "articles": "Articles"
+    },
+    "types": {
+      "listing": "Listing",
+      "event": "Event",
+      "promotion": "Promotion",
+      "blog": "Article"
+    },
+    "validUntil": "Valid until {{date}}",
+    "blogSubtitle": "By {{author}} • {{minutes}} min read",
+    "guestTitle": "Sign Up to Save Favorites",
+    "guestMessage": "Create an account to add items to your wishlist and access them from any device.",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account? Sign In"
   },
   "search": {
     "title": "Search & Discover",
