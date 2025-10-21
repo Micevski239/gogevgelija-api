@@ -360,12 +360,13 @@ class BlogSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    cover_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Blog
         fields = [
-            "id", "title", "subtitle", "content", "author", "category", 
-            "tags", "image", "images", "read_time_minutes", "featured", 
+            "id", "title", "subtitle", "content", "author", "category",
+            "tags", "image", "images", "cover_image", "read_time_minutes", "featured",
             "published", "created_at", "updated_at"
         ]
     
@@ -392,6 +393,10 @@ class BlogSerializer(serializers.ModelSerializer):
     def get_images(self, obj):
         request = self.context.get('request')
         return _build_image_urls(obj, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
+
+    def get_cover_image(self, obj):
+        """Return the primary blog image (same as image field)."""
+        return self.get_image(obj)
 
 class GuestUserSerializer(serializers.ModelSerializer):
     class Meta:

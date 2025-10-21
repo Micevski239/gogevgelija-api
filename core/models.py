@@ -84,6 +84,7 @@ class Category(models.Model):
     image_url = models.URLField(max_length=1000, blank=True, null=True, help_text="Optional category image URL")
     trending = models.BooleanField(default=False, help_text="Show as trending category")
     show_in_events = models.BooleanField(default=True, help_text="Whether this category should be available for events")
+    show_in_search = models.BooleanField(default=True, help_text="Whether this category should be displayed in search screen")
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
