@@ -23,11 +23,11 @@ def _build_image_urls(obj, request, field_names):
 
 class CategorySerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Category
-        fields = ["id", "name", "icon", "image_url", "trending", "created_at"]
-    
+        fields = ["id", "name", "icon", "image_url", "trending", "show_in_search", "created_at"]
+
     def get_name(self, obj):
         language = self.context.get('language', 'en')
         return getattr(obj, f'name_{language}', obj.name_en or obj.name)
