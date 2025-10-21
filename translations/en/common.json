@@ -45,7 +45,9 @@
     "facebook": "Facebook",
     "instagram": "Instagram",
     "optional": "optional",
-    "selectLanguage": "Select Language"
+    "selectLanguage": "Select Language",
+    "open": "Open",
+    "closed": "Closed"
   },
   "greetings": {
     "hello": "Hello, {{name}}",

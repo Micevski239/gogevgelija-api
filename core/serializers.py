@@ -228,12 +228,13 @@ class EventSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    cover_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
         fields = [
             "id", "title", "description", "date_time", "location",
-            "image", "images", "entry_price", "category", "age_limit", "expectations",
+            "image", "images", "cover_image", "entry_price", "category", "age_limit", "expectations",
             "join_count", "has_joined", "featured", "created_at", "updated_at"
         ]
     
@@ -282,6 +283,10 @@ class EventSerializer(serializers.ModelSerializer):
     def get_images(self, obj):
         request = self.context.get('request')
         return _build_image_urls(obj, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
+
+    def get_cover_image(self, obj):
+        """Return the primary event image (same as image field)."""
+        return self.get_image(obj)
 
 class PromotionSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()

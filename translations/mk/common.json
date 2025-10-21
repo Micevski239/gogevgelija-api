@@ -45,7 +45,9 @@
     "facebook": "Фејсбук",
     "instagram": "Инстаграм",
     "optional": "опционално",
-    "selectLanguage": "Избери јазик"
+    "selectLanguage": "Избери јазик",
+    "open": "Отворено",
+    "closed": "Затворено"
   },
   "greetings": {
     "hello": "Здраво, {{name}}",
