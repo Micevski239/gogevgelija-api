@@ -86,6 +86,14 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
     "DEFAULT_PAGINATION_CLASS": "core.pagination.StandardResultsSetPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/hour",
+        "user": "1000/hour",
+    },
 }
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", "15"))),
@@ -234,15 +242,13 @@ if not DEBUG:
 # -------------------- Cache --------------------
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache" if os.getenv("REDIS_URL") else "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": os.getenv("REDIS_URL", "unique-snowflake"),
-        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"} if os.getenv("REDIS_URL") else {},
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
         "KEY_PREFIX": "gogevgelija",
         "TIMEOUT": 300,
     }
 }
 
 # -------------------- Sessions --------------------
-SESSION_ENGINE = "django.contrib.sessions.backends.cache" if os.getenv("REDIS_URL") else "django.contrib.sessions.backends.db"
-SESSION_CACHE_ALIAS = "default"
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 SESSION_COOKIE_AGE = int(os.getenv("SESSION_COOKIE_AGE", "1209600"))
