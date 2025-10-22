@@ -96,7 +96,16 @@
     "successJoined": "You have successfully joined the event!",
     "successLeft": "You have successfully left the event!",
     "calendarReminder": "Get reminded before the event",
-    "inviteFriends": "Invite friends and family"
+    "inviteFriends": "Invite friends and family",
+    "contact": "Contact",
+    "noContactInfo": "No contact information available",
+    "contactInfo": "Contact Information",
+    "phone": "Phone",
+    "website": "Website",
+    "visitWebsite": "Visit website",
+    "visitPage": "Visit page",
+    "visitProfile": "Visit profile",
+    "joinAuthPrompt": "Sign up to join events"
   },
   "promotions": {
     "title": "Discover Deals",
