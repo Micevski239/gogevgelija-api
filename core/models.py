@@ -76,12 +76,29 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.language_preference}"
-    
+
+
+def _image_upload_path(prefix: str, filename: str) -> str:
+    """Generate a unique path for uploaded images under the given prefix."""
+    _, ext = os.path.splitext(filename)
+    ext = ext.lower() or '.jpg'
+    return f"{prefix}/{uuid.uuid4().hex}{ext}"
+
+
+def category_image_upload_to(instance, filename):
+    """Generate a unique path for category images."""
+    return _image_upload_path("categories", filename)
+
 
 class Category(models.Model):
     name = models.CharField(max_length=50, unique=True)
     icon = models.CharField(max_length=50, help_text="Ionicon name (e.g., 'restaurant-outline')")
-    image_url = models.URLField(max_length=1000, blank=True, null=True, help_text="Optional category image URL")
+    image = models.ImageField(
+        upload_to=category_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional category image stored in the media bucket"
+    )
     trending = models.BooleanField(default=False, help_text="Show as trending category")
     show_in_events = models.BooleanField(default=True, help_text="Whether this category should be available for events")
     show_in_search = models.BooleanField(default=True, help_text="Whether this category should be displayed in search screen")
@@ -93,12 +110,6 @@ class Category(models.Model):
     
     def __str__(self):
         return self.name
-    
-def _image_upload_path(prefix: str, filename: str) -> str:
-    """Generate a unique path for uploaded images under the given prefix."""
-    _, ext = os.path.splitext(filename)
-    ext = ext.lower() or '.jpg'
-    return f"{prefix}/{uuid.uuid4().hex}{ext}"
 
 
 def listing_image_upload_to(instance, filename):

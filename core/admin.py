@@ -164,11 +164,24 @@ class MultilingualAdminMixin:
 
 @admin.register(Category, site=admin_site)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'icon', 'trending', 'show_in_events', 'created_at')
+    list_display = ('name', 'icon', 'image', 'trending', 'show_in_events', 'created_at')
     list_filter = ('trending', 'show_in_events', 'created_at')
     search_fields = ('name', 'icon')
     list_editable = ('trending', 'show_in_events')
     ordering = ('name',)
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'icon', 'image'),
+            'classes': ('wide',),
+        }),
+        ('Display Settings', {
+            'fields': ('trending', 'show_in_events', 'show_in_search'),
+            'classes': ('wide',),
+        }),
+    )
+
+    readonly_fields = ('created_at',)
 
 @admin.register(Listing, site=admin_site)
 class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):

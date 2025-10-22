@@ -23,14 +23,27 @@ def _build_image_urls(obj, request, field_names):
 
 class CategorySerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
-        fields = ["id", "name", "icon", "image_url", "trending", "show_in_search", "created_at"]
+        fields = ["id", "name", "icon", "image", "trending", "show_in_search", "created_at"]
 
     def get_name(self, obj):
         language = self.context.get('language', 'en')
         return getattr(obj, f'name_{language}', obj.name_en or obj.name)
+
+    def get_image(self, obj):
+        """Return the absolute URL for the category image."""
+        if not obj.image:
+            return None
+        request = self.context.get('request')
+        try:
+            url = obj.image.url
+            return request.build_absolute_uri(url) if request else url
+        except ValueError:
+            # File exists in DB but not in storage
+            return None
 
 class ListingSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
