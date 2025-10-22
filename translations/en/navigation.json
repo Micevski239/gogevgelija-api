@@ -1,6 +1,7 @@
 {
   "tabs": {
     "home": "Home",
+    "search": "Search",
     "events": "Events",
     "promotions": "Promotions",
     "blog": "Blog",
@@ -20,5 +21,9 @@
   "search": {
     "label": "Search",
     "hint": "Navigate to search screen"
+  },
+  "promotions": {
+    "label": "Promotions",
+    "hint": "Navigate to promotions screen"
   }
 }
