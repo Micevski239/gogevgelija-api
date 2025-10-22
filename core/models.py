@@ -289,6 +289,11 @@ class Event(models.Model):
     join_count = models.PositiveIntegerField(default=0, help_text="Number of users who joined this event")
     featured = models.BooleanField(default=False, help_text="Show in featured events")
     is_active = models.BooleanField(default=True, help_text="Show this event in the app. Uncheck to hide from users.")
+    show_join_button = models.BooleanField(default=True, help_text="Show 'Join Event' button. If unchecked, show 'Contact' button instead.")
+    phone_number = models.CharField(max_length=20, blank=True, null=True, help_text="Contact phone number (shown when join button is disabled)")
+    facebook_url = models.URLField(max_length=500, blank=True, null=True, help_text="Facebook page URL")
+    instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
+    website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official website URL")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

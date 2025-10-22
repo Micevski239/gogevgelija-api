@@ -229,10 +229,10 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
 @admin.register(Event, site=admin_site)
 class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'date_time', 'location', 'category', 'featured', 'is_active', 'join_count', 'created_at')
-    list_filter = ('category', 'featured', 'is_active', 'created_at')
+    list_display = ('title', 'date_time', 'location', 'category', 'featured', 'is_active', 'show_join_button', 'join_count', 'created_at')
+    list_filter = ('category', 'featured', 'is_active', 'show_join_button', 'created_at')
     search_fields = ('title', 'location', 'description', 'category')
-    list_editable = ('featured', 'is_active')
+    list_editable = ('featured', 'is_active', 'show_join_button')
     ordering = ('-created_at',)
 
     fieldsets = (
@@ -241,11 +241,22 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'category',
                 'featured',
                 'is_active',
+                'show_join_button',
                 'date_time',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
                 'join_count'
             ),
             'classes': ('wide',),
+        }),
+        ('Contact Information', {
+            'fields': (
+                'phone_number',
+                'website_url',
+                'facebook_url',
+                'instagram_url'
+            ),
+            'classes': ('wide',),
+            'description': 'Contact details (shown when Join button is disabled)',
         }),
         ('English Content', {
             'fields': ('title', 'description', 'location', 'entry_price', 'age_limit', 'expectations'),

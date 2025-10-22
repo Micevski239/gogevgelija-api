@@ -248,7 +248,9 @@ class EventSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "description", "date_time", "location",
             "image", "images", "cover_image", "entry_price", "category", "age_limit", "expectations",
-            "join_count", "has_joined", "featured", "is_active", "created_at", "updated_at"
+            "join_count", "has_joined", "featured", "is_active", "show_join_button",
+            "phone_number", "facebook_url", "instagram_url", "website_url",
+            "created_at", "updated_at"
         ]
     
     def get_has_joined(self, obj):
