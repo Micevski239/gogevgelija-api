@@ -56,7 +56,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
             "image", "images", "phone_number",
             "facebook_url", "instagram_url", "website_url",
-            "featured", "promotions", "created_at", "updated_at", "can_edit"
+            "featured", "is_active", "promotions", "created_at", "updated_at", "can_edit"
         ]
     
     def get_title(self, obj):
@@ -235,7 +235,7 @@ class EventSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "description", "date_time", "location",
             "image", "images", "cover_image", "entry_price", "category", "age_limit", "expectations",
-            "join_count", "has_joined", "featured", "created_at", "updated_at"
+            "join_count", "has_joined", "featured", "is_active", "created_at", "updated_at"
         ]
     
     def get_has_joined(self, obj):
@@ -301,7 +301,7 @@ class PromotionSerializer(serializers.ModelSerializer):
         model = Promotion
         fields = [
             "id", "title", "description", "has_discount_code", "discount_code", "tags",
-            "image", "images", "valid_until", "featured", "website", "phone_number", "facebook_url",
+            "image", "images", "valid_until", "featured", "is_active", "website", "phone_number", "facebook_url",
             "instagram_url", "address", "listings", "created_at", "updated_at"
         ]
 
@@ -367,7 +367,7 @@ class BlogSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "subtitle", "content", "author", "category",
             "tags", "image", "images", "cover_image", "read_time_minutes", "featured",
-            "published", "created_at", "updated_at"
+            "published", "is_active", "created_at", "updated_at"
         ]
     
     def get_title(self, obj):

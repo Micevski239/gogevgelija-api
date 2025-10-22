@@ -215,6 +215,7 @@ class Listing(models.Model):
     instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
     website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official website URL")
     featured = models.BooleanField(default=False, help_text="Show in featured section")
+    is_active = models.BooleanField(default=True, help_text="Show this listing in the app. Uncheck to hide from users.")
     promotions = models.ManyToManyField('Promotion', blank=True, related_name='listings', help_text="Select promotions associated with this listing (optional)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -276,6 +277,7 @@ class Event(models.Model):
     expectations_mk = models.JSONField(default=list, help_text="List of expectations in Macedonian with icons, e.g., [{'icon': 'musical-notes', 'text': 'Музика во живо'}, {'icon': 'restaurant', 'text': 'Достапна храна'}]")
     join_count = models.PositiveIntegerField(default=0, help_text="Number of users who joined this event")
     featured = models.BooleanField(default=False, help_text="Show in featured events")
+    is_active = models.BooleanField(default=True, help_text="Show this event in the app. Uncheck to hide from users.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -331,6 +333,7 @@ class Promotion(models.Model):
     )
     valid_until = models.DateField(null=True, blank=True, help_text="Promotion expiry date")
     featured = models.BooleanField(default=False, help_text="Show in featured promotions")
+    is_active = models.BooleanField(default=True, help_text="Show this promotion in the app. Uncheck to hide from users.")
     website = models.URLField(max_length=500, blank=True, help_text="Website URL")
     phone_number = models.CharField(max_length=20, blank=True, null=True, help_text="Contact phone number")
     facebook_url = models.URLField(max_length=500, blank=True, help_text="Facebook page URL")
@@ -403,6 +406,7 @@ class Blog(models.Model):
     read_time_minutes = models.PositiveIntegerField(default=5, help_text="Estimated reading time in minutes")
     featured = models.BooleanField(default=False, help_text="Show in featured blogs")
     published = models.BooleanField(default=True, help_text="Whether the blog is published")
+    is_active = models.BooleanField(default=True, help_text="Show this blog in the app. Uncheck to hide from users.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

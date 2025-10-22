@@ -172,10 +172,10 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Listing, site=admin_site)
 class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'category', 'featured', 'created_at', 'phone_number')
-    list_filter = ('category', 'featured', 'created_at')
+    list_display = ('title', 'category', 'featured', 'is_active', 'created_at', 'phone_number')
+    list_filter = ('category', 'featured', 'is_active', 'created_at')
     search_fields = ('title', 'address', 'category__name')
-    list_editable = ('featured',)
+    list_editable = ('featured', 'is_active')
     ordering = ('-created_at',)
     filter_horizontal = ('promotions',)
 
@@ -184,6 +184,7 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'fields': (
                 'category',
                 'featured',
+                'is_active',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
                 'phone_number',
                 'website_url',
@@ -215,17 +216,18 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
 @admin.register(Event, site=admin_site)
 class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'date_time', 'location', 'category', 'featured', 'join_count', 'created_at')
-    list_filter = ('category', 'featured', 'created_at')
+    list_display = ('title', 'date_time', 'location', 'category', 'featured', 'is_active', 'join_count', 'created_at')
+    list_filter = ('category', 'featured', 'is_active', 'created_at')
     search_fields = ('title', 'location', 'description', 'category')
-    list_editable = ('featured',)
+    list_editable = ('featured', 'is_active')
     ordering = ('-created_at',)
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': (
                 'category',
                 'featured',
+                'is_active',
                 'date_time',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
                 'join_count'
@@ -250,16 +252,17 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
 @admin.register(Promotion, site=admin_site)
 class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'discount_code', 'valid_until', 'featured', 'created_at')
-    list_filter = ('featured', 'has_discount_code', 'valid_until', 'created_at')
+    list_display = ('title', 'discount_code', 'valid_until', 'featured', 'is_active', 'created_at')
+    list_filter = ('featured', 'is_active', 'has_discount_code', 'valid_until', 'created_at')
     search_fields = ('title', 'discount_code', 'description')
-    list_editable = ('featured',)
+    list_editable = ('featured', 'is_active')
     ordering = ('-created_at',)
 
     fieldsets = (
         ('Basic Information', {
             'fields': (
                 'featured',
+                'is_active',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
                 'valid_until',
                 'has_discount_code',
@@ -290,18 +293,19 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
 @admin.register(Blog, site=admin_site)
 class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'author', 'category', 'read_time_minutes', 'featured', 'published', 'created_at')
-    list_filter = ('category', 'featured', 'published', 'created_at')
+    list_display = ('title', 'author', 'category', 'read_time_minutes', 'featured', 'published', 'is_active', 'created_at')
+    list_filter = ('category', 'featured', 'published', 'is_active', 'created_at')
     search_fields = ('title', 'subtitle', 'content', 'author', 'category')
-    list_editable = ('featured', 'published')
+    list_editable = ('featured', 'published', 'is_active')
     ordering = ('-created_at',)
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': (
                 'category',
                 'featured',
                 'published',
+                'is_active',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
                 'read_time_minutes',
                 'tags'
