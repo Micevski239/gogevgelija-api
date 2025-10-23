@@ -45,6 +45,56 @@ class CategorySerializer(serializers.ModelSerializer):
             # File exists in DB but not in storage
             return None
 
+class SimplifiedListingSerializer(serializers.ModelSerializer):
+    """Simplified listing serializer without nested relationships to avoid circular references."""
+    title = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
+    category = CategorySerializer(read_only=True)
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Listing
+        fields = ["id", "title", "address", "category", "image", "phone_number"]
+
+    def get_title(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'title_{language}', obj.title_en or obj.title)
+
+    def get_address(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'address_{language}', obj.address_en or obj.address)
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        images = _build_image_urls(obj, request, ["image"])
+        return images[0] if images else None
+
+
+class SimplifiedEventSerializer(serializers.ModelSerializer):
+    """Simplified event serializer without nested relationships to avoid circular references."""
+    title = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+    category = CategorySerializer(read_only=True)
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Event
+        fields = ["id", "title", "date_time", "location", "category", "image", "entry_price"]
+
+    def get_title(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'title_{language}', obj.title_en or obj.title)
+
+    def get_location(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'location_{language}', obj.location_en or obj.location)
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        images = _build_image_urls(obj, request, ["image"])
+        return images[0] if images else None
+
+
 class ListingSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
@@ -236,8 +286,8 @@ class ListingSerializer(serializers.ModelSerializer):
         events = obj.events.all()
         if not events.exists():
             return []
-        # Use EventSerializer but need to pass context for language support
-        return EventSerializer(events, many=True, context=self.context).data
+        # Use SimplifiedEventSerializer to avoid circular reference
+        return SimplifiedEventSerializer(events, many=True, context=self.context).data
 
 class EventSerializer(serializers.ModelSerializer):
     has_joined = serializers.SerializerMethodField()
@@ -318,8 +368,8 @@ class EventSerializer(serializers.ModelSerializer):
         listings = obj.listings.all()
         if not listings.exists():
             return []
-        # Use ListingSerializer but need to pass context for language support
-        return ListingSerializer(listings, many=True, context=self.context).data
+        # Use SimplifiedListingSerializer to avoid circular reference
+        return SimplifiedListingSerializer(listings, many=True, context=self.context).data
 
 class PromotionSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
