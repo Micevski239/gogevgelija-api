@@ -163,7 +163,7 @@ class MultilingualAdminMixin:
 
 
 @admin.register(Category, site=admin_site)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     list_display = ('name', 'icon', 'image', 'trending', 'show_in_events', 'created_at')
     list_filter = ('trending', 'show_in_events', 'created_at')
     search_fields = ('name', 'icon')
@@ -172,8 +172,16 @@ class CategoryAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name', 'icon', 'image'),
+            'fields': ('icon', 'image'),
             'classes': ('wide',),
+        }),
+        ('English Content', {
+            'fields': ('name',),
+            'classes': ('lang-tab', 'lang-en'),
+        }),
+        ('Macedonian Content', {
+            'fields': ('name_mk',),
+            'classes': ('lang-tab', 'lang-mk'),
         }),
         ('Display Settings', {
             'fields': ('trending', 'show_in_events', 'show_in_search'),
