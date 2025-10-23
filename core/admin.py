@@ -242,6 +242,7 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     search_fields = ('title', 'location', 'description', 'category')
     list_editable = ('featured', 'is_active', 'show_join_button')
     ordering = ('-created_at',)
+    filter_horizontal = ('listings',)
 
     fieldsets = (
         ('Basic Information', {
@@ -255,6 +256,11 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'join_count'
             ),
             'classes': ('wide',),
+        }),
+        ('Listings', {
+            'fields': ('listings',),
+            'classes': ('wide',),
+            'description': 'Select listings associated with this event (optional)',
         }),
         ('Contact Information', {
             'fields': (

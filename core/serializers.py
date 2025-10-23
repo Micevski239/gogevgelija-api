@@ -61,6 +61,7 @@ class ListingSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     promotions = serializers.SerializerMethodField()
+    events = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -69,7 +70,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
             "image", "images", "phone_number",
             "facebook_url", "instagram_url", "website_url",
-            "featured", "is_active", "promotions", "created_at", "updated_at", "can_edit"
+            "featured", "is_active", "promotions", "events", "created_at", "updated_at", "can_edit"
         ]
     
     def get_title(self, obj):
@@ -230,6 +231,14 @@ class ListingSerializer(serializers.ModelSerializer):
         # Use PromotionSerializer but need to pass context for language support
         return PromotionSerializer(promotions, many=True, context=self.context).data
 
+    def get_events(self, obj):
+        """Return serialized events associated with this listing."""
+        events = obj.events.all()
+        if not events.exists():
+            return []
+        # Use EventSerializer but need to pass context for language support
+        return EventSerializer(events, many=True, context=self.context).data
+
 class EventSerializer(serializers.ModelSerializer):
     has_joined = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
@@ -242,6 +251,7 @@ class EventSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     cover_image = serializers.SerializerMethodField()
+    listings = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -250,7 +260,7 @@ class EventSerializer(serializers.ModelSerializer):
             "image", "images", "cover_image", "entry_price", "category", "age_limit", "expectations",
             "join_count", "has_joined", "featured", "is_active", "show_join_button",
             "phone_number", "facebook_url", "instagram_url", "website_url",
-            "created_at", "updated_at"
+            "listings", "created_at", "updated_at"
         ]
     
     def get_has_joined(self, obj):
@@ -302,6 +312,14 @@ class EventSerializer(serializers.ModelSerializer):
     def get_cover_image(self, obj):
         """Return the primary event image (same as image field)."""
         return self.get_image(obj)
+
+    def get_listings(self, obj):
+        """Return serialized listings associated with this event."""
+        listings = obj.listings.all()
+        if not listings.exists():
+            return []
+        # Use ListingSerializer but need to pass context for language support
+        return ListingSerializer(listings, many=True, context=self.context).data
 
 class PromotionSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()

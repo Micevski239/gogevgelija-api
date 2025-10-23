@@ -294,6 +294,7 @@ class Event(models.Model):
     facebook_url = models.URLField(max_length=500, blank=True, null=True, help_text="Facebook page URL")
     instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
     website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official website URL")
+    listings = models.ManyToManyField('Listing', blank=True, related_name='events', help_text="Select listings associated with this event (optional)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
