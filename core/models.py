@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from imagekit.models import ImageSpecField
+from imagekit.processors import ResizeToFill, ResizeToFit
 import uuid
 import os
 
@@ -221,6 +223,21 @@ class Listing(models.Model):
         null=True,
         help_text="Optional additional listing image"
     )
+
+    # Optimized image variants (auto-generated)
+    image_thumbnail = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(54, 54)],
+        format='WEBP',
+        options={'quality': 85}
+    )
+    image_medium = ImageSpecField(
+        source='image',
+        processors=[ResizeToFit(430, 430)],
+        format='WEBP',
+        options={'quality': 90}
+    )
+
     phone_number = models.CharField(max_length=20, blank=True, null=True, help_text="Contact phone number")
     facebook_url = models.URLField(max_length=500, blank=True, null=True, help_text="Facebook page URL")
     instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
@@ -279,6 +296,21 @@ class Event(models.Model):
         null=True,
         help_text="Optional additional event image"
     )
+
+    # Optimized image variants (auto-generated)
+    image_thumbnail = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(54, 54)],
+        format='WEBP',
+        options={'quality': 85}
+    )
+    image_medium = ImageSpecField(
+        source='image',
+        processors=[ResizeToFit(430, 430)],
+        format='WEBP',
+        options={'quality': 90}
+    )
+
     entry_price = models.CharField(max_length=50, default="Free", help_text="Entry price (e.g., 'Free', '10 EUR', '500 MKD')")
     entry_price_mk = models.CharField(max_length=50, blank=True, help_text="Entry price in Macedonian (e.g., 'Бесплатно', '10 ЕУР', '500 МКД')")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select category from available categories")
@@ -348,6 +380,21 @@ class Promotion(models.Model):
         null=True,
         help_text="Optional additional promotion image"
     )
+
+    # Optimized image variants (auto-generated)
+    image_thumbnail = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(54, 54)],
+        format='WEBP',
+        options={'quality': 85}
+    )
+    image_medium = ImageSpecField(
+        source='image',
+        processors=[ResizeToFit(430, 430)],
+        format='WEBP',
+        options={'quality': 90}
+    )
+
     valid_until = models.DateField(null=True, blank=True, help_text="Promotion expiry date")
     featured = models.BooleanField(default=False, help_text="Show in featured promotions")
     is_active = models.BooleanField(default=True, help_text="Show this promotion in the app. Uncheck to hide from users.")
@@ -420,6 +467,21 @@ class Blog(models.Model):
         null=True,
         help_text="Optional additional blog image"
     )
+
+    # Optimized image variants (auto-generated)
+    image_thumbnail = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(54, 54)],
+        format='WEBP',
+        options={'quality': 85}
+    )
+    image_medium = ImageSpecField(
+        source='image',
+        processors=[ResizeToFit(430, 430)],
+        format='WEBP',
+        options={'quality': 90}
+    )
+
     read_time_minutes = models.PositiveIntegerField(default=5, help_text="Estimated reading time in minutes")
     featured = models.BooleanField(default=False, help_text="Show in featured blogs")
     published = models.BooleanField(default=True, help_text="Whether the blog is published")

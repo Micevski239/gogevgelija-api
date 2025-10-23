@@ -14,11 +14,24 @@ def _build_image_urls(obj, request, field_names):
             continue
         try:
             url = image_field.url
-        except ValueError:
-            # File exists in DB but not in storage
+        except (ValueError, AttributeError):
+            # File exists in DB but not in storage, or field doesn't have url attr
             continue
         urls.append(request.build_absolute_uri(url) if request else url)
     return urls
+
+
+def _get_optimized_image_url(obj, field_name, request):
+    """Get absolute URL for an ImageField or ImageSpecField."""
+    image_field = getattr(obj, field_name, None)
+    if not image_field:
+        return None
+    try:
+        url = image_field.url
+        return request.build_absolute_uri(url) if request else url
+    except (ValueError, AttributeError):
+        # File exists in DB but not in storage, or field doesn't have url attr
+        return None
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -51,10 +64,11 @@ class SimplifiedListingSerializer(serializers.ModelSerializer):
     address = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
-        fields = ["id", "title", "address", "category", "image", "phone_number"]
+        fields = ["id", "title", "address", "category", "image", "image_thumbnail", "phone_number"]
 
     def get_title(self, obj):
         language = self.context.get('language', 'en')
@@ -69,6 +83,11 @@ class SimplifiedListingSerializer(serializers.ModelSerializer):
         images = _build_image_urls(obj, request, ["image"])
         return images[0] if images else None
 
+    def get_image_thumbnail(self, obj):
+        """Return optimized thumbnail URL (54x54px)"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_thumbnail', request)
+
 
 class SimplifiedEventSerializer(serializers.ModelSerializer):
     """Simplified event serializer without nested relationships to avoid circular references."""
@@ -76,10 +95,11 @@ class SimplifiedEventSerializer(serializers.ModelSerializer):
     location = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
-        fields = ["id", "title", "date_time", "location", "category", "image", "entry_price"]
+        fields = ["id", "title", "date_time", "location", "category", "image", "image_thumbnail", "entry_price"]
 
     def get_title(self, obj):
         language = self.context.get('language', 'en')
@@ -93,6 +113,11 @@ class SimplifiedEventSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         images = _build_image_urls(obj, request, ["image"])
         return images[0] if images else None
+
+    def get_image_thumbnail(self, obj):
+        """Return optimized thumbnail URL (54x54px)"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_thumbnail', request)
 
 
 class ListingSerializer(serializers.ModelSerializer):
@@ -110,6 +135,9 @@ class ListingSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
+    image_medium = serializers.SerializerMethodField()
+    images_medium = serializers.SerializerMethodField()
     promotions = serializers.SerializerMethodField()
     events = serializers.SerializerMethodField()
 
@@ -118,7 +146,7 @@ class ListingSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "description", "address", "open_time",
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
-            "image", "images", "phone_number",
+            "image", "images", "image_thumbnail", "image_medium", "images_medium", "phone_number",
             "facebook_url", "instagram_url", "website_url",
             "featured", "is_active", "promotions", "events", "created_at", "updated_at", "can_edit"
         ]
@@ -273,6 +301,20 @@ class ListingSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return _build_image_urls(obj, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
 
+    def get_image_thumbnail(self, obj):
+        """Return optimized thumbnail URL (54x54px) for cards"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_thumbnail', request)
+
+    def get_image_medium(self, obj):
+        """Return optimized medium URL (430px) for carousel primary image"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_medium', request)
+
+    def get_images_medium(self, obj):
+        """Return array of medium-sized images for carousel - fallback to full-size if medium not available"""
+        return self._build_image_urls(obj)  # Keep full images for now as ImageSpecField only works on source field
+
     def get_promotions(self, obj):
         """Return serialized promotions associated with this listing."""
         promotions = obj.promotions.all()
@@ -300,6 +342,8 @@ class EventSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
+    image_medium = serializers.SerializerMethodField()
     cover_image = serializers.SerializerMethodField()
     listings = serializers.SerializerMethodField()
 
@@ -307,7 +351,7 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = [
             "id", "title", "description", "date_time", "location",
-            "image", "images", "cover_image", "entry_price", "category", "age_limit", "expectations",
+            "image", "images", "image_thumbnail", "image_medium", "cover_image", "entry_price", "category", "age_limit", "expectations",
             "join_count", "has_joined", "featured", "is_active", "show_join_button",
             "phone_number", "facebook_url", "instagram_url", "website_url",
             "listings", "created_at", "updated_at"
@@ -363,6 +407,16 @@ class EventSerializer(serializers.ModelSerializer):
         """Return the primary event image (same as image field)."""
         return self.get_image(obj)
 
+    def get_image_thumbnail(self, obj):
+        """Return optimized thumbnail URL (54x54px) for cards"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_thumbnail', request)
+
+    def get_image_medium(self, obj):
+        """Return optimized medium URL (430px) for carousel"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_medium', request)
+
     def get_listings(self, obj):
         """Return serialized listings associated with this event."""
         listings = obj.listings.all()
@@ -378,13 +432,15 @@ class PromotionSerializer(serializers.ModelSerializer):
     tags = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
+    image_medium = serializers.SerializerMethodField()
     listings = serializers.SerializerMethodField()
 
     class Meta:
         model = Promotion
         fields = [
             "id", "title", "description", "has_discount_code", "discount_code", "tags",
-            "image", "images", "valid_until", "featured", "is_active", "website", "phone_number", "facebook_url",
+            "image", "images", "image_thumbnail", "image_medium", "valid_until", "featured", "is_active", "website", "phone_number", "facebook_url",
             "instagram_url", "address", "listings", "created_at", "updated_at"
         ]
 
@@ -413,6 +469,16 @@ class PromotionSerializer(serializers.ModelSerializer):
     def get_images(self, obj):
         request = self.context.get('request')
         return _build_image_urls(obj, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
+
+    def get_image_thumbnail(self, obj):
+        """Return optimized thumbnail URL (54x54px) for cards"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_thumbnail', request)
+
+    def get_image_medium(self, obj):
+        """Return optimized medium URL (430px) for carousel"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_medium', request)
 
     def get_listings(self, obj):
         """Return serialized listings associated with this promotion."""
@@ -443,13 +509,15 @@ class BlogSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
+    image_medium = serializers.SerializerMethodField()
     cover_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Blog
         fields = [
             "id", "title", "subtitle", "content", "author", "category",
-            "tags", "image", "images", "cover_image", "read_time_minutes", "featured",
+            "tags", "image", "images", "image_thumbnail", "image_medium", "cover_image", "read_time_minutes", "featured",
             "published", "is_active", "created_at", "updated_at"
         ]
     
@@ -480,6 +548,16 @@ class BlogSerializer(serializers.ModelSerializer):
     def get_cover_image(self, obj):
         """Return the primary blog image (same as image field)."""
         return self.get_image(obj)
+
+    def get_image_thumbnail(self, obj):
+        """Return optimized thumbnail URL (54x54px) for cards"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_thumbnail', request)
+
+    def get_image_medium(self, obj):
+        """Return optimized medium URL (430px) for carousel"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_medium', request)
 
 class GuestUserSerializer(serializers.ModelSerializer):
     class Meta:

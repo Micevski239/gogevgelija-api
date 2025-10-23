@@ -37,7 +37,7 @@ X_FRAME_OPTIONS = "DENY"
 INSTALLED_APPS = [
     "django.contrib.admin","django.contrib.auth","django.contrib.contenttypes",
     "django.contrib.sessions","django.contrib.messages","django.contrib.staticfiles",
-    "rest_framework","corsheaders","modeltranslation","core.apps.CoreConfig",
+    "rest_framework","corsheaders","imagekit","modeltranslation","core.apps.CoreConfig",
 ]
 USE_SPACES = os.getenv("USE_SPACES", "1") == "1"
 if USE_SPACES:
