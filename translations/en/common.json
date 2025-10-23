@@ -18,6 +18,8 @@
     "ok": "OK",
     "goBack": "Go Back"
   },
+  "showAll": "Show All",
+  "showLess": "Show Less",
   "labels": {
     "username": "Username",
     "email": "Email",
