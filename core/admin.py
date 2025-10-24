@@ -168,27 +168,21 @@ class CategoryAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     list_filter = ('is_active', 'trending', 'featured', 'applies_to', 'level', 'parent', 'show_in_search', 'show_in_navigation')
     search_fields = ('name', 'name_en', 'name_mk', 'slug', 'icon')
     list_editable = ('order', 'is_active', 'trending', 'featured')
-    ordering = ('level', 'order', 'name_en')
+    ordering = ('level', 'order', 'name')
 
-    prepopulated_fields = {'slug': ('name_en',)}
+    # Note: modeltranslation will auto-generate name_en field, so we can prepopulate from it
+    # But we need to be careful since it might not exist yet during initial setup
+    # prepopulated_fields = {'slug': ('name_en',)}
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('icon', 'image', 'color', 'slug'),
+            'fields': ('name', 'description', 'icon', 'image', 'color', 'slug'),
             'classes': ('wide',),
         }),
         ('Hierarchy', {
             'fields': ('parent', 'level', 'order'),
             'classes': ('wide',),
             'description': 'Parent category and display order. Level is auto-calculated.',
-        }),
-        ('English Content', {
-            'fields': ('name_en', 'description_en'),
-            'classes': ('lang-tab', 'lang-en'),
-        }),
-        ('Macedonian Content', {
-            'fields': ('name_mk', 'description_mk'),
-            'classes': ('lang-tab', 'lang-mk'),
         }),
         ('Visibility Settings', {
             'fields': (

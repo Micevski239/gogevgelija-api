@@ -100,9 +100,7 @@ class Category(models.Model):
     ]
 
     # Basic Information
-    name = models.CharField(max_length=100, help_text="Category name (fallback if translations not provided)")
-    name_en = models.CharField(max_length=100, blank=True, help_text="Category name in English")
-    name_mk = models.CharField(max_length=100, blank=True, help_text="Category name in Macedonian")
+    name = models.CharField(max_length=100, help_text="Category name (will be translated by modeltranslation)")
     slug = models.SlugField(max_length=120, unique=True, blank=True, help_text="URL-friendly identifier (auto-generated from name if empty)")
     icon = models.CharField(max_length=50, help_text="Ionicon name (e.g., 'restaurant-outline')")
     image = models.ImageField(
@@ -144,9 +142,7 @@ class Category(models.Model):
     show_in_events = models.BooleanField(default=True, help_text="[Legacy] Whether this category should be available for events")
 
     # Metadata
-    description = models.TextField(blank=True, help_text="Category description (fallback)")
-    description_en = models.TextField(blank=True, help_text="Category description in English")
-    description_mk = models.TextField(blank=True, help_text="Category description in Macedonian")
+    description = models.TextField(blank=True, help_text="Category description (will be translated by modeltranslation)")
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -168,7 +164,9 @@ class Category(models.Model):
         # Auto-generate slug from name if not provided
         if not self.slug:
             from django.utils.text import slugify
-            base_slug = slugify(self.name_en or self.name_mk or self.name)
+            # Try to use English name first (modeltranslation will have created name_en)
+            base_name = getattr(self, 'name_en', None) or getattr(self, 'name_mk', None) or self.name
+            base_slug = slugify(base_name)
             slug = base_slug
             counter = 1
             while Category.objects.filter(slug=slug).exclude(pk=self.pk).exists():

@@ -3,7 +3,7 @@ from .models import Category, Listing, Event, Promotion, Blog
 
 @register(Category)
 class CategoryTranslationOptions(TranslationOptions):
-    fields = ('name',)
+    fields = ('name', 'description')
 
 @register(Listing)
 class ListingTranslationOptions(TranslationOptions):
