@@ -101,7 +101,7 @@ class Category(models.Model):
 
     # Basic Information
     name = models.CharField(max_length=100, help_text="Category name (will be translated by modeltranslation)")
-    slug = models.SlugField(max_length=120, unique=True, blank=True, help_text="URL-friendly identifier (auto-generated from name if empty)")
+    slug = models.SlugField(max_length=120, blank=True, null=True, help_text="URL-friendly identifier (auto-generated from name if empty)")
     icon = models.CharField(max_length=50, help_text="Ionicon name (e.g., 'restaurant-outline')")
     image = models.ImageField(
         upload_to=category_image_upload_to,
@@ -154,7 +154,6 @@ class Category(models.Model):
         indexes = [
             models.Index(fields=['parent', 'is_active']),
             models.Index(fields=['level', 'order']),
-            models.Index(fields=['slug']),
         ]
 
     def __str__(self):
