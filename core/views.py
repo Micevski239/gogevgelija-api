@@ -15,7 +15,7 @@ from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode
-from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer
+from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer
 from .utils import get_preferred_language
 from .pagination import StandardResultsSetPagination
 
@@ -29,10 +29,29 @@ class IsSuperUser(permissions.BasePermission):
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.filter(is_active=True)
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        """Filter queryset based on query parameters"""
+        queryset = Category.objects.filter(is_active=True)
+
+        # Filter by parent
+        parent_id = self.request.query_params.get('parent_id', None)
+        if parent_id is not None:
+            if parent_id == 'null' or parent_id == '':
+                queryset = queryset.filter(parent__isnull=True)
+            else:
+                queryset = queryset.filter(parent_id=parent_id)
+
+        # Filter by applies_to
+        applies_to = self.request.query_params.get('applies_to', None)
+        if applies_to:
+            queryset = queryset.filter(applies_to__in=[applies_to, 'both'])
+
+        return queryset.order_by('level', 'order', 'name')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -40,13 +59,113 @@ class CategoryViewSet(viewsets.ModelViewSet):
         return context
 
     @action(detail=False, methods=['get'])
-    def for_events(self, request):
-        """Get categories that should be shown for events"""
-        categories = Category.objects.filter(show_in_events=True).order_by('name')
+    def tree(self, request):
+        """Get hierarchical tree structure of all categories"""
+        # Get only root categories (parent=None)
+        root_categories = Category.objects.filter(
+            parent__isnull=True,
+            is_active=True
+        ).order_by('order', 'name')
+
+        serializer = CategoryTreeSerializer(
+            root_categories,
+            many=True,
+            context=self.get_serializer_context()
+        )
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def root(self, request):
+        """Get only root categories (parent_id = null)"""
+        categories = Category.objects.filter(
+            parent__isnull=True,
+            is_active=True
+        ).order_by('order', 'name')
+
         page = self.paginate_queryset(categories)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(categories, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def children(self, request, pk=None):
+        """Get direct children of a category"""
+        category = self.get_object()
+        children = Category.objects.filter(
+            parent=category,
+            is_active=True
+        ).order_by('order', 'name')
+
+        page = self.paginate_queryset(children)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(children, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def ancestors(self, request, pk=None):
+        """Get all ancestor categories (breadcrumb path)"""
+        category = self.get_object()
+        ancestors = category.get_ancestors()
+        serializer = self.get_serializer(ancestors, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='for-listings')
+    def for_listings(self, request):
+        """Get categories applicable to listings"""
+        categories = Category.objects.filter(
+            applies_to__in=['listing', 'both'],
+            is_active=True
+        ).order_by('level', 'order', 'name')
+
+        page = self.paginate_queryset(categories)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(categories, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='for-events')
+    def for_events(self, request):
+        """Get categories applicable to events"""
+        categories = Category.objects.filter(
+            applies_to__in=['event', 'both'],
+            is_active=True
+        ).order_by('level', 'order', 'name')
+
+        page = self.paginate_queryset(categories)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(categories, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def featured(self, request):
+        """Get featured categories"""
+        categories = Category.objects.filter(
+            featured=True,
+            is_active=True
+        ).order_by('order', 'name')
+
+        serializer = self.get_serializer(categories, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def trending(self, request):
+        """Get trending categories"""
+        categories = Category.objects.filter(
+            trending=True,
+            is_active=True
+        ).order_by('order', 'name')
+
         serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)
 

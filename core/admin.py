@@ -164,32 +164,86 @@ class MultilingualAdminMixin:
 
 @admin.register(Category, site=admin_site)
 class CategoryAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('name', 'icon', 'image', 'trending', 'show_in_events', 'created_at')
-    list_filter = ('trending', 'show_in_events', 'created_at')
-    search_fields = ('name', 'icon')
-    list_editable = ('trending', 'show_in_events')
-    ordering = ('name',)
+    list_display = ('__str__', 'parent', 'level', 'order', 'icon', 'applies_to', 'is_active', 'trending', 'featured', 'item_count_display')
+    list_filter = ('is_active', 'trending', 'featured', 'applies_to', 'level', 'parent', 'show_in_search', 'show_in_navigation')
+    search_fields = ('name', 'name_en', 'name_mk', 'slug', 'icon')
+    list_editable = ('order', 'is_active', 'trending', 'featured')
+    ordering = ('level', 'order', 'name_en')
+
+    prepopulated_fields = {'slug': ('name_en',)}
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('icon', 'image'),
+            'fields': ('icon', 'image', 'color', 'slug'),
             'classes': ('wide',),
         }),
+        ('Hierarchy', {
+            'fields': ('parent', 'level', 'order'),
+            'classes': ('wide',),
+            'description': 'Parent category and display order. Level is auto-calculated.',
+        }),
         ('English Content', {
-            'fields': ('name',),
+            'fields': ('name_en', 'description_en'),
             'classes': ('lang-tab', 'lang-en'),
         }),
         ('Macedonian Content', {
-            'fields': ('name_mk',),
+            'fields': ('name_mk', 'description_mk'),
             'classes': ('lang-tab', 'lang-mk'),
         }),
-        ('Display Settings', {
-            'fields': ('trending', 'show_in_events', 'show_in_search'),
+        ('Visibility Settings', {
+            'fields': (
+                'is_active',
+                'show_in_search',
+                'show_in_navigation',
+                'trending',
+                'featured',
+            ),
             'classes': ('wide',),
+        }),
+        ('Scope', {
+            'fields': ('applies_to', 'show_in_events'),
+            'classes': ('wide',),
+            'description': 'Determines where this category can be used. "show_in_events" is kept for backward compatibility.',
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
         }),
     )
 
-    readonly_fields = ('created_at',)
+    readonly_fields = ('level', 'created_at', 'updated_at')
+
+    def item_count_display(self, obj):
+        """Display the item count"""
+        count = obj.item_count
+        return f"{count} items" if count != 1 else "1 item"
+    item_count_display.short_description = 'Items'
+
+    def get_queryset(self, request):
+        """Optimize queries with select_related"""
+        return super().get_queryset(request).select_related('parent')
+
+    actions = ['make_active', 'make_inactive', 'make_featured', 'remove_featured'] + MultilingualAdminMixin.actions
+
+    def make_active(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} categories activated.')
+    make_active.short_description = '✅ Activate selected categories'
+
+    def make_inactive(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} categories deactivated.')
+    make_inactive.short_description = '❌ Deactivate selected categories'
+
+    def make_featured(self, request, queryset):
+        updated = queryset.update(featured=True)
+        self.message_user(request, f'{updated} categories marked as featured.')
+    make_featured.short_description = '⭐ Mark as featured'
+
+    def remove_featured(self, request, queryset):
+        updated = queryset.update(featured=False)
+        self.message_user(request, f'{updated} categories unmarked as featured.')
+    remove_featured.short_description = '⚪ Remove featured status'
 
 @admin.register(Listing, site=admin_site)
 class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):

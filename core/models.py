@@ -93,7 +93,17 @@ def category_image_upload_to(instance, filename):
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=50, unique=True)
+    APPLIES_TO_CHOICES = [
+        ('listing', 'Listing'),
+        ('event', 'Event'),
+        ('both', 'Both'),
+    ]
+
+    # Basic Information
+    name = models.CharField(max_length=100, help_text="Category name (fallback if translations not provided)")
+    name_en = models.CharField(max_length=100, blank=True, help_text="Category name in English")
+    name_mk = models.CharField(max_length=100, blank=True, help_text="Category name in Macedonian")
+    slug = models.SlugField(max_length=120, unique=True, blank=True, help_text="URL-friendly identifier (auto-generated from name if empty)")
     icon = models.CharField(max_length=50, help_text="Ionicon name (e.g., 'restaurant-outline')")
     image = models.ImageField(
         upload_to=category_image_upload_to,
@@ -101,17 +111,117 @@ class Category(models.Model):
         null=True,
         help_text="Optional category image stored in the media bucket"
     )
-    trending = models.BooleanField(default=False, help_text="Show as trending category")
-    show_in_events = models.BooleanField(default=True, help_text="Whether this category should be available for events")
-    show_in_search = models.BooleanField(default=True, help_text="Whether this category should be displayed in search screen")
+    color = models.CharField(max_length=7, blank=True, help_text="Brand color for category in hex format (e.g., '#FF5722')")
+
+    # Hierarchy
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+        help_text="Parent category (leave empty for root categories)"
+    )
+    level = models.PositiveIntegerField(default=0, help_text="Hierarchy level (0=root, 1=subcategory, etc.)")
+    order = models.PositiveIntegerField(default=0, help_text="Display order within parent category")
+
+    # Visibility & Behavior
+    is_active = models.BooleanField(default=True, help_text="Whether category is active and visible")
+    show_in_search = models.BooleanField(default=True, help_text="Show in search screen")
+    show_in_navigation = models.BooleanField(default=True, help_text="Show in navigation menus")
+    trending = models.BooleanField(default=False, help_text="Mark as trending category")
+    featured = models.BooleanField(default=False, help_text="Mark as featured category")
+
+    # Scope
+    applies_to = models.CharField(
+        max_length=10,
+        choices=APPLIES_TO_CHOICES,
+        default='both',
+        help_text="Whether this category applies to listings, events, or both"
+    )
+
+    # Legacy field (for backward compatibility)
+    show_in_events = models.BooleanField(default=True, help_text="[Legacy] Whether this category should be available for events")
+
+    # Metadata
+    description = models.TextField(blank=True, help_text="Category description (fallback)")
+    description_en = models.TextField(blank=True, help_text="Category description in English")
+    description_mk = models.TextField(blank=True, help_text="Category description in Macedonian")
+
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         verbose_name_plural = "Categories"
-        ordering = ['name']
-    
+        ordering = ['level', 'order', 'name']
+        indexes = [
+            models.Index(fields=['parent', 'is_active']),
+            models.Index(fields=['level', 'order']),
+            models.Index(fields=['slug']),
+        ]
+
     def __str__(self):
-        return self.name
+        return self.name_en or self.name_mk or self.name
+
+    def save(self, *args, **kwargs):
+        # Auto-generate slug from name if not provided
+        if not self.slug:
+            from django.utils.text import slugify
+            base_slug = slugify(self.name_en or self.name_mk or self.name)
+            slug = base_slug
+            counter = 1
+            while Category.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+
+        # Auto-calculate level based on parent
+        if self.parent:
+            self.level = self.parent.level + 1
+        else:
+            self.level = 0
+
+        super().save(*args, **kwargs)
+
+    @property
+    def item_count(self):
+        """Calculate the number of items (listings + events) in this category and all subcategories"""
+        from django.db.models import Q, Count
+
+        # Get all descendant category IDs (including self)
+        descendant_ids = self.get_descendants(include_self=True)
+
+        # Count listings
+        listing_count = Listing.objects.filter(
+            category_id__in=descendant_ids,
+            is_active=True
+        ).count()
+
+        # Count events
+        event_count = Event.objects.filter(
+            category_id__in=descendant_ids,
+            is_active=True
+        ).count()
+
+        return listing_count + event_count
+
+    def get_descendants(self, include_self=False):
+        """Get all descendant category IDs recursively"""
+        descendants = [self.id] if include_self else []
+        children = Category.objects.filter(parent=self)
+        for child in children:
+            descendants.extend(child.get_descendants(include_self=True))
+        return descendants
+
+    def get_ancestors(self):
+        """Get all ancestor categories from root to parent"""
+        ancestors = []
+        current = self.parent
+        while current:
+            ancestors.insert(0, current)
+            current = current.parent
+        return ancestors
 
 
 def listing_image_upload_to(instance, filename):
