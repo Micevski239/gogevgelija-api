@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
 from django.db import models
 from django.forms import Textarea
-# from modeltranslation.admin import TranslationAdmin
+from modeltranslation.admin import TranslationAdmin, TabbedTranslationAdmin
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode
 
 
@@ -163,7 +163,7 @@ class MultilingualAdminMixin:
 
 
 @admin.register(Category, site=admin_site)
-class CategoryAdmin(MultilingualAdminMixin, admin.ModelAdmin):
+class CategoryAdmin(TabbedTranslationAdmin, admin.ModelAdmin):
     list_display = ('__str__', 'parent', 'level', 'order', 'icon', 'applies_to', 'is_active', 'trending', 'featured', 'item_count_display')
     list_filter = ('is_active', 'trending', 'featured', 'applies_to', 'level', 'parent', 'show_in_search', 'show_in_navigation')
     search_fields = ('name', 'name_en', 'name_mk', 'slug', 'icon')
@@ -217,7 +217,7 @@ class CategoryAdmin(MultilingualAdminMixin, admin.ModelAdmin):
         """Optimize queries with select_related"""
         return super().get_queryset(request).select_related('parent')
 
-    actions = ['make_active', 'make_inactive', 'make_featured', 'remove_featured'] + MultilingualAdminMixin.actions
+    actions = ['make_active', 'make_inactive', 'make_featured', 'remove_featured']
 
     def make_active(self, request, queryset):
         updated = queryset.update(is_active=True)
