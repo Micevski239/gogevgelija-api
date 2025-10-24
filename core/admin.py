@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
 from django.db import models
 from django.forms import Textarea
-from modeltranslation.admin import TranslationAdmin, TabbedTranslationAdmin
+# Modeltranslation will automatically add language fields to admin
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode
 
 
@@ -163,7 +163,7 @@ class MultilingualAdminMixin:
 
 
 @admin.register(Category, site=admin_site)
-class CategoryAdmin(TabbedTranslationAdmin, admin.ModelAdmin):
+class CategoryAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'parent', 'level', 'order', 'icon', 'applies_to', 'is_active', 'trending', 'featured', 'item_count_display')
     list_filter = ('is_active', 'trending', 'featured', 'applies_to', 'level', 'parent', 'show_in_search', 'show_in_navigation')
     search_fields = ('name', 'name_en', 'name_mk', 'slug', 'icon')
@@ -176,8 +176,14 @@ class CategoryAdmin(TabbedTranslationAdmin, admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name', 'description', 'icon', 'image', 'color', 'slug'),
+            'fields': ('name_en', 'name_mk', 'name', 'icon', 'image', 'color', 'slug'),
             'classes': ('wide',),
+            'description': 'Name fields: English (en), Macedonian (mk), and fallback name.',
+        }),
+        ('Description', {
+            'fields': ('description_en', 'description_mk', 'description'),
+            'classes': ('wide',),
+            'description': 'Description fields: English (en), Macedonian (mk), and fallback description.',
         }),
         ('Hierarchy', {
             'fields': ('parent', 'level', 'order'),
