@@ -176,6 +176,17 @@ class ListingViewSet(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     pagination_class = StandardResultsSetPagination
 
+    def get_queryset(self):
+        """Filter queryset based on query parameters"""
+        queryset = Listing.objects.filter(is_active=True)
+
+        # Filter by category
+        category = self.request.query_params.get('category', None)
+        if category:
+            queryset = queryset.filter(category_id=category)
+
+        return queryset.order_by('-featured', '-created_at')
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
