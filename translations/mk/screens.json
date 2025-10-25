@@ -202,7 +202,8 @@
     "noResultsMessage": "Пронајдете ресторани, кафулиња, места за забава",
     "searchStartMessage": "Започнете со пребарување",
     "seeAll": "Види ги сите",
-    "home": "Дома"
+    "home": "Дома",
+    "featured": "Препорачано"
   },
   "overlays": {
     "upcomingEvents": "Претстојни настани",

@@ -201,7 +201,8 @@
     "noResultsMessage": "Find restaurants, cafes, music venues and places",
     "searchStartMessage": "Start searching",
     "seeAll": "See All",
-    "home": "Home"
+    "home": "Home",
+    "featured": "Featured"
   },
   "overlays": {
     "upcomingEvents": "Upcoming Events",
