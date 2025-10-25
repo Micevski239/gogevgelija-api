@@ -203,7 +203,8 @@
     "searchStartMessage": "Започнете со пребарување",
     "seeAll": "Види ги сите",
     "home": "Дома",
-    "featured": "Препорачано"
+    "featured": "Препорачано",
+    "allCategories": "Категории"
   },
   "overlays": {
     "upcomingEvents": "Претстојни настани",

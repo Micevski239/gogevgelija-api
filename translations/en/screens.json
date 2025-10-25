@@ -202,7 +202,8 @@
     "searchStartMessage": "Start searching",
     "seeAll": "See All",
     "home": "Home",
-    "featured": "Featured"
+    "featured": "Featured",
+    "allCategories": "Categories"
   },
   "overlays": {
     "upcomingEvents": "Upcoming Events",
