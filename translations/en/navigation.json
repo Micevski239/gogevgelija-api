@@ -1,7 +1,7 @@
 {
   "tabs": {
     "home": "Home",
-    "search": "Search",
+    "search": "Explore",
     "events": "Events",
     "promotions": "Promotions",
     "blog": "Blog",
@@ -14,13 +14,13 @@
     "blog": "Blog",
     "profile": "Profile",
     "wishlist": "Wishlist",
-    "search": "Search",
+    "search": "Explore",
     "featured": "Featured",
     "settings": "Settings"
   },
   "search": {
-    "label": "Search",
-    "hint": "Navigate to search screen"
+    "label": "Explore",
+    "hint": "Navigate to explore screen"
   },
   "promotions": {
     "label": "Promotions",
