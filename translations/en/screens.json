@@ -204,7 +204,7 @@
     "home": "Home",
     "featured": "Featured",
     "allCategories": "Categories",
-    "Trending": "Trending"
+    "trending": "Trending"
   },
   "overlays": {
     "upcomingEvents": "Upcoming Events",

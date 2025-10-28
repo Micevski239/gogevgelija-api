@@ -205,7 +205,7 @@
     "home": "Дома",
     "featured": "Препорачано",
     "allCategories": "Категории",
-    "Trending": "Популарно"
+    "trending": "Популарно"
   },
   "overlays": {
     "upcomingEvents": "Претстојни настани",
