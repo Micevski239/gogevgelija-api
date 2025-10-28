@@ -203,7 +203,8 @@
     "seeAll": "See All",
     "home": "Home",
     "featured": "Featured",
-    "allCategories": "Categories"
+    "allCategories": "Categories",
+    "Trending": "Trending"
   },
   "overlays": {
     "upcomingEvents": "Upcoming Events",
