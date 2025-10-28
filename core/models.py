@@ -337,6 +337,14 @@ class Listing(models.Model):
         help_text="Optional additional listing image"
     )
 
+    # Manual thumbnail for card displays
+    thumbnail_image = models.ImageField(
+        upload_to=listing_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Custom thumbnail for list/card views (recommended: 430x430px). If not set, auto-generated from main image."
+    )
+
     # Optimized image variants (auto-generated)
     image_thumbnail = ImageSpecField(
         source='image',
@@ -408,6 +416,14 @@ class Event(models.Model):
         blank=True,
         null=True,
         help_text="Optional additional event image"
+    )
+
+    # Manual thumbnail for card displays
+    thumbnail_image = models.ImageField(
+        upload_to=event_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Custom thumbnail for list/card views (recommended: 430x430px). If not set, auto-generated from main image."
     )
 
     # Optimized image variants (auto-generated)
@@ -492,6 +508,14 @@ class Promotion(models.Model):
         blank=True,
         null=True,
         help_text="Optional additional promotion image"
+    )
+
+    # Manual thumbnail for card displays
+    thumbnail_image = models.ImageField(
+        upload_to=promotion_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Custom thumbnail for list/card views (recommended: 430x430px). If not set, auto-generated from main image."
     )
 
     # Optimized image variants (auto-generated)
@@ -579,6 +603,14 @@ class Blog(models.Model):
         blank=True,
         null=True,
         help_text="Optional additional blog image"
+    )
+
+    # Manual thumbnail for card displays
+    thumbnail_image = models.ImageField(
+        upload_to=blog_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Custom thumbnail for list/card views (recommended: 430x430px). If not set, auto-generated from main image."
     )
 
     # Optimized image variants (auto-generated)

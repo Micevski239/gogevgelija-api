@@ -216,6 +216,7 @@ class ListingSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    thumbnail_image = serializers.SerializerMethodField()
     image_thumbnail = serializers.SerializerMethodField()
     image_medium = serializers.SerializerMethodField()
     images_medium = serializers.SerializerMethodField()
@@ -227,7 +228,7 @@ class ListingSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "description", "address", "open_time",
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
-            "image", "images", "image_thumbnail", "image_medium", "images_medium", "phone_number",
+            "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "phone_number",
             "facebook_url", "instagram_url", "website_url",
             "featured", "is_active", "promotions", "events", "created_at", "updated_at", "can_edit"
         ]
@@ -387,6 +388,19 @@ class ListingSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return _build_image_urls(obj, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
 
+    def get_thumbnail_image(self, obj):
+        """Return manual thumbnail URL with priority over auto-generated"""
+        request = self.context.get('request')
+        # Try manual thumbnail first, fallback to main image
+        if obj.thumbnail_image:
+            try:
+                url = obj.thumbnail_image.url
+                return request.build_absolute_uri(url) if request else url
+            except (ValueError, AttributeError):
+                pass
+        # Fallback to main image
+        return self.get_image(obj)
+
     def get_image_thumbnail(self, obj):
         """Return optimized thumbnail URL (54x54px) for cards"""
         request = self.context.get('request')
@@ -428,6 +442,7 @@ class EventSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    thumbnail_image = serializers.SerializerMethodField()
     image_thumbnail = serializers.SerializerMethodField()
     image_medium = serializers.SerializerMethodField()
     cover_image = serializers.SerializerMethodField()
@@ -437,7 +452,7 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = [
             "id", "title", "description", "date_time", "location",
-            "image", "images", "image_thumbnail", "image_medium", "cover_image", "entry_price", "category", "age_limit", "expectations",
+            "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "cover_image", "entry_price", "category", "age_limit", "expectations",
             "join_count", "has_joined", "featured", "is_active", "show_join_button",
             "phone_number", "facebook_url", "instagram_url", "website_url",
             "listings", "created_at", "updated_at"
@@ -493,6 +508,19 @@ class EventSerializer(serializers.ModelSerializer):
         """Return the primary event image (same as image field)."""
         return self.get_image(obj)
 
+    def get_thumbnail_image(self, obj):
+        """Return manual thumbnail URL with priority over auto-generated"""
+        request = self.context.get('request')
+        # Try manual thumbnail first, fallback to main image
+        if obj.thumbnail_image:
+            try:
+                url = obj.thumbnail_image.url
+                return request.build_absolute_uri(url) if request else url
+            except (ValueError, AttributeError):
+                pass
+        # Fallback to main image
+        return self.get_image(obj)
+
     def get_image_thumbnail(self, obj):
         """Return optimized thumbnail URL (54x54px) for cards"""
         request = self.context.get('request')
@@ -518,6 +546,7 @@ class PromotionSerializer(serializers.ModelSerializer):
     tags = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    thumbnail_image = serializers.SerializerMethodField()
     image_thumbnail = serializers.SerializerMethodField()
     image_medium = serializers.SerializerMethodField()
     listings = serializers.SerializerMethodField()
@@ -526,7 +555,7 @@ class PromotionSerializer(serializers.ModelSerializer):
         model = Promotion
         fields = [
             "id", "title", "description", "has_discount_code", "discount_code", "tags",
-            "image", "images", "image_thumbnail", "image_medium", "valid_until", "featured", "is_active", "website", "phone_number", "facebook_url",
+            "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "valid_until", "featured", "is_active", "website", "phone_number", "facebook_url",
             "instagram_url", "address", "listings", "created_at", "updated_at"
         ]
 
@@ -555,6 +584,19 @@ class PromotionSerializer(serializers.ModelSerializer):
     def get_images(self, obj):
         request = self.context.get('request')
         return _build_image_urls(obj, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
+
+    def get_thumbnail_image(self, obj):
+        """Return manual thumbnail URL with priority over auto-generated"""
+        request = self.context.get('request')
+        # Try manual thumbnail first, fallback to main image
+        if obj.thumbnail_image:
+            try:
+                url = obj.thumbnail_image.url
+                return request.build_absolute_uri(url) if request else url
+            except (ValueError, AttributeError):
+                pass
+        # Fallback to main image
+        return self.get_image(obj)
 
     def get_image_thumbnail(self, obj):
         """Return optimized thumbnail URL (54x54px) for cards"""
@@ -595,6 +637,7 @@ class BlogSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    thumbnail_image = serializers.SerializerMethodField()
     image_thumbnail = serializers.SerializerMethodField()
     image_medium = serializers.SerializerMethodField()
     cover_image = serializers.SerializerMethodField()
@@ -603,7 +646,7 @@ class BlogSerializer(serializers.ModelSerializer):
         model = Blog
         fields = [
             "id", "title", "subtitle", "content", "author", "category",
-            "tags", "image", "images", "image_thumbnail", "image_medium", "cover_image", "read_time_minutes", "featured",
+            "tags", "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "cover_image", "read_time_minutes", "featured",
             "published", "is_active", "created_at", "updated_at"
         ]
     
@@ -633,6 +676,19 @@ class BlogSerializer(serializers.ModelSerializer):
 
     def get_cover_image(self, obj):
         """Return the primary blog image (same as image field)."""
+        return self.get_image(obj)
+
+    def get_thumbnail_image(self, obj):
+        """Return manual thumbnail URL with priority over auto-generated"""
+        request = self.context.get('request')
+        # Try manual thumbnail first, fallback to main image
+        if obj.thumbnail_image:
+            try:
+                url = obj.thumbnail_image.url
+                return request.build_absolute_uri(url) if request else url
+            except (ValueError, AttributeError):
+                pass
+        # Fallback to main image
         return self.get_image(obj)
 
     def get_image_thumbnail(self, obj):

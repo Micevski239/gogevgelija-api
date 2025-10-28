@@ -261,6 +261,7 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'featured',
                 'is_active',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
+                'thumbnail_image',
                 'phone_number',
                 'website_url',
                 'facebook_url',
@@ -307,6 +308,7 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'show_join_button',
                 'date_time',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
+                'thumbnail_image',
                 'join_count'
             ),
             'classes': ('wide',),
@@ -356,6 +358,7 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'featured',
                 'is_active',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
+                'thumbnail_image',
                 'valid_until',
                 'has_discount_code',
                 'discount_code',
@@ -399,6 +402,7 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'published',
                 'is_active',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
+                'thumbnail_image',
                 'read_time_minutes',
                 'tags'
             ),
