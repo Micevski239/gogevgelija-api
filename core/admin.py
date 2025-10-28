@@ -247,10 +247,10 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Listing, site=admin_site)
 class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'category', 'featured', 'is_active', 'created_at', 'phone_number')
-    list_filter = ('category', 'featured', 'is_active', 'created_at')
+    list_display = ('title', 'category', 'featured', 'trending', 'is_active', 'created_at', 'phone_number')
+    list_filter = ('category', 'featured', 'trending', 'is_active', 'created_at')
     search_fields = ('title', 'address', 'category__name')
-    list_editable = ('featured', 'is_active')
+    list_editable = ('featured', 'trending', 'is_active')
     ordering = ('-created_at',)
     filter_horizontal = ('promotions',)
 
@@ -259,6 +259,7 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'fields': (
                 'category',
                 'featured',
+                'trending',
                 'is_active',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
                 'thumbnail_image',

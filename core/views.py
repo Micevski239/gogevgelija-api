@@ -199,6 +199,13 @@ class ListingViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(featured_listings, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def trending(self, request):
+        """Get only trending listings (no pagination for trending items)"""
+        trending_listings = Listing.objects.filter(trending=True, is_active=True)
+        serializer = self.get_serializer(trending_listings, many=True)
+        return Response(serializer.data)
+
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.filter(is_active=True)
     serializer_class = EventSerializer
