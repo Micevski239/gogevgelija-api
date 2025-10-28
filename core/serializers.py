@@ -290,6 +290,11 @@ class ListingSerializer(serializers.ModelSerializer):
             working_hours = obj.working_hours
             if not working_hours or not isinstance(working_hours, dict):
                 print(f"[is_open] Listing {obj.id} ({obj.title}): No working hours defined")
+                # If no working hours, check manual status
+                if hasattr(obj, 'manual_open_status') and obj.manual_open_status is not None:
+                    manual_status = obj.manual_open_status
+                    print(f"[is_open] Listing {obj.id} ({obj.title}): Using manual status = {manual_status}")
+                    return manual_status
                 return None
 
             # Unwrap nested working_hours structure if present
