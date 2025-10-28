@@ -230,7 +230,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "phone_number",
             "facebook_url", "instagram_url", "website_url",
-            "featured", "is_active", "promotions", "events", "created_at", "updated_at", "can_edit"
+            "featured", "trending", "is_active", "promotions", "events", "created_at", "updated_at", "can_edit"
         ]
     
     def get_title(self, obj):
