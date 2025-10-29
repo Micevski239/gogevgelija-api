@@ -27,7 +27,8 @@
     "editProfileTitle": "Edit Profile",
     "userLocation": "📍 Gevgelija, Macedonia",
     "logoutConfirmTitle": "Log Out",
-    "logoutConfirmMessage": "Are you sure you want to log out?"
+    "logoutConfirmMessage": "Are you sure you want to log out?",
+    "collab": "Contact for collaborations"
   },
   "listings": {
     "title": "Listings",
