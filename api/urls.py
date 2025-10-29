@@ -22,6 +22,7 @@ from core.views import (
     GuestLoginView,
     SendVerificationCode,
     VerifyCode,
+    global_search,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -50,6 +51,7 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/listings/<int:listing_id>/edit/", EditListingView.as_view(), name="edit_listing"),
     path("api/admin/users/", AdminUsersView.as_view(), name="admin_users"),
+    path("api/search/", global_search, name="global_search"),
 ]
 
 # Conditionally include health check
