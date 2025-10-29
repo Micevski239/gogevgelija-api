@@ -1195,7 +1195,133 @@ class CollaborationContactViewSet(viewsets.ModelViewSet):
         
         translations = collaboration_type_translations.get(language, collaboration_type_translations['en'])
         types = [
-            {'value': choice[0], 'label': translations.get(choice[0], choice[1])} 
+            {'value': choice[0], 'label': translations.get(choice[0], choice[1])}
             for choice in CollaborationContact.COLLABORATION_TYPE_CHOICES
         ]
         return Response(types)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def global_search(request):
+    """
+    Global search across all content types.
+    GET /api/search/?q=pizza&type=all
+
+    Query parameters:
+    - q: Search query (required, min 2 characters)
+    - type: Content type to search (optional: all, listings, events, promotions, blogs)
+    - limit: Max results per type (optional, default: 20)
+    """
+    from django.db.models import Q
+
+    query = request.query_params.get('q', '').strip()
+    content_type = request.query_params.get('type', 'all')
+    limit = int(request.query_params.get('limit', 20))
+
+    # Minimum query length
+    if len(query) < 2:
+        return Response({
+            'listings': [],
+            'events': [],
+            'promotions': [],
+            'blogs': [],
+            'total_count': 0,
+            'query': query
+        })
+
+    results = {}
+    language = get_preferred_language(request)
+
+    # Search listings
+    if content_type in ['all', 'listings']:
+        listings = Listing.objects.filter(
+            Q(title__icontains=query) |
+            Q(title_en__icontains=query) |
+            Q(title_mk__icontains=query) |
+            Q(address__icontains=query) |
+            Q(description__icontains=query) |
+            Q(description_en__icontains=query) |
+            Q(description_mk__icontains=query) |
+            Q(category__name__icontains=query) |
+            Q(category__name_en__icontains=query) |
+            Q(category__name_mk__icontains=query),
+            is_active=True
+        ).distinct()[:limit]
+
+        results['listings'] = ListingSerializer(
+            listings,
+            many=True,
+            context={'language': language}
+        ).data
+
+    # Search events
+    if content_type in ['all', 'events']:
+        events = Event.objects.filter(
+            Q(title__icontains=query) |
+            Q(title_en__icontains=query) |
+            Q(title_mk__icontains=query) |
+            Q(location__icontains=query) |
+            Q(description__icontains=query) |
+            Q(description_en__icontains=query) |
+            Q(description_mk__icontains=query) |
+            Q(category__name__icontains=query) |
+            Q(category__name_en__icontains=query) |
+            Q(category__name_mk__icontains=query),
+            is_active=True
+        ).distinct()[:limit]
+
+        results['events'] = EventSerializer(
+            events,
+            many=True,
+            context={'language': language}
+        ).data
+
+    # Search promotions
+    if content_type in ['all', 'promotions']:
+        promotions = Promotion.objects.filter(
+            Q(title__icontains=query) |
+            Q(title_en__icontains=query) |
+            Q(title_mk__icontains=query) |
+            Q(description__icontains=query) |
+            Q(description_en__icontains=query) |
+            Q(description_mk__icontains=query) |
+            Q(discount_code__icontains=query),
+            is_active=True
+        ).distinct()[:limit]
+
+        results['promotions'] = PromotionSerializer(
+            promotions,
+            many=True,
+            context={'language': language}
+        ).data
+
+    # Search blogs
+    if content_type in ['all', 'blogs']:
+        blogs = Blog.objects.filter(
+            Q(title__icontains=query) |
+            Q(title_en__icontains=query) |
+            Q(title_mk__icontains=query) |
+            Q(subtitle__icontains=query) |
+            Q(subtitle_en__icontains=query) |
+            Q(subtitle_mk__icontains=query) |
+            Q(content__icontains=query) |
+            Q(content_en__icontains=query) |
+            Q(content_mk__icontains=query),
+            is_active=True,
+            published=True
+        ).distinct()[:limit]
+
+        results['blogs'] = BlogSerializer(
+            blogs,
+            many=True,
+            context={'language': language}
+        ).data
+
+    total = sum(len(v) for v in results.values())
+
+    return Response({
+        **results,
+        'total_count': total,
+        'query': query
+    })
