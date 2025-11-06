@@ -6,6 +6,8 @@ from datetime import timedelta
 from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes, action
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -177,8 +179,13 @@ class ListingViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        """Filter queryset based on query parameters"""
-        queryset = Listing.objects.filter(is_active=True)
+        """
+        Filter queryset based on query parameters.
+        PERFORMANCE FIX: Added select_related and prefetch_related to avoid N+1 queries.
+        """
+        queryset = Listing.objects.filter(is_active=True) \
+            .select_related('category') \
+            .prefetch_related('promotions', 'events')
 
         # Filter by category
         category = self.request.query_params.get('category', None)
@@ -192,17 +199,23 @@ class ListingViewSet(viewsets.ModelViewSet):
         context['language'] = get_preferred_language(self.request)
         return context
 
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get only featured listings (no pagination for featured items)"""
-        featured_listings = Listing.objects.filter(featured=True, is_active=True)
+        featured_listings = Listing.objects.filter(featured=True, is_active=True) \
+            .select_related('category') \
+            .prefetch_related('promotions', 'events')
         serializer = self.get_serializer(featured_listings, many=True)
         return Response(serializer.data)
 
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     @action(detail=False, methods=['get'])
     def trending(self, request):
         """Get only trending listings (no pagination for trending items)"""
-        trending_listings = Listing.objects.filter(trending=True, is_active=True)
+        trending_listings = Listing.objects.filter(trending=True, is_active=True) \
+            .select_related('category') \
+            .prefetch_related('promotions', 'events')
         serializer = self.get_serializer(trending_listings, many=True)
         return Response(serializer.data)
 
@@ -212,15 +225,52 @@ class EventViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     pagination_class = StandardResultsSetPagination
 
+    def get_queryset(self):
+        """
+        PERFORMANCE FIX: Added select_related and prefetch_related to avoid N+1 queries.
+        Also prefetch event joins for current user to optimize has_joined checks.
+        """
+        queryset = Event.objects.filter(is_active=True) \
+            .select_related('category') \
+            .prefetch_related('listings')
+
+        # Prefetch user's event joins if authenticated
+        if self.request.user.is_authenticated:
+            from django.db.models import Prefetch
+            queryset = queryset.prefetch_related(
+                Prefetch(
+                    'eventjoin_set',
+                    queryset=EventJoin.objects.filter(user=self.request.user),
+                    to_attr='user_joins'
+                )
+            )
+
+        return queryset.order_by('-featured', '-date_time')
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
         return context
 
+    @method_decorator(cache_page(60 * 3))  # Cache for 3 minutes (events change more frequently)
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get only featured events (no pagination for featured items)"""
-        featured_events = Event.objects.filter(featured=True, is_active=True)
+        featured_events = Event.objects.filter(featured=True, is_active=True) \
+            .select_related('category') \
+            .prefetch_related('listings')
+
+        # Prefetch user joins for has_joined optimization
+        if request.user.is_authenticated:
+            from django.db.models import Prefetch
+            featured_events = featured_events.prefetch_related(
+                Prefetch(
+                    'eventjoin_set',
+                    queryset=EventJoin.objects.filter(user=request.user),
+                    to_attr='user_joins'
+                )
+            )
+
         serializer = self.get_serializer(featured_events, many=True)
         return Response(serializer.data)
     
@@ -246,9 +296,10 @@ class EventViewSet(viewsets.ModelViewSet):
         # Create join record
         EventJoin.objects.create(event=event, user=request.user)
 
-        # Update join count
-        event.join_count = EventJoin.objects.filter(event=event).count()
-        event.save()
+        # PERFORMANCE FIX: Update join count using F() expression instead of counting all joins
+        from django.db.models import F
+        Event.objects.filter(pk=event.pk).update(join_count=F('join_count') + 1)
+        event.refresh_from_db()  # Refresh to get updated count
 
         serializer = self.get_serializer(event)
         return Response({
@@ -278,9 +329,10 @@ class EventViewSet(viewsets.ModelViewSet):
         # Remove join record
         existing_join.delete()
 
-        # Update join count
-        event.join_count = EventJoin.objects.filter(event=event).count()
-        event.save()
+        # PERFORMANCE FIX: Update join count using F() expression instead of counting all joins
+        from django.db.models import F
+        Event.objects.filter(pk=event.pk).update(join_count=F('join_count') - 1)
+        event.refresh_from_db()  # Refresh to get updated count
 
         serializer = self.get_serializer(event)
         return Response({
@@ -294,15 +346,25 @@ class PromotionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     pagination_class = StandardResultsSetPagination
 
+    def get_queryset(self):
+        """PERFORMANCE FIX: Added select_related and prefetch_related to avoid N+1 queries."""
+        return Promotion.objects.filter(is_active=True) \
+            .select_related('category') \
+            .prefetch_related('listings') \
+            .order_by('-created_at')
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
         return context
 
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get only featured promotions (no pagination for featured items)"""
-        featured_promotions = Promotion.objects.filter(featured=True, is_active=True)
+        featured_promotions = Promotion.objects.filter(featured=True, is_active=True) \
+            .select_related('category') \
+            .prefetch_related('listings')
         serializer = self.get_serializer(featured_promotions, many=True)
         return Response(serializer.data)
 
@@ -311,6 +373,12 @@ class BlogViewSet(viewsets.ModelViewSet):
     serializer_class = BlogSerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        """PERFORMANCE FIX: Added select_related to avoid N+1 queries."""
+        return Blog.objects.filter(published=True, is_active=True) \
+            .select_related('category') \
+            .order_by('-created_at')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

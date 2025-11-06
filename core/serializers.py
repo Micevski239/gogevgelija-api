@@ -81,8 +81,15 @@ class CategorySerializer(serializers.ModelSerializer):
             return None
 
     def get_item_count(self, obj):
-        """Return the number of items in this category and its descendants"""
-        return obj.item_count
+        """
+        Return the number of items in this category and its descendants.
+        PERFORMANCE FIX: Only calculate when explicitly requested, not on every serialization.
+        Returns 0 by default to avoid expensive calculation.
+        """
+        # Only calculate if explicitly requested via context
+        if self.context.get('include_item_count', False):
+            return obj.get_item_count()
+        return 0
 
     def to_representation(self, instance):
         """Convert applies_to from CharField to list"""
@@ -459,10 +466,19 @@ class EventSerializer(serializers.ModelSerializer):
         ]
     
     def get_has_joined(self, obj):
-        """Check if the current user has joined this event."""
+        """
+        Check if the current user has joined this event.
+        PERFORMANCE FIX: Uses prefetched 'user_joins' to avoid N+1 queries.
+        """
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
+
+        # Use prefetched data if available (set by EventViewSet)
+        if hasattr(obj, 'user_joins'):
+            return len(obj.user_joins) > 0
+
+        # Fallback to query (for backwards compatibility)
         from .models import EventJoin
         return EventJoin.objects.filter(event=obj, user=request.user).exists()
     

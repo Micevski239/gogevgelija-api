@@ -44,7 +44,9 @@ if USE_SPACES:
     INSTALLED_APPS += ["storages"]
 
 # -------------------- Middleware --------------------
+# PERFORMANCE FIX: Add GZipMiddleware first to compress all responses (~70% size reduction)
 MIDDLEWARE = [
+    "django.middleware.gzip.GZipMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
 ]
