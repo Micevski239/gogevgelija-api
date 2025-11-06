@@ -590,9 +590,9 @@ class Promotion(models.Model):
     class Meta:
         ordering = ['-created_at']
         # PERFORMANCE FIX: Add database indexes for frequently queried fields
+        # Note: Promotion has no category field, only featured, is_active, dates
         indexes = [
-            models.Index(fields=['category', 'is_active']),
-            models.Index(fields=['featured', '-created_at']),
+            models.Index(fields=['featured', 'is_active', '-created_at']),
             models.Index(fields=['is_active', '-created_at']),
         ]
 

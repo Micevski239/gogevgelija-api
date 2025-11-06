@@ -347,9 +347,11 @@ class PromotionViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        """PERFORMANCE FIX: Added select_related and prefetch_related to avoid N+1 queries."""
+        """
+        PERFORMANCE FIX: Added prefetch_related to avoid N+1 queries.
+        Note: Promotion has no category ForeignKey, only CharField choices for Blog.
+        """
         return Promotion.objects.filter(is_active=True) \
-            .select_related('category') \
             .prefetch_related('listings') \
             .order_by('-created_at')
 
@@ -363,7 +365,6 @@ class PromotionViewSet(viewsets.ModelViewSet):
     def featured(self, request):
         """Get only featured promotions (no pagination for featured items)"""
         featured_promotions = Promotion.objects.filter(featured=True, is_active=True) \
-            .select_related('category') \
             .prefetch_related('listings')
         serializer = self.get_serializer(featured_promotions, many=True)
         return Response(serializer.data)
@@ -375,9 +376,11 @@ class BlogViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        """PERFORMANCE FIX: Added select_related to avoid N+1 queries."""
+        """
+        PERFORMANCE FIX: Optimized query ordering.
+        Note: Blog.category is a CharField (not ForeignKey), so no select_related needed.
+        """
         return Blog.objects.filter(published=True, is_active=True) \
-            .select_related('category') \
             .order_by('-created_at')
 
     def get_serializer_context(self):
