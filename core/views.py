@@ -592,6 +592,13 @@ class Me(APIView):
     
     def put(self, request):
         """Update user profile"""
+        # CRITICAL FIX: Verify user is authenticated before accessing profile
+        if not request.user.is_authenticated:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         user = request.user
         data = request.data
 
