@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+from django.views.decorators.cache import cache_page
 from rest_framework.routers import DefaultRouter
 from core.views import (
     CategoryViewSet,

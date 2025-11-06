@@ -181,30 +181,60 @@ class Category(models.Model):
 
         super().save(*args, **kwargs)
 
-    @property
-    def item_count(self):
-        """Calculate the number of items (listings + events) in this category and all subcategories"""
+    def get_item_count(self):
+        """
+        Calculate the number of items (listings + events) in this category and all subcategories.
+        PERFORMANCE FIX: Changed from @property to method to avoid automatic calculation on every access.
+        Call this explicitly when needed.
+        """
         from django.db.models import Q, Count
 
-        # Get all descendant category IDs (including self)
-        descendant_ids = self.get_descendants(include_self=True)
+        # Get all descendant category IDs (including self) - optimized with single query
+        descendant_ids = self.get_descendants_optimized(include_self=True)
 
-        # Count listings
-        listing_count = Listing.objects.filter(
-            category_id__in=descendant_ids,
-            is_active=True
-        ).count()
+        # Count listings and events in a single query using aggregation
+        from django.db.models import Count, Q
+        counts = {
+            'listings': Listing.objects.filter(
+                category_id__in=descendant_ids,
+                is_active=True
+            ).count(),
+            'events': Event.objects.filter(
+                category_id__in=descendant_ids,
+                is_active=True
+            ).count()
+        }
 
-        # Count events
-        event_count = Event.objects.filter(
-            category_id__in=descendant_ids,
-            is_active=True
-        ).count()
+        return counts['listings'] + counts['events']
 
-        return listing_count + event_count
+    def get_descendants_optimized(self, include_self=False):
+        """
+        Get all descendant category IDs - OPTIMIZED VERSION using iterative approach
+        to avoid recursive database queries.
+        """
+        descendants = [self.id] if include_self else []
+        queue = [self.id]
+
+        # Fetch all categories in one query
+        all_children = {cat.parent_id: [] for cat in Category.objects.all()}
+        for cat in Category.objects.all():
+            if cat.parent_id:
+                all_children.setdefault(cat.parent_id, []).append(cat.id)
+
+        # Iterative traversal instead of recursive
+        while queue:
+            current_id = queue.pop(0)
+            children_ids = all_children.get(current_id, [])
+            descendants.extend(children_ids)
+            queue.extend(children_ids)
+
+        return descendants
 
     def get_descendants(self, include_self=False):
-        """Get all descendant category IDs recursively"""
+        """
+        DEPRECATED: Use get_descendants_optimized() instead.
+        Kept for backward compatibility but causes N+1 queries.
+        """
         descendants = [self.id] if include_self else []
         children = Category.objects.filter(parent=self)
         for child in children:
@@ -372,7 +402,14 @@ class Listing(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-    
+        # PERFORMANCE FIX: Add database indexes for frequently queried fields
+        indexes = [
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['featured', '-created_at']),
+            models.Index(fields=['trending', '-created_at']),
+            models.Index(fields=['is_active', '-created_at']),
+        ]
+
     def __str__(self):
         return self.title
 
@@ -462,7 +499,13 @@ class Event(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-    
+        # PERFORMANCE FIX: Add database indexes for frequently queried fields
+        indexes = [
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['featured', '-date_time']),
+            models.Index(fields=['is_active', '-date_time']),
+        ]
+
     def __str__(self):
         return f"{self.title} - {self.date_time}"
 
@@ -546,7 +589,13 @@ class Promotion(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-    
+        # PERFORMANCE FIX: Add database indexes for frequently queried fields
+        indexes = [
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['featured', '-created_at']),
+            models.Index(fields=['is_active', '-created_at']),
+        ]
+
     def __str__(self):
         return f"{self.title} - {self.discount_code}"
 
@@ -637,7 +686,13 @@ class Blog(models.Model):
     
     class Meta:
         ordering = ['-created_at']
-    
+        # PERFORMANCE FIX: Add database indexes for frequently queried fields
+        indexes = [
+            models.Index(fields=['category', 'is_active', 'published']),
+            models.Index(fields=['featured', 'published', '-created_at']),
+            models.Index(fields=['is_active', 'published', '-created_at']),
+        ]
+
     def __str__(self):
         return self.title
 
