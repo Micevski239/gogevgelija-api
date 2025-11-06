@@ -239,7 +239,7 @@ class EventViewSet(viewsets.ModelViewSet):
             from django.db.models import Prefetch
             queryset = queryset.prefetch_related(
                 Prefetch(
-                    'eventjoin_set',
+                    'joined_users',  # FIX: Use correct related_name from EventJoin model
                     queryset=EventJoin.objects.filter(user=self.request.user),
                     to_attr='user_joins'
                 )
@@ -265,7 +265,7 @@ class EventViewSet(viewsets.ModelViewSet):
             from django.db.models import Prefetch
             featured_events = featured_events.prefetch_related(
                 Prefetch(
-                    'eventjoin_set',
+                    'joined_users',  # FIX: Use correct related_name from EventJoin model
                     queryset=EventJoin.objects.filter(user=request.user),
                     to_attr='user_joins'
                 )
