@@ -160,6 +160,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)
 
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes (consistent with trending listings)
     @action(detail=False, methods=['get'])
     def trending(self, request):
         """Get trending categories"""
@@ -167,6 +168,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
             trending=True,
             is_active=True
         ).order_by('order', 'name')
+
+        page = self.paginate_queryset(categories)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)
