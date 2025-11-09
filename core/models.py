@@ -127,7 +127,7 @@ class Category(models.Model):
     is_active = models.BooleanField(default=True, help_text="Whether category is active and visible")
     show_in_search = models.BooleanField(default=True, help_text="Show in search screen")
     show_in_navigation = models.BooleanField(default=True, help_text="Show in navigation menus")
-    trending = models.BooleanField(default=False, help_text="Mark as trending category")
+    trending = models.BooleanField(default=False, help_text="Mark as trending category (can be combined with featured)")
     featured = models.BooleanField(default=False, help_text="Mark as featured category")
 
     # Scope
@@ -394,7 +394,7 @@ class Listing(models.Model):
     instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
     website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official website URL")
     featured = models.BooleanField(default=False, help_text="Show in featured section")
-    trending = models.BooleanField(default=False, help_text="Mark as trending - will be displayed in search screen instead of featured")
+    trending = models.BooleanField(default=False, help_text="Mark as trending - will be displayed in trending tab on search screen")
     is_active = models.BooleanField(default=True, help_text="Show this listing in the app. Uncheck to hide from users.")
     promotions = models.ManyToManyField('Promotion', blank=True, related_name='listings', help_text="Select promotions associated with this listing (optional)")
     created_at = models.DateTimeField(auto_now_add=True)
