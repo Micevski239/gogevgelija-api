@@ -478,11 +478,11 @@ class Event(models.Model):
         options={'quality': 90}
     )
 
-    entry_price = models.CharField(max_length=50, default="Free", help_text="Entry price (e.g., 'Free', '10 EUR', '500 MKD')")
-    entry_price_mk = models.CharField(max_length=50, blank=True, help_text="Entry price in Macedonian (e.g., 'Бесплатно', '10 ЕУР', '500 МКД')")
+    entry_price = models.CharField(max_length=50, default="Free", blank=True, null=True, help_text="Entry price (e.g., 'Free', '10 EUR', '500 MKD')")
+    entry_price_mk = models.CharField(max_length=50, blank=True, null=True, help_text="Entry price in Macedonian (e.g., 'Бесплатно', '10 ЕУР', '500 МКД')")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select category from available categories")
-    age_limit = models.CharField(max_length=50, default="All ages welcome", help_text="Age restriction (e.g., 'All ages welcome', '18+', '21+')")
-    age_limit_mk = models.CharField(max_length=50, blank=True, help_text="Age restriction in Macedonian (e.g., 'Добредојдени се сите возрасти', '18+', '21+')")
+    age_limit = models.CharField(max_length=50, default="All ages welcome", blank=True, null=True, help_text="Age restriction (e.g., 'All ages welcome', '18+', '21+')")
+    age_limit_mk = models.CharField(max_length=50, blank=True, null=True, help_text="Age restriction in Macedonian (e.g., 'Добредојдени се сите возрасти', '18+', '21+')")
     expectations = models.JSONField(default=list, help_text="List of expectations with icons, e.g., [{'icon': 'musical-notes', 'text': 'Live entertainment'}, {'icon': 'restaurant', 'text': 'Food available'}]")
     expectations_mk = models.JSONField(default=list, help_text="List of expectations in Macedonian with icons, e.g., [{'icon': 'musical-notes', 'text': 'Музика во живо'}, {'icon': 'restaurant', 'text': 'Достапна храна'}]")
     join_count = models.PositiveIntegerField(default=0, help_text="Number of users who joined this event")
