@@ -215,7 +215,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
     def item_count_display(self, obj):
         """Display the item count"""
-        count = obj.item_count
+        count = obj.get_item_count()
         return f"{count} items" if count != 1 else "1 item"
     item_count_display.short_description = 'Items'
 
