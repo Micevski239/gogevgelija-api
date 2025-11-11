@@ -266,7 +266,8 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'phone_number',
                 'website_url',
                 'facebook_url',
-                'instagram_url'
+                'instagram_url',
+                'google_maps_url'
             ),
             'classes': ('wide',),
         }),
@@ -324,7 +325,8 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'phone_number',
                 'website_url',
                 'facebook_url',
-                'instagram_url'
+                'instagram_url',
+                'google_maps_url'
             ),
             'classes': ('wide',),
             'description': 'Contact details (shown when Join button is disabled)',
@@ -367,7 +369,8 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'phone_number',
                 'facebook_url',
                 'instagram_url',
-                'address'
+                'address',
+                'google_maps_url'
             ),
             'classes': ('wide',),
         }),
