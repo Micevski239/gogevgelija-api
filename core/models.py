@@ -393,6 +393,7 @@ class Listing(models.Model):
     facebook_url = models.URLField(max_length=500, blank=True, null=True, help_text="Facebook page URL")
     instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
     website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official website URL")
+    google_maps_url = models.URLField(max_length=500, blank=True, null=True, help_text="Google Maps URL for directions (optional - if not provided, will use address field)")
     featured = models.BooleanField(default=False, help_text="Show in featured section")
     trending = models.BooleanField(default=False, help_text="Mark as trending - will be displayed in trending tab on search screen")
     is_active = models.BooleanField(default=True, help_text="Show this listing in the app. Uncheck to hide from users.")
@@ -493,6 +494,7 @@ class Event(models.Model):
     facebook_url = models.URLField(max_length=500, blank=True, null=True, help_text="Facebook page URL")
     instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
     website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official website URL")
+    google_maps_url = models.URLField(max_length=500, blank=True, null=True, help_text="Google Maps URL for directions (optional - if not provided, will use location field)")
     listings = models.ManyToManyField('Listing', blank=True, related_name='events', help_text="Select listings associated with this event (optional)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -584,6 +586,7 @@ class Promotion(models.Model):
     facebook_url = models.URLField(max_length=500, blank=True, help_text="Facebook page URL")
     instagram_url = models.URLField(max_length=500, blank=True, help_text="Instagram profile URL")
     address = models.CharField(max_length=500, blank=True, help_text="Physical address")
+    google_maps_url = models.URLField(max_length=500, blank=True, null=True, help_text="Google Maps URL for directions (optional - if not provided, will use address field)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

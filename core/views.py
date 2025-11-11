@@ -258,6 +258,11 @@ class EventViewSet(viewsets.ModelViewSet):
         context['language'] = get_preferred_language(self.request)
         return context
 
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    def list(self, request, *args, **kwargs):
+        """Get all events with caching"""
+        return super().list(request, *args, **kwargs)
+
     @method_decorator(cache_page(60 * 3))  # Cache for 3 minutes (events change more frequently)
     @action(detail=False, methods=['get'])
     def featured(self, request):
@@ -367,6 +372,11 @@ class PromotionViewSet(viewsets.ModelViewSet):
         return context
 
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    def list(self, request, *args, **kwargs):
+        """Get all promotions with caching"""
+        return super().list(request, *args, **kwargs)
+
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get only featured promotions (no pagination for featured items)"""
@@ -394,6 +404,12 @@ class BlogViewSet(viewsets.ModelViewSet):
         context['language'] = get_preferred_language(self.request)
         return context
 
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    def list(self, request, *args, **kwargs):
+        """Get all blogs with caching"""
+        return super().list(request, *args, **kwargs)
+
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get only featured blogs (no pagination for featured items)"""

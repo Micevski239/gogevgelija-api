@@ -236,7 +236,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "id", "title", "description", "address", "open_time",
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "phone_number",
-            "facebook_url", "instagram_url", "website_url",
+            "facebook_url", "instagram_url", "website_url", "google_maps_url",
             "featured", "trending", "is_active", "promotions", "events", "created_at", "updated_at", "can_edit"
         ]
     
@@ -461,7 +461,7 @@ class EventSerializer(serializers.ModelSerializer):
             "id", "title", "description", "date_time", "location",
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "cover_image", "entry_price", "category", "age_limit", "expectations",
             "join_count", "has_joined", "featured", "is_active", "show_join_button",
-            "phone_number", "facebook_url", "instagram_url", "website_url",
+            "phone_number", "facebook_url", "instagram_url", "website_url", "google_maps_url",
             "listings", "created_at", "updated_at"
         ]
     
@@ -572,7 +572,7 @@ class PromotionSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "description", "has_discount_code", "discount_code", "tags",
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "valid_until", "featured", "is_active", "website", "phone_number", "facebook_url",
-            "instagram_url", "address", "listings", "created_at", "updated_at"
+            "instagram_url", "address", "google_maps_url", "listings", "created_at", "updated_at"
         ]
 
     def get_title(self, obj):
