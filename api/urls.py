@@ -63,4 +63,5 @@ if settings.HEALTH_CHECK_ENABLED:
 if settings.ADMIN_ENABLED:
     urlpatterns.extend([
         path('admin/', admin.site.urls),
+        path('privacy-policty')
     ])
