@@ -378,9 +378,9 @@ class Listing(models.Model):
     # Optimized image variants (auto-generated)
     image_thumbnail = ImageSpecField(
         source='image',
-        processors=[ResizeToFill(54, 54)],
+        processors=[ResizeToFill(162, 162)],  # 54pt * 3 for retina displays
         format='WEBP',
-        options={'quality': 85}
+        options={'quality': 95}  # Higher quality for small images
     )
     image_medium = ImageSpecField(
         source='image',
@@ -468,9 +468,9 @@ class Event(models.Model):
     # Optimized image variants (auto-generated)
     image_thumbnail = ImageSpecField(
         source='image',
-        processors=[ResizeToFill(54, 54)],
+        processors=[ResizeToFill(162, 162)],  # 54pt * 3 for retina displays
         format='WEBP',
-        options={'quality': 85}
+        options={'quality': 95}  # Higher quality for small images
     )
     image_medium = ImageSpecField(
         source='image',
@@ -567,9 +567,9 @@ class Promotion(models.Model):
     # Optimized image variants (auto-generated)
     image_thumbnail = ImageSpecField(
         source='image',
-        processors=[ResizeToFill(54, 54)],
+        processors=[ResizeToFill(162, 162)],  # 54pt * 3 for retina displays
         format='WEBP',
-        options={'quality': 85}
+        options={'quality': 95}  # Higher quality for small images
     )
     image_medium = ImageSpecField(
         source='image',
@@ -669,9 +669,9 @@ class Blog(models.Model):
     # Optimized image variants (auto-generated)
     image_thumbnail = ImageSpecField(
         source='image',
-        processors=[ResizeToFill(54, 54)],
+        processors=[ResizeToFill(162, 162)],  # 54pt * 3 for retina displays
         format='WEBP',
-        options={'quality': 85}
+        options={'quality': 95}  # Higher quality for small images
     )
     image_medium = ImageSpecField(
         source='image',
