@@ -251,7 +251,7 @@ class EventViewSet(viewsets.ModelViewSet):
                 )
             )
 
-        return queryset.order_by('-featured', '-date_time')
+        return queryset.order_by('-featured', '-created_at')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
