@@ -13,8 +13,10 @@ from core.views import (
     UserPermissionViewSet,
     HelpSupportViewSet,
     CollaborationContactViewSet,
+    HomeSectionViewSet,
     TranslationResourceView,
     health,
+    app_config,
     Register,
     Me,
     LanguageView,
@@ -34,12 +36,14 @@ router.register(r"events", EventViewSet, basename="event")
 router.register(r"promotions", PromotionViewSet, basename="promotion")
 router.register(r"blogs", BlogViewSet, basename="blog")
 router.register(r"wishlist", WishlistViewSet, basename="wishlist")
+router.register(r"home/sections", HomeSectionViewSet, basename="home-section")
 router.register(r"admin/permissions", UserPermissionViewSet, basename="permissions")
 router.register(r"help-support", HelpSupportViewSet, basename="help-support")
 router.register(r"collaboration-contact", CollaborationContactViewSet, basename="collaboration-contact")
 
 urlpatterns = [
     path('api/', include(router.urls)),
+    path("api/app/config/", app_config, name="app_config"),
     path("api/auth/register/", Register.as_view()),
     path("api/auth/send-code/", SendVerificationCode.as_view(), name="send_verification_code"),
     path("api/auth/verify-code/", VerifyCode.as_view(), name="verify_code"),
