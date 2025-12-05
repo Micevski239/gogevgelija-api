@@ -16,7 +16,7 @@ class GroupedAdminSite(admin.AdminSite):
     index_title = "Management"
 
     model_groups = {
-        "MAIN": [Listing, Blog, Event, Promotion, Category],
+        "MAIN": [Listing, Blog, Event, Promotion, Category, HomeSection, HomeSectionItem],
         "USERS": [User, Group, GuestUser, UserPermission, UserProfile, VerificationCode],
         "INTERACTIONS": [Wishlist, HelpSupport, CollaborationContact, EventJoin],
     }
@@ -620,7 +620,7 @@ class HomeSectionItemInline(admin.TabularInline):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-@admin.register(HomeSection)
+@admin.register(HomeSection, site=admin_site)
 class HomeSectionAdmin(admin.ModelAdmin):
     """Admin interface for HomeSection with inline items"""
     list_display = ("label", "card_type", "item_count", "order", "is_active", "created_at")
@@ -664,7 +664,7 @@ class HomeSectionAdmin(admin.ModelAdmin):
     deactivate_sections.short_description = "❌ Deactivate selected sections"
 
 
-@admin.register(HomeSectionItem)
+@admin.register(HomeSectionItem, site=admin_site)
 class HomeSectionItemAdmin(admin.ModelAdmin):
     """Admin interface for HomeSectionItem (standalone view)"""
     list_display = ("section", "content_type", "object_id", "item_type", "order", "is_active", "created_at")
