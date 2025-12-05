@@ -16,8 +16,8 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode
-from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem
+from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer
 from .utils import get_preferred_language
 from .pagination import StandardResultsSetPagination
 
@@ -421,6 +421,30 @@ class BlogViewSet(viewsets.ModelViewSet):
 @permission_classes([permissions.AllowAny])
 def health(_request):
     return Response({"status": "ok"})
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def app_config(_request):
+    """
+    Returns app configuration including version requirements.
+    Can be updated without deploying new app version.
+    Backend-controlled feature flags and force update settings.
+    """
+    return Response({
+        "status": "ok",
+        "min_supported_version": "1.0.0",  # Start with current version (no forced update yet)
+        "latest_version": "1.1.0",          # New version with HomeSection feature
+        "force_update": False,              # Toggle this to force users to update
+        "update_message": {
+            "en": "A new version of GoGevgelija is available! Update now to see personalized content sections.",
+            "mk": "Нова верзија на GoGevgelija е достапна! Ажурирајте сега за персонализирани секции со содржина."
+        },
+        "features": [
+            "Dynamic home sections",
+            "Mixed content cards",
+            "Better performance"
+        ]
+    })
 
 class SendVerificationCode(APIView):
     """Send a verification code to the user's email"""
@@ -1425,3 +1449,31 @@ def global_search(request):
         'total_count': total,
         'query': query
     })
+
+
+
+# ============================================================================
+# HOME SECTION VIEWSET - Backend-driven homescreen sections
+# ============================================================================
+
+class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for HomeSection - read-only for mobile clients.
+    Returns active sections with their items for dynamic HomeScreen rendering.
+    
+    Endpoints:
+    - GET /api/home/sections/ - List all active sections with items
+    - GET /api/home/sections/{id}/ - Get single section with items
+    """
+    permission_classes = [permissions.AllowAny]
+    serializer_class = HomeSectionSerializer
+    
+    def get_queryset(self):
+        """Return only active sections with their items prefetched"""
+        return HomeSection.objects.filter(
+            is_active=True
+        ).prefetch_related(
+            "items",
+            "items__content_type"
+        ).order_by("order", "-created_at")
+

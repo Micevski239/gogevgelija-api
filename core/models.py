@@ -861,3 +861,116 @@ class CollaborationContact(models.Model):
             from django.utils import timezone
             self.review_date = timezone.now()
         super().save(*args, **kwargs)
+
+
+# ============================================================================
+# HOME SECTION MODELS - Backend-driven homescreen sections
+# ============================================================================
+
+class HomeSection(models.Model):
+    """
+    Represents a configurable section on the HomeScreen.
+    Admin can create multiple sections with different layouts and content types.
+    """
+    CARD_TYPE_CHOICES = [
+        ('small', 'Small Cards'),  # Like current event cards (60x60 thumb, horizontal)
+        ('big', 'Big Cards'),      # Like current promo cards (full image, vertical)
+    ]
+
+    label = models.CharField(
+        max_length=100,
+        help_text="Section title displayed on HomeScreen (e.g., 'Upcoming Events', 'Top Promotions')"
+    )
+    label_en = models.CharField(max_length=100, blank=True, help_text="Section title in English")
+    label_mk = models.CharField(max_length=100, blank=True, help_text="Section title in Macedonian")
+
+    card_type = models.CharField(
+        max_length=10,
+        choices=CARD_TYPE_CHOICES,
+        default='small',
+        help_text="Visual style: small (event-style) or big (promotion-style)"
+    )
+
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order on HomeScreen (lower numbers appear first)"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Show this section on the HomeScreen"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', '-created_at']
+        verbose_name = "Home Section"
+        verbose_name_plural = "Home Sections"
+        indexes = [
+            models.Index(fields=['is_active', 'order']),
+        ]
+
+    def __str__(self):
+        return f"{self.label} ({self.card_type})"
+
+    @property
+    def item_count(self):
+        """Return number of active items in this section"""
+        return self.items.filter(is_active=True).count()
+
+
+class HomeSectionItem(models.Model):
+    """
+    Represents a single item within a HomeSection.
+    Uses GenericForeignKey to reference Listing, Event, or Promotion.
+    """
+    section = models.ForeignKey(
+        HomeSection,
+        on_delete=models.CASCADE,
+        related_name='items',
+        help_text="The section this item belongs to"
+    )
+
+    # GenericForeignKey to support Listing, Event, or Promotion
+    content_type = models.ForeignKey(
+        'contenttypes.ContentType',
+        on_delete=models.CASCADE,
+        help_text="Type of content (Listing, Event, or Promotion)"
+    )
+    object_id = models.PositiveIntegerField(
+        help_text="ID of the referenced object"
+    )
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order within the section (lower numbers appear first)"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Show this item in the section"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', '-created_at']
+        verbose_name = "Home Section Item"
+        verbose_name_plural = "Home Section Items"
+        indexes = [
+            models.Index(fields=['section', 'is_active', 'order']),
+            models.Index(fields=['content_type', 'object_id']),
+        ]
+        # Ensure no duplicate items in same section
+        unique_together = [['section', 'content_type', 'object_id']]
+
+    def __str__(self):
+        return f"{self.section.label} - {self.content_type.model} #{self.object_id}"
+
+    @property
+    def item_type(self):
+        """Return the type of content as a string ('listing', 'event', 'promotion')"""
+        return self.content_type.model

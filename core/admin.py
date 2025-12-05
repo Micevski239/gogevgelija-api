@@ -3,10 +3,11 @@ from collections import defaultdict
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.forms import Textarea
 # Modeltranslation will automatically add language fields to admin
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem
 
 
 class GroupedAdminSite(admin.AdminSite):
@@ -596,3 +597,107 @@ class CollaborationContactAdmin(admin.ModelAdmin):
         updated = queryset.update(status='scheduled')
         self.message_user(request, f"{updated} collaboration requests marked as meeting scheduled.")
     mark_as_scheduled.short_description = "Mark selected requests as meeting scheduled"
+
+
+
+# ============================================================================
+# HOME SECTION ADMIN - Backend-driven homescreen configuration
+# ============================================================================
+
+class HomeSectionItemInline(admin.TabularInline):
+    """Inline admin for HomeSectionItems"""
+    model = HomeSectionItem
+    extra = 1
+    fields = ("content_type", "object_id", "order", "is_active")
+    ordering = ["order", "-created_at"]
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Limit content_type choices to Listing, Event, Promotion"""
+        if db_field.name == "content_type":
+            kwargs["queryset"] = ContentType.objects.filter(
+                model__in=["listing", "event", "promotion"]
+            )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(HomeSection)
+class HomeSectionAdmin(admin.ModelAdmin):
+    """Admin interface for HomeSection with inline items"""
+    list_display = ("label", "card_type", "item_count", "order", "is_active", "created_at")
+    list_editable = ("order", "is_active")
+    list_filter = ("card_type", "is_active", "created_at")
+    search_fields = ("label", "label_en", "label_mk")
+    ordering = ("order", "-created_at")
+    
+    fieldsets = (
+        ("Basic Information", {
+            "fields": ("label", "label_en", "label_mk", "card_type")
+        }),
+        ("Display Settings", {
+            "fields": ("order", "is_active")
+        }),
+        ("Metadata", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    readonly_fields = ("created_at", "updated_at")
+    inlines = [HomeSectionItemInline]
+    
+    def item_count(self, obj):
+        """Display number of items in this section"""
+        return obj.item_count
+    item_count.short_description = "Items"
+    
+    # Bulk actions
+    actions = ["activate_sections", "deactivate_sections"]
+    
+    def activate_sections(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} sections activated.")
+    activate_sections.short_description = "✅ Activate selected sections"
+    
+    def deactivate_sections(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f"{updated} sections deactivated.")
+    deactivate_sections.short_description = "❌ Deactivate selected sections"
+
+
+@admin.register(HomeSectionItem)
+class HomeSectionItemAdmin(admin.ModelAdmin):
+    """Admin interface for HomeSectionItem (standalone view)"""
+    list_display = ("section", "content_type", "object_id", "item_type", "order", "is_active", "created_at")
+    list_filter = ("section", "content_type", "is_active", "created_at")
+    list_editable = ("order", "is_active")
+    search_fields = ("section__label",)
+    ordering = ("section__order", "order", "-created_at")
+    
+    fieldsets = (
+        ("Section", {
+            "fields": ("section",)
+        }),
+        ("Content Reference", {
+            "fields": ("content_type", "object_id"),
+            "description": "Select the type and ID of the content to display (Listing, Event, or Promotion)"
+        }),
+        ("Display Settings", {
+            "fields": ("order", "is_active")
+        }),
+    )
+    
+    readonly_fields = ("created_at",)
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Limit content_type choices to Listing, Event, Promotion"""
+        if db_field.name == "content_type":
+            kwargs["queryset"] = ContentType.objects.filter(
+                model__in=["listing", "event", "promotion"]
+            )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    
+    def item_type(self, obj):
+        """Display the content type in a readable format"""
+        return obj.content_type.model.title()
+    item_type.short_description = "Type"
+

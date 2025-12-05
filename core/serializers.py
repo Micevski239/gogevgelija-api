@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem
 
 
 def _build_image_urls(obj, request, field_names):
@@ -1015,3 +1015,87 @@ class CollaborationContactCreateSerializer(serializers.ModelSerializer):
         # Auto-assign the current user
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+
+
+
+# ============================================================================
+# HOME SECTION SERIALIZERS - Backend-driven homescreen
+# ============================================================================
+
+class HomeSectionItemSerializer(serializers.ModelSerializer):
+    """
+    Serializer for HomeSectionItem that includes the full content object.
+    Returns the referenced Listing, Event, or Promotion with all fields.
+    """
+    # These fields will be populated with the actual content object data
+    type = serializers.SerializerMethodField()
+    data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HomeSectionItem
+        fields = ["id", "type", "data", "order"]
+
+    def get_type(self, obj):
+        """Return the content type as a string (listing, event, promotion)"""
+        return obj.content_type.model
+
+    def get_data(self, obj):
+        """Return the full serialized content object"""
+        content_object = obj.content_object
+        request = self.context.get("request")
+
+        # Check if the object exists and is active
+        if not content_object:
+            return None
+
+        # Check if object has is_active field and skip inactive items
+        if hasattr(content_object, "is_active") and not content_object.is_active:
+            return None
+
+        # Serialize based on content type
+        if obj.content_type.model == "listing":
+            return ListingSerializer(content_object, context={"request": request}).data
+        elif obj.content_type.model == "event":
+            return EventSerializer(content_object, context={"request": request}).data
+        elif obj.content_type.model == "promotion":
+            return PromotionSerializer(content_object, context={"request": request}).data
+
+        return None
+
+
+class HomeSectionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for HomeSection that includes all active items.
+    Returns section configuration and nested items with their content.
+    """
+    items = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HomeSection
+        fields = ["id", "label", "card_type", "items", "order"]
+
+    def get_label(self, obj):
+        """Return label in the current language"""
+        current_language = translation.get_language()
+
+        if current_language == "mk" and obj.label_mk:
+            return obj.label_mk
+        elif current_language == "en" and obj.label_en:
+            return obj.label_en
+
+        # Fallback to default label
+        return obj.label
+
+    def get_items(self, obj):
+        """Return only active items with valid content objects"""
+        active_items = obj.items.filter(is_active=True).select_related("content_type")
+        serializer = HomeSectionItemSerializer(
+            active_items,
+            many=True,
+            context=self.context
+        )
+
+        # Filter out items where content object is None or inactive
+        return [item for item in serializer.data if item["data"] is not None]
+
