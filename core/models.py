@@ -873,8 +873,9 @@ class HomeSection(models.Model):
     Admin can create multiple sections with different layouts and content types.
     """
     CARD_TYPE_CHOICES = [
-        ('small', 'Small Cards'),  # Like current event cards (60x60 thumb, horizontal)
-        ('big', 'Big Cards'),      # Like current promo cards (full image, vertical)
+        ('small', 'Small Cards'),      # Vertical list - event-style cards (60x60 thumb, horizontal layout)
+        ('big', 'Big Cards'),          # Horizontal scroll - promo-style cards (full image, vertical layout)
+        ('carousel', 'Carousel'),      # Auto-scrolling slideshow - full-width cards with gradient overlay
     ]
 
     label = models.CharField(
@@ -888,7 +889,7 @@ class HomeSection(models.Model):
         max_length=10,
         choices=CARD_TYPE_CHOICES,
         default='small',
-        help_text="Visual style: small (event-style) or big (promotion-style)"
+        help_text="Visual style: small (vertical list), big (horizontal scroll), or carousel (auto-scrolling slideshow)"
     )
 
     order = models.PositiveIntegerField(
