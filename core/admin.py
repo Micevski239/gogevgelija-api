@@ -248,7 +248,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Listing, site=admin_site)
 class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'category', 'featured', 'trending', 'is_active', 'created_at', 'phone_number')
+    list_display = ('id', 'title', 'category', 'featured', 'trending', 'is_active', 'created_at', 'phone_number')
     list_filter = ('category', 'featured', 'trending', 'is_active', 'created_at')
     search_fields = ('title', 'address', 'category__name')
     list_editable = ('featured', 'trending', 'is_active')
@@ -295,7 +295,7 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
 @admin.register(Event, site=admin_site)
 class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'date_time', 'location', 'category', 'featured', 'is_active', 'show_join_button', 'join_count', 'created_at')
+    list_display = ('id', 'title', 'date_time', 'location', 'category', 'featured', 'is_active', 'show_join_button', 'join_count', 'created_at')
     list_filter = ('category', 'featured', 'is_active', 'show_join_button', 'created_at')
     search_fields = ('title', 'location', 'description', 'category')
     list_editable = ('featured', 'is_active', 'show_join_button')
@@ -350,7 +350,7 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
 @admin.register(Promotion, site=admin_site)
 class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'discount_code', 'valid_until', 'featured', 'is_active', 'created_at')
+    list_display = ('id', 'title', 'discount_code', 'valid_until', 'featured', 'is_active', 'created_at')
     list_filter = ('featured', 'is_active', 'has_discount_code', 'valid_until', 'created_at')
     search_fields = ('title', 'discount_code', 'description')
     list_editable = ('featured', 'is_active')
@@ -393,7 +393,7 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
 @admin.register(Blog, site=admin_site)
 class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'author', 'category', 'read_time_minutes', 'featured', 'published', 'is_active', 'created_at')
+    list_display = ('id', 'title', 'author', 'category', 'read_time_minutes', 'featured', 'published', 'is_active', 'created_at')
     list_filter = ('category', 'featured', 'published', 'is_active', 'created_at')
     search_fields = ('title', 'subtitle', 'content', 'author', 'category')
     list_editable = ('featured', 'published', 'is_active')
