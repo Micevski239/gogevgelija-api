@@ -242,12 +242,27 @@ if not DEBUG:
     LOGGING["loggers"]["django"]["handlers"].append("mail_admins")
 
 # -------------------- Cache --------------------
+REDIS_URL = os.getenv(
+    "REDIS_URL",
+    "redis://default:SDwfJ1j3fMYOR6I76J0tn7yxQXSjpowX@redis-11843.c250.eu-central-1-1.ec2.cloud.redislabs.com:11843"
+)
+
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
+            "SOCKET_TIMEOUT": 5,  # seconds
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 50,
+                "retry_on_timeout": True,
+            },
+            "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",  # Compress cached data
+        },
         "KEY_PREFIX": "gogevgelija",
-        "TIMEOUT": 300,
+        "TIMEOUT": 300,  # 5 minutes default
     }
 }
 
