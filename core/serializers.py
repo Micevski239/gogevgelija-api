@@ -236,7 +236,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "id", "title", "description", "address", "open_time",
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "phone_number",
-            "facebook_url", "instagram_url", "website_url", "google_maps_url",
+            "facebook_url", "instagram_url", "website_url", "google_maps_url", "latitude", "longitude",
             "featured", "trending", "is_active", "promotions", "events", "created_at", "updated_at", "can_edit"
         ]
     
