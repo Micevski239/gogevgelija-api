@@ -3,6 +3,7 @@ Management command to extract latitude/longitude from Google Maps URLs.
 Usage: python manage.py extract_coordinates
 """
 import re
+import requests
 from django.core.management.base import BaseCommand
 from core.models import Listing
 
@@ -17,6 +18,21 @@ class Command(BaseCommand):
             help='Show what would be updated without actually updating',
         )
 
+    def expand_short_url(self, url):
+        """
+        Expand shortened URLs (goo.gl, maps.app.goo.gl) to full URLs.
+        """
+        if 'goo.gl' in url or 'maps.app.goo.gl' in url:
+            try:
+                response = requests.head(url, allow_redirects=True, timeout=10)
+                return response.url
+            except Exception as e:
+                self.stdout.write(
+                    self.style.WARNING(f'Failed to expand URL {url}: {e}')
+                )
+                return url
+        return url
+
     def extract_coordinates(self, url):
         """
         Extract lat/long from Google Maps URL.
@@ -24,28 +40,32 @@ class Command(BaseCommand):
         - https://maps.google.com/?q=41.1234,22.5678
         - https://www.google.com/maps/@41.1234,22.5678,15z
         - https://www.google.com/maps/place/.../@41.1234,22.5678,...
-        - https://goo.gl/maps/... (expanded URL needed)
+        - https://goo.gl/maps/... (will be expanded first)
+        - https://maps.app.goo.gl/... (will be expanded first)
         """
         if not url:
             return None, None
 
+        # Expand shortened URLs first
+        expanded_url = self.expand_short_url(url)
+
         # Pattern 1: ?q=lat,lng
-        match = re.search(r'[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)', url)
+        match = re.search(r'[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)', expanded_url)
         if match:
             return float(match.group(1)), float(match.group(2))
 
-        # Pattern 2: @lat,lng
-        match = re.search(r'@(-?\d+\.?\d*),(-?\d+\.?\d*)', url)
+        # Pattern 2: @lat,lng (most common for expanded goo.gl links)
+        match = re.search(r'@(-?\d+\.\d+),(-?\d+\.\d+)', expanded_url)
         if match:
             return float(match.group(1)), float(match.group(2))
 
-        # Pattern 3: /place/.../@lat,lng or /@lat,lng
-        match = re.search(r'/@(-?\d+\.?\d*),(-?\d+\.?\d*),', url)
+        # Pattern 3: /place/.../@lat,lng or /@lat,lng with comma separator
+        match = re.search(r'/@(-?\d+\.\d+),(-?\d+\.\d+),', expanded_url)
         if match:
             return float(match.group(1)), float(match.group(2))
 
         # Pattern 4: ll=lat,lng
-        match = re.search(r'll=(-?\d+\.?\d*),(-?\d+\.?\d*)', url)
+        match = re.search(r'll=(-?\d+\.?\d*),(-?\d+\.?\d*)', expanded_url)
         if match:
             return float(match.group(1)), float(match.group(2))
 
