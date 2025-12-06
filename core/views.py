@@ -149,6 +149,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)
 
+    @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes (categories rarely change)
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get featured categories"""
@@ -205,7 +206,7 @@ class ListingViewSet(viewsets.ModelViewSet):
         context['language'] = get_preferred_language(self.request)
         return context
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    @method_decorator(cache_page(60 * 10))  # Cache for 10 minutes
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get only featured listings (no pagination for featured items)"""
@@ -1460,14 +1461,14 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for HomeSection - read-only for mobile clients.
     Returns active sections with their items for dynamic HomeScreen rendering.
-    
+
     Endpoints:
     - GET /api/home/sections/ - List all active sections with items
     - GET /api/home/sections/{id}/ - Get single section with items
     """
     permission_classes = [permissions.AllowAny]
     serializer_class = HomeSectionSerializer
-    
+
     def get_queryset(self):
         """Return only active sections with their items prefetched"""
         return HomeSection.objects.filter(
@@ -1476,4 +1477,9 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
             "items",
             "items__content_type"
         ).order_by("order", "-created_at")
+
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes (most requested endpoint)
+    def list(self, request, *args, **kwargs):
+        """Get all active home sections with caching"""
+        return super().list(request, *args, **kwargs)
 
