@@ -564,6 +564,11 @@ class VerifyCode(APIView):
         # Check if user exists
         try:
             user = User.objects.get(email=email)
+        except User.MultipleObjectsReturned:
+            # Handle duplicate users - get the first one (oldest account)
+            user = User.objects.filter(email=email).order_by('date_joined').first()
+            if __debug__:
+                print(f"WARNING: Multiple users found for email {email}. Using oldest account (ID: {user.id})")
         except User.DoesNotExist:
             # Register new user
             if not name:
