@@ -397,6 +397,13 @@ class Listing(models.Model):
     featured = models.BooleanField(default=False, help_text="Show in featured section")
     trending = models.BooleanField(default=False, help_text="Mark as trending - will be displayed in trending tab on search screen")
     is_active = models.BooleanField(default=True, help_text="Show this listing in the app. Uncheck to hide from users.")
+    random_order = models.DecimalField(
+        max_digits=10,
+        decimal_places=9,
+        default=0.5,
+        db_index=True,
+        help_text="Random value for shuffling order (auto-updated by cron job for fair rotation)"
+    )
     promotions = models.ManyToManyField('Promotion', blank=True, related_name='listings', help_text="Select promotions associated with this listing (optional)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

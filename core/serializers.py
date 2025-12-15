@@ -1042,7 +1042,6 @@ class HomeSectionItemSerializer(serializers.ModelSerializer):
     def get_data(self, obj):
         """Return the full serialized content object"""
         content_object = obj.content_object
-        request = self.context.get("request")
 
         # Check if the object exists and is active
         if not content_object:
@@ -1052,13 +1051,13 @@ class HomeSectionItemSerializer(serializers.ModelSerializer):
         if hasattr(content_object, "is_active") and not content_object.is_active:
             return None
 
-        # Serialize based on content type
+        # Serialize based on content type - pass full context to preserve language
         if obj.content_type.model == "listing":
-            return ListingSerializer(content_object, context={"request": request}).data
+            return ListingSerializer(content_object, context=self.context).data
         elif obj.content_type.model == "event":
-            return EventSerializer(content_object, context={"request": request}).data
+            return EventSerializer(content_object, context=self.context).data
         elif obj.content_type.model == "promotion":
-            return PromotionSerializer(content_object, context={"request": request}).data
+            return PromotionSerializer(content_object, context=self.context).data
 
         return None
 

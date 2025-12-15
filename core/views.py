@@ -189,9 +189,11 @@ class ListingViewSet(viewsets.ModelViewSet):
         """
         Filter queryset based on query parameters.
         PERFORMANCE FIX: Added select_related and prefetch_related to avoid N+1 queries.
+        Listings are ordered by random_order field for fair rotation (shuffled by cron job).
         """
         queryset = Listing.objects.filter(is_active=True) \
             .select_related('category') \
+            .order_by('random_order') \
             .prefetch_related('promotions', 'events')
 
         # Filter by category
@@ -199,7 +201,8 @@ class ListingViewSet(viewsets.ModelViewSet):
         if category:
             queryset = queryset.filter(category_id=category)
 
-        return queryset.order_by('-featured', '-created_at')
+        # Order: featured first, then random order for fair rotation
+        return queryset.order_by('-featured', 'random_order')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -1482,6 +1485,11 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
             "items",
             "items__content_type"
         ).order_by("order", "-created_at")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['language'] = get_preferred_language(self.request)
+        return context
 
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes (most requested endpoint)
     def list(self, request, *args, **kwargs):
