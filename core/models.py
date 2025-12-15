@@ -394,20 +394,6 @@ class Listing(models.Model):
     instagram_url = models.URLField(max_length=500, blank=True, null=True, help_text="Instagram profile URL")
     website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official website URL")
     google_maps_url = models.URLField(max_length=500, blank=True, null=True, help_text="Google Maps URL for directions (optional - if not provided, will use address field)")
-    latitude = models.DecimalField(
-        max_digits=9,
-        decimal_places=6,
-        null=True,
-        blank=True,
-        help_text="Latitude coordinate (auto-extracted from Google Maps URL or manually entered)"
-    )
-    longitude = models.DecimalField(
-        max_digits=9,
-        decimal_places=6,
-        null=True,
-        blank=True,
-        help_text="Longitude coordinate (auto-extracted from Google Maps URL or manually entered)"
-    )
     featured = models.BooleanField(default=False, help_text="Show in featured section")
     trending = models.BooleanField(default=False, help_text="Mark as trending - will be displayed in trending tab on search screen")
     is_active = models.BooleanField(default=True, help_text="Show this listing in the app. Uncheck to hide from users.")
