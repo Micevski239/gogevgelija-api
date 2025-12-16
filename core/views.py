@@ -16,8 +16,8 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem
-from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton
+from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer
 from .utils import get_preferred_language
 from .pagination import StandardResultsSetPagination
 
@@ -1495,4 +1495,77 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
     def list(self, request, *args, **kwargs):
         """Get all active home sections with caching"""
         return super().list(request, *args, **kwargs)
+
+
+# ============================================================================
+# TOURISM SCREEN VIEWSET - Dedicated tourism/visitor screen
+# ============================================================================
+
+class TourismScreenView(APIView):
+    """
+    Single endpoint for the Tourism screen.
+    Returns all data needed for the tourism screen:
+    - Hero carousel (configurable items from Listings/Events)
+    - Category buttons (4 small + 4 big buttons to categories)
+    - Dynamic sections (using HomeSection model for flexible content)
+
+    Endpoint:
+    - GET /api/tourism/ - Get complete tourism screen data
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    def get(self, request):
+        """Return complete tourism screen data"""
+        language = get_preferred_language(request)
+
+        # Get carousel items
+        carousel_items = TourismCarousel.objects.filter(
+            is_active=True
+        ).select_related('content_type').order_by('order')
+
+        # Get category buttons
+        category_buttons = TourismCategoryButton.objects.filter(
+            is_active=True
+        ).select_related('category').order_by('button_size', 'order')
+
+        # Get dynamic sections (reuse HomeSection for tourism screen)
+        # You can tag sections with specific labels or create a tourism_screen boolean field
+        # For now, we'll return all active sections (you can filter by specific criteria later)
+        sections = HomeSection.objects.filter(
+            is_active=True
+        ).prefetch_related(
+            "items",
+            "items__content_type"
+        ).order_by("order", "-created_at")
+
+        # Build context for serializers
+        context = {
+            'request': request,
+            'language': language
+        }
+
+        # Serialize data
+        data = {
+            'carousel': TourismCarouselSerializer(
+                carousel_items,
+                many=True,
+                context=context
+            ).data,
+            'category_buttons': TourismCategoryButtonSerializer(
+                category_buttons,
+                many=True,
+                context=context
+            ).data,
+            'sections': HomeSectionSerializer(
+                sections,
+                many=True,
+                context=context
+            ).data
+        }
+
+        # Filter out carousel items with no content
+        data['carousel'] = [item for item in data['carousel'] if item['data'] is not None]
+
+        return Response(data)
 
