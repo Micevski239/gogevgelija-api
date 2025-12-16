@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.forms import Textarea
 # Modeltranslation will automatically add language fields to admin
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton
 
 
 class GroupedAdminSite(admin.AdminSite):
@@ -16,7 +16,7 @@ class GroupedAdminSite(admin.AdminSite):
     index_title = "Management"
 
     model_groups = {
-        "MAIN": [Listing, Blog, Event, Promotion, Category, HomeSection, HomeSectionItem],
+        "MAIN": [Listing, Blog, Event, Promotion, Category, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton],
         "USERS": [User, Group, GuestUser, UserPermission, UserProfile, VerificationCode],
         "INTERACTIONS": [Wishlist, HelpSupport, CollaborationContact, EventJoin],
     }
@@ -700,4 +700,105 @@ class HomeSectionItemAdmin(admin.ModelAdmin):
         """Display the content type in a readable format"""
         return obj.content_type.model.title()
     item_type.short_description = "Type"
+
+
+# ============================================================================
+# TOURISM SCREEN ADMIN
+# ============================================================================
+
+@admin.register(TourismCarousel, site=admin_site)
+class TourismCarouselAdmin(MultilingualAdminMixin, admin.ModelAdmin):
+    """Admin interface for Tourism Carousel items"""
+    list_display = ("title", "content_type", "object_id", "item_type", "order", "is_active", "created_at")
+    list_editable = ("order", "is_active")
+    list_filter = ("content_type", "is_active", "created_at")
+    search_fields = ("title", "title_en", "title_mk")
+    ordering = ("order", "-created_at")
+
+    fieldsets = (
+        ("Carousel Item", {
+            "fields": ("title", "title_en", "title_mk")
+        }),
+        ("Content Reference", {
+            "fields": ("content_type", "object_id"),
+            "description": "Select the type and ID of the content to display (Listing or Event)"
+        }),
+        ("Display Settings", {
+            "fields": ("order", "is_active")
+        }),
+        ("Metadata", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
+        }),
+    )
+
+    readonly_fields = ("created_at", "updated_at")
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Limit content_type choices to Listing or Event"""
+        if db_field.name == "content_type":
+            kwargs["queryset"] = ContentType.objects.filter(
+                model__in=["listing", "event"]
+            )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def item_type(self, obj):
+        """Display the content type in a readable format"""
+        return obj.content_type.model.title()
+    item_type.short_description = "Type"
+
+    # Bulk actions
+    actions = ["activate_items", "deactivate_items"] + MultilingualAdminMixin.actions
+
+    def activate_items(self, request, queryset):
+        """Activate selected carousel items"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} carousel items activated.")
+    activate_items.short_description = "✅ Activate selected items"
+
+    def deactivate_items(self, request, queryset):
+        """Deactivate selected carousel items"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f"{updated} carousel items deactivated.")
+    deactivate_items.short_description = "❌ Deactivate selected items"
+
+
+@admin.register(TourismCategoryButton, site=admin_site)
+class TourismCategoryButtonAdmin(MultilingualAdminMixin, admin.ModelAdmin):
+    """Admin interface for Tourism Category Buttons"""
+    list_display = ("label", "category", "button_size", "icon", "order", "is_active", "created_at")
+    list_editable = ("order", "is_active")
+    list_filter = ("button_size", "is_active", "category")
+    search_fields = ("label", "label_en", "label_mk", "category__name")
+    ordering = ("button_size", "order", "-created_at")
+
+    fieldsets = (
+        ("Button Configuration", {
+            "fields": ("label", "label_en", "label_mk", "category", "icon", "button_size")
+        }),
+        ("Display Settings", {
+            "fields": ("order", "is_active")
+        }),
+        ("Metadata", {
+            "fields": ("created_at",),
+            "classes": ("collapse",)
+        }),
+    )
+
+    readonly_fields = ("created_at",)
+
+    # Bulk actions
+    actions = ["activate_buttons", "deactivate_buttons"] + MultilingualAdminMixin.actions
+
+    def activate_buttons(self, request, queryset):
+        """Activate selected category buttons"""
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} category buttons activated.")
+    activate_buttons.short_description = "✅ Activate selected buttons"
+
+    def deactivate_buttons(self, request, queryset):
+        """Deactivate selected category buttons"""
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f"{updated} category buttons deactivated.")
+    deactivate_buttons.short_description = "❌ Deactivate selected buttons"
 

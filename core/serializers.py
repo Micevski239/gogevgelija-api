@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton
 
 
 def _build_image_urls(obj, request, field_names):
@@ -1097,4 +1097,93 @@ class HomeSectionSerializer(serializers.ModelSerializer):
 
         # Filter out items where content object is None or inactive
         return [item for item in serializer.data if item["data"] is not None]
+
+
+# ============================================================================
+# TOURISM SCREEN SERIALIZERS
+# ============================================================================
+
+class TourismCarouselSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Tourism carousel items.
+    Returns the carousel item with full content object (Listing or Event).
+    """
+    type = serializers.SerializerMethodField()
+    data = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TourismCarousel
+        fields = ["id", "title", "type", "data", "order"]
+
+    def get_title(self, obj):
+        """Return title in the current language"""
+        current_language = translation.get_language()
+
+        if current_language == "mk" and obj.title_mk:
+            return obj.title_mk
+        elif current_language == "en" and obj.title_en:
+            return obj.title_en
+
+        # Fallback to default title
+        return obj.title
+
+    def get_type(self, obj):
+        """Return the content type as a string (listing, event)"""
+        return obj.content_type.model
+
+    def get_data(self, obj):
+        """Return the full serialized content object"""
+        content_object = obj.content_object
+
+        # Check if the object exists and is active
+        if not content_object:
+            return None
+
+        # Check if object has is_active field and skip inactive items
+        if hasattr(content_object, "is_active") and not content_object.is_active:
+            return None
+
+        # Serialize based on content type - pass full context to preserve language
+        if obj.content_type.model == "listing":
+            return ListingSerializer(content_object, context=self.context).data
+        elif obj.content_type.model == "event":
+            return EventSerializer(content_object, context=self.context).data
+
+        return None
+
+
+class TourismCategoryButtonSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Tourism category buttons.
+    Returns button configuration with category details.
+    """
+    label = serializers.SerializerMethodField()
+    category = CategorySerializer(read_only=True)
+
+    class Meta:
+        model = TourismCategoryButton
+        fields = ["id", "label", "category", "icon", "button_size", "order"]
+
+    def get_label(self, obj):
+        """Return label in the current language"""
+        current_language = translation.get_language()
+
+        if current_language == "mk" and obj.label_mk:
+            return obj.label_mk
+        elif current_language == "en" and obj.label_en:
+            return obj.label_en
+
+        # Fallback to default label
+        return obj.label
+
+
+class TourismScreenSerializer(serializers.Serializer):
+    """
+    Combined serializer for the entire Tourism screen.
+    Returns carousel, category buttons, and dynamic home sections.
+    """
+    carousel = TourismCarouselSerializer(many=True, read_only=True)
+    category_buttons = TourismCategoryButtonSerializer(many=True, read_only=True)
+    sections = HomeSectionSerializer(many=True, read_only=True)
 

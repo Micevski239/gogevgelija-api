@@ -982,3 +982,121 @@ class HomeSectionItem(models.Model):
     def item_type(self):
         """Return the type of content as a string ('listing', 'event', 'promotion')"""
         return self.content_type.model
+
+
+# ============================================================================
+# TOURISM SCREEN MODELS
+# ============================================================================
+
+class TourismCarousel(models.Model):
+    """
+    Manages the hero carousel on the Tourism screen.
+    Admin can add/remove/reorder carousel items from listings and events.
+    """
+    title = models.CharField(
+        max_length=200,
+        help_text="Carousel item title"
+    )
+    title_en = models.CharField(max_length=200, blank=True, help_text="Title in English")
+    title_mk = models.CharField(max_length=200, blank=True, help_text="Title in Macedonian")
+
+    # GenericForeignKey to support Listing or Event
+    content_type = models.ForeignKey(
+        'contenttypes.ContentType',
+        on_delete=models.CASCADE,
+        limit_choices_to={'model__in': ('listing', 'event')},
+        help_text="Type of content (Listing or Event)"
+    )
+    object_id = models.PositiveIntegerField(
+        help_text="ID of the referenced object"
+    )
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order in carousel (lower numbers appear first)"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Show this item in the carousel"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', '-created_at']
+        verbose_name = "Tourism Carousel Item"
+        verbose_name_plural = "Tourism Carousel Items"
+        indexes = [
+            models.Index(fields=['is_active', 'order']),
+            models.Index(fields=['content_type', 'object_id']),
+        ]
+        # Ensure no duplicate items in carousel
+        unique_together = [['content_type', 'object_id']]
+
+    def __str__(self):
+        return f"{self.title} - {self.content_type.model} #{self.object_id}"
+
+    @property
+    def item_type(self):
+        """Return the type of content as a string ('listing', 'event')"""
+        return self.content_type.model
+
+
+class TourismCategoryButton(models.Model):
+    """
+    Configurable category buttons on Tourism screen.
+    Links to specific categories with custom labels and icons.
+    """
+    BUTTON_SIZE_CHOICES = [
+        ('small', 'Small Button'),  # 4 small buttons row
+        ('big', 'Big Button'),      # 2 big buttons (restaurant/coffee, hotel/apartment)
+    ]
+
+    label = models.CharField(
+        max_length=100,
+        help_text="Button label (e.g., 'Restaurants', 'Hotels')"
+    )
+    label_en = models.CharField(max_length=100, blank=True, help_text="Label in English")
+    label_mk = models.CharField(max_length=100, blank=True, help_text="Label in Macedonian")
+
+    category = models.ForeignKey(
+        'Category',
+        on_delete=models.CASCADE,
+        help_text="Category to link to"
+    )
+
+    icon = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Icon name (e.g., 'restaurant', 'hotel', 'coffee') - for frontend to handle"
+    )
+
+    button_size = models.CharField(
+        max_length=10,
+        choices=BUTTON_SIZE_CHOICES,
+        default='small',
+        help_text="Button size: small (4 in row) or big (2 in row)"
+    )
+
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order (lower numbers appear first)"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Show this button on tourism screen"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['button_size', 'order']
+        verbose_name = "Tourism Category Button"
+        verbose_name_plural = "Tourism Category Buttons"
+
+    def __str__(self):
+        return f"{self.label} ({self.button_size}) -> {self.category.name}"
