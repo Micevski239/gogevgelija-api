@@ -7,6 +7,7 @@ from core.views import (
     CategoryViewSet,
     ListingViewSet,
     EventViewSet,
+    PromotionViewSet,
     BlogViewSet,
     WishlistViewSet,
     UserPermissionViewSet,
@@ -33,6 +34,7 @@ router = DefaultRouter()
 router.register(r"categories", CategoryViewSet, basename="category")
 router.register(r"listings", ListingViewSet, basename="listing")
 router.register(r"events", EventViewSet, basename="event")
+router.register(r"promotions", PromotionViewSet, basename="promotion")
 router.register(r"blogs", BlogViewSet, basename="blog")
 router.register(r"wishlist", WishlistViewSet, basename="wishlist")
 router.register(r"home/sections", HomeSectionViewSet, basename="home-section")
