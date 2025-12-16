@@ -2,6 +2,7 @@
   "tabs": {
     "home": "Home",
     "search": "Explore",
+    "tourism": "Tourism",
     "events": "Events",
     "promotions": "Promotions",
     "blog": "Blog",
@@ -9,6 +10,7 @@
   },
   "headers": {
     "home": "GoGevgelija",
+    "tourism": "Tourism",
     "events": "Events",
     "promotions": "Promotions",
     "blog": "Blog",
@@ -21,6 +23,14 @@
   "search": {
     "label": "Explore",
     "hint": "Navigate to explore screen"
+  },
+  "tourism": {
+    "label": "Tourism",
+    "hint": "Navigate to tourism screen"
+  },
+  "events": {
+    "label": "Events",
+    "hint": "Navigate to events screen"
   },
   "promotions": {
     "label": "Promotions",
