@@ -77,6 +77,11 @@
       "tasteFlavors": "Taste the flavors of our community"
     }
   },
+  "tourism": {
+    "title": "Explore Gevgelija",
+    "loading": "Loading tourism data...",
+    "pullToRefresh": "Pull to refresh"
+  },
   "eventDetail": {
     "title": "Event Details",
     "peopleJoined": "people joined",
