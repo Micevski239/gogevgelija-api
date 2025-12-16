@@ -1529,6 +1529,13 @@ class TourismScreenView(APIView):
             is_active=True
         ).select_related('category').order_by('button_size', 'order')
 
+        # Debug logging
+        if __debug__:
+            print(f"🔍 Tourism API Debug:")
+            print(f"  Total carousel items: {carousel_items.count()}")
+            print(f"  Total category buttons: {category_buttons.count()}")
+            print(f"  Category buttons: {list(category_buttons.values('id', 'label', 'button_size', 'is_active'))}")
+
         # Get dynamic sections (reuse HomeSection for tourism screen)
         # You can tag sections with specific labels or create a tourism_screen boolean field
         # For now, we'll return all active sections (you can filter by specific criteria later)
