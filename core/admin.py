@@ -774,7 +774,7 @@ class TourismCategoryButtonAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
     fieldsets = (
         ("Button Configuration", {
-            "fields": ("label", "label_en", "label_mk", "category", "icon", "button_size")
+            "fields": ("label", "label_en", "label_mk", "category", "icon", "background_image", "button_size")
         }),
         ("Display Settings", {
             "fields": ("order", "is_active")
