@@ -1160,10 +1160,11 @@ class TourismCategoryButtonSerializer(serializers.ModelSerializer):
     """
     label = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
+    background_image = serializers.SerializerMethodField()
 
     class Meta:
         model = TourismCategoryButton
-        fields = ["id", "label", "category", "icon", "button_size", "order"]
+        fields = ["id", "label", "category", "icon", "background_image", "button_size", "order"]
 
     def get_label(self, obj):
         """Return label in the current language"""
@@ -1176,6 +1177,18 @@ class TourismCategoryButtonSerializer(serializers.ModelSerializer):
 
         # Fallback to default label
         return obj.label
+
+    def get_background_image(self, obj):
+        """Return the absolute URL for the background image."""
+        if not obj.background_image:
+            return None
+        request = self.context.get('request')
+        try:
+            url = obj.background_image.url
+            return request.build_absolute_uri(url) if request else url
+        except ValueError:
+            # File exists in DB but not in storage
+            return None
 
 
 class TourismScreenSerializer(serializers.Serializer):

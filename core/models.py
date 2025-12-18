@@ -92,6 +92,11 @@ def category_image_upload_to(instance, filename):
     return _image_upload_path("categories", filename)
 
 
+def tourism_button_bg_upload_to(instance, filename):
+    """Generate a unique path for tourism category button background images."""
+    return _image_upload_path("tourism_buttons", filename)
+
+
 class Category(models.Model):
     APPLIES_TO_CHOICES = [
         ('listing', 'Listing'),
@@ -1072,6 +1077,13 @@ class TourismCategoryButton(models.Model):
         max_length=50,
         blank=True,
         help_text="Icon name (e.g., 'restaurant', 'hotel', 'coffee') - for frontend to handle"
+    )
+
+    background_image = models.ImageField(
+        upload_to=tourism_button_bg_upload_to,
+        blank=True,
+        null=True,
+        help_text="Optional background image for the button (displays instead of red gradient when set)"
     )
 
     button_size = models.CharField(
