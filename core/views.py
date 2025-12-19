@@ -649,8 +649,7 @@ class Register(APIView):
                 "username": user.username,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
-                "email": user.email,
-                "is_tourist": user.profile.is_tourist if hasattr(user, 'profile') else False
+                "email": user.email
             },
             "access": str(refresh.access_token),
             "refresh": str(refresh),
@@ -658,7 +657,7 @@ class Register(APIView):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Custom JWT serializer that includes user profile data including is_tourist"""
+    """Custom JWT serializer that includes user profile data"""
 
     def validate(self, attrs):
         data = super().validate(attrs)
@@ -668,15 +667,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['user'] = {
             'id': user.id,
             'username': user.username,
-            'email': user.email,
-            'is_tourist': user.profile.is_tourist if hasattr(user, 'profile') else False
+            'email': user.email
         }
 
         return data
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-    """Custom JWT login view that includes is_tourist in response"""
+    """Custom JWT login view that includes user profile data in response"""
     serializer_class = CustomTokenObtainPairSerializer
 
 
