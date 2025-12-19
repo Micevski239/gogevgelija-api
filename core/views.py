@@ -15,6 +15,8 @@ from django.contrib.auth import authenticate
 from django.conf import settings
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton
 from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer
@@ -647,11 +649,36 @@ class Register(APIView):
                 "username": user.username,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
-                "email": user.email
+                "email": user.email,
+                "is_tourist": user.profile.is_tourist if hasattr(user, 'profile') else False
             },
             "access": str(refresh.access_token),
             "refresh": str(refresh),
         }, status = status.HTTP_201_CREATED)
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Custom JWT serializer that includes user profile data including is_tourist"""
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        # Add user profile data to the response
+        user = self.user
+        data['user'] = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_tourist': user.profile.is_tourist if hasattr(user, 'profile') else False
+        }
+
+        return data
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Custom JWT login view that includes is_tourist in response"""
+    serializer_class = CustomTokenObtainPairSerializer
+
 
 class GuestLoginView(APIView):
     """View for creating guest user sessions"""

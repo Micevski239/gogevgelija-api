@@ -27,8 +27,9 @@ from core.views import (
     SendVerificationCode,
     VerifyCode,
     global_search,
+    CustomTokenObtainPairView,
 )
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
 router.register(r"categories", CategoryViewSet, basename="category")
@@ -54,7 +55,7 @@ urlpatterns = [
     path("api/auth/profile/", Me.as_view()),
     path("api/auth/language/", LanguageView.as_view()),
     path("api/i18n/<str:language_code>/<str:namespace>/", TranslationResourceView.as_view(), name="i18n_resource"),
-    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/listings/<int:listing_id>/edit/", EditListingView.as_view(), name="edit_listing"),
     path("api/admin/users/", AdminUsersView.as_view(), name="admin_users"),

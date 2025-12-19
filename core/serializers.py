@@ -726,18 +726,21 @@ class GuestUserSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ["language_preference", "avatar"]
+        fields = ["language_preference", "avatar", "is_tourist"]
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8, required=False, allow_blank=True)
+    is_tourist = serializers.BooleanField(write_only=True, required=False, default=False)
     profile = UserProfileSerializer(read_only=True)
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "password", "profile"]
+        fields = ["id", "username", "email", "password", "is_tourist", "profile"]
 
     def create(self, validated_data):
         password = validated_data.get("password")
+        is_tourist = validated_data.pop("is_tourist", False)
+
         user = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data.get("email",""),
@@ -752,8 +755,8 @@ class UserSerializer(serializers.ModelSerializer):
 
         user.save()
 
-        # Create user profile with default language
-        UserProfile.objects.create(user=user)
+        # Create user profile with is_tourist flag
+        UserProfile.objects.create(user=user, is_tourist=is_tourist)
         return user
 
 class WishlistSerializer(serializers.ModelSerializer):
