@@ -1489,6 +1489,7 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
+        context['screen_type'] = 'home'
         return context
 
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes (most requested endpoint)
@@ -1549,7 +1550,8 @@ class TourismScreenView(APIView):
         # Build context for serializers
         context = {
             'request': request,
-            'language': language
+            'language': language,
+            'screen_type': 'tourism'
         }
 
         # Serialize data
