@@ -939,6 +939,12 @@ class HomeSectionItem(models.Model):
     Represents a single item within a HomeSection.
     Uses GenericForeignKey to reference Listing, Event, or Promotion.
     """
+    DISPLAY_ON_CHOICES = [
+        ('both', 'Both Home & Tourism'),
+        ('home', 'Home Screen Only'),
+        ('tourism', 'Tourism Screen Only'),
+    ]
+
     section = models.ForeignKey(
         HomeSection,
         on_delete=models.CASCADE,
@@ -960,6 +966,13 @@ class HomeSectionItem(models.Model):
     order = models.PositiveIntegerField(
         default=0,
         help_text="Display order within the section (lower numbers appear first)"
+    )
+
+    display_on = models.CharField(
+        max_length=10,
+        choices=DISPLAY_ON_CHOICES,
+        default='both',
+        help_text="Where should this item be displayed"
     )
 
     is_active = models.BooleanField(

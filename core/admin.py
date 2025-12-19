@@ -608,9 +608,9 @@ class HomeSectionItemInline(admin.TabularInline):
     """Inline admin for HomeSectionItems"""
     model = HomeSectionItem
     extra = 1
-    fields = ("content_type", "object_id", "order", "is_active")
+    fields = ("content_type", "object_id", "display_on", "order", "is_active")
     ordering = ["order", "-created_at"]
-    
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         """Limit content_type choices to Listing, Event, Promotion"""
         if db_field.name == "content_type":
@@ -667,12 +667,12 @@ class HomeSectionAdmin(admin.ModelAdmin):
 @admin.register(HomeSectionItem, site=admin_site)
 class HomeSectionItemAdmin(admin.ModelAdmin):
     """Admin interface for HomeSectionItem (standalone view)"""
-    list_display = ("section", "content_type", "object_id", "item_type", "order", "is_active", "created_at")
-    list_filter = ("section", "content_type", "is_active", "created_at")
+    list_display = ("section", "content_type", "object_id", "item_type", "display_on", "order", "is_active", "created_at")
+    list_filter = ("section", "content_type", "display_on", "is_active", "created_at")
     list_editable = ("order", "is_active")
     search_fields = ("section__label",)
     ordering = ("section__order", "order", "-created_at")
-    
+
     fieldsets = (
         ("Section", {
             "fields": ("section",)
@@ -682,7 +682,7 @@ class HomeSectionItemAdmin(admin.ModelAdmin):
             "description": "Select the type and ID of the content to display (Listing, Event, or Promotion)"
         }),
         ("Display Settings", {
-            "fields": ("order", "is_active")
+            "fields": ("display_on", "order", "is_active")
         }),
     )
     
