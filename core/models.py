@@ -73,6 +73,10 @@ class UserProfile(models.Model):
         default='default',
         help_text="Selected profile avatar"
     )
+    is_tourist = models.BooleanField(
+        default=False,
+        help_text="If true, user will default to Tourism screen instead of Home screen"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
