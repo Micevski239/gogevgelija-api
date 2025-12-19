@@ -2,7 +2,6 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from django.db import models
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton
 
 
@@ -1088,17 +1087,8 @@ class HomeSectionSerializer(serializers.ModelSerializer):
         return obj.label
 
     def get_items(self, obj):
-        """Return only active items with valid content objects, filtered by screen type"""
-        # Get the screen type from context (default to 'home' for backwards compatibility)
-        screen_type = self.context.get('screen_type', 'home')
-
-        # Filter items based on display_on field
-        active_items = obj.items.filter(
-            is_active=True
-        ).filter(
-            models.Q(display_on='both') | models.Q(display_on=screen_type)
-        ).select_related("content_type")
-
+        """Return only active items with valid content objects"""
+        active_items = obj.items.filter(is_active=True).select_related("content_type")
         serializer = HomeSectionItemSerializer(
             active_items,
             many=True,

@@ -1478,9 +1478,12 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = HomeSectionSerializer
 
     def get_queryset(self):
-        """Return only active sections with their items prefetched"""
+        """Return only active sections for home screen with their items prefetched"""
+        from django.db.models import Q
         return HomeSection.objects.filter(
             is_active=True
+        ).filter(
+            Q(display_on='both') | Q(display_on='home')
         ).prefetch_related(
             "items",
             "items__content_type"
@@ -1489,7 +1492,6 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
-        context['screen_type'] = 'home'
         return context
 
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes (most requested endpoint)
@@ -1537,11 +1539,12 @@ class TourismScreenView(APIView):
             print(f"  Total category buttons: {category_buttons.count()}")
             print(f"  Category buttons: {list(category_buttons.values('id', 'label', 'button_size', 'is_active'))}")
 
-        # Get dynamic sections (reuse HomeSection for tourism screen)
-        # You can tag sections with specific labels or create a tourism_screen boolean field
-        # For now, we'll return all active sections (you can filter by specific criteria later)
+        # Get dynamic sections (filtered by display_on field for tourism screen)
+        from django.db.models import Q
         sections = HomeSection.objects.filter(
             is_active=True
+        ).filter(
+            Q(display_on='both') | Q(display_on='tourism')
         ).prefetch_related(
             "items",
             "items__content_type"
@@ -1550,8 +1553,7 @@ class TourismScreenView(APIView):
         # Build context for serializers
         context = {
             'request': request,
-            'language': language,
-            'screen_type': 'tourism'
+            'language': language
         }
 
         # Serialize data

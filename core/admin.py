@@ -608,7 +608,7 @@ class HomeSectionItemInline(admin.TabularInline):
     """Inline admin for HomeSectionItems"""
     model = HomeSectionItem
     extra = 1
-    fields = ("content_type", "object_id", "display_on", "order", "is_active")
+    fields = ("content_type", "object_id", "order", "is_active")
     ordering = ["order", "-created_at"]
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -623,18 +623,18 @@ class HomeSectionItemInline(admin.TabularInline):
 @admin.register(HomeSection, site=admin_site)
 class HomeSectionAdmin(admin.ModelAdmin):
     """Admin interface for HomeSection with inline items"""
-    list_display = ("label", "card_type", "item_count", "order", "is_active", "created_at")
+    list_display = ("label", "card_type", "display_on", "item_count", "order", "is_active", "created_at")
     list_editable = ("order", "is_active")
-    list_filter = ("card_type", "is_active", "created_at")
+    list_filter = ("card_type", "display_on", "is_active", "created_at")
     search_fields = ("label", "label_en", "label_mk")
     ordering = ("order", "-created_at")
-    
+
     fieldsets = (
         ("Basic Information", {
             "fields": ("label", "label_en", "label_mk", "card_type")
         }),
         ("Display Settings", {
-            "fields": ("order", "is_active")
+            "fields": ("display_on", "order", "is_active")
         }),
         ("Metadata", {
             "fields": ("created_at", "updated_at"),
@@ -667,8 +667,8 @@ class HomeSectionAdmin(admin.ModelAdmin):
 @admin.register(HomeSectionItem, site=admin_site)
 class HomeSectionItemAdmin(admin.ModelAdmin):
     """Admin interface for HomeSectionItem (standalone view)"""
-    list_display = ("section", "content_type", "object_id", "item_type", "display_on", "order", "is_active", "created_at")
-    list_filter = ("section", "content_type", "display_on", "is_active", "created_at")
+    list_display = ("section", "content_type", "object_id", "item_type", "order", "is_active", "created_at")
+    list_filter = ("section", "content_type", "is_active", "created_at")
     list_editable = ("order", "is_active")
     search_fields = ("section__label",)
     ordering = ("section__order", "order", "-created_at")
@@ -682,7 +682,7 @@ class HomeSectionItemAdmin(admin.ModelAdmin):
             "description": "Select the type and ID of the content to display (Listing, Event, or Promotion)"
         }),
         ("Display Settings", {
-            "fields": ("display_on", "order", "is_active")
+            "fields": ("order", "is_active")
         }),
     )
     
