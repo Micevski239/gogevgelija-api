@@ -1125,3 +1125,148 @@ class TourismCategoryButton(models.Model):
 
     def __str__(self):
         return f"{self.label} ({self.button_size}) -> {self.category.name}"
+
+
+# ============================================================================
+# BILLBOARD MODELS - Magazine-style promotional content
+# ============================================================================
+
+def billboard_image_upload_to(instance, filename):
+    """Generate a unique path for billboard images."""
+    return _image_upload_path("billboard", filename)
+
+
+class BillboardItem(models.Model):
+    """
+    Magazine-style billboard items for the central FAB screen.
+    Supports hero banners, promotions, spotlights, announcements, and countdowns.
+    """
+    ITEM_TYPE_CHOICES = [
+        ('hero', 'Hero Banner'),           # Full-width featured item
+        ('promo', 'Promotion'),            # Time-limited offer with countdown
+        ('spotlight', 'Spotlight'),        # Featured listing/event
+        ('announcement', 'Announcement'),  # Text-based info/news
+        ('countdown', 'Countdown Event'),  # Event with countdown timer
+    ]
+
+    SECTION_CHOICES = [
+        ('hero', 'Hero Section'),          # Top hero banner
+        ('limited', 'Limited Time'),       # Time-sensitive promos
+        ('spotlight', 'Spotlight'),        # Featured content
+        ('upcoming', 'Coming Soon'),       # Upcoming events
+        ('general', 'General'),            # General announcements
+    ]
+
+    # Basic Information
+    item_type = models.CharField(
+        max_length=20,
+        choices=ITEM_TYPE_CHOICES,
+        default='spotlight',
+        help_text="Type of billboard item"
+    )
+    section = models.CharField(
+        max_length=20,
+        choices=SECTION_CHOICES,
+        default='general',
+        help_text="Which section this item appears in"
+    )
+
+    title = models.CharField(max_length=200, help_text="Main title")
+    title_mk = models.CharField(max_length=200, blank=True, help_text="Title in Macedonian")
+    subtitle = models.TextField(blank=True, help_text="Subtitle or description")
+    subtitle_mk = models.TextField(blank=True, help_text="Subtitle in Macedonian")
+
+    # Image
+    image = models.ImageField(
+        upload_to=billboard_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Main billboard image"
+    )
+
+    # Auto-generated thumbnail
+    image_thumbnail = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(400, 400)],
+        format='WEBP',
+        options={'quality': 90}
+    )
+
+    # Link to internal content (Listing, Event, or Promotion)
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={'model__in': ('listing', 'event', 'promotion')},
+        help_text="Link to internal content (optional)"
+    )
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    # Or external link
+    external_url = models.URLField(blank=True, help_text="External URL (if not linking to internal content)")
+    button_text = models.CharField(max_length=50, default="Learn More", help_text="Call-to-action button text")
+    button_text_mk = models.CharField(max_length=50, blank=True, help_text="Button text in Macedonian")
+
+    # Timing (for promos and countdowns)
+    starts_at = models.DateTimeField(null=True, blank=True, help_text="When this item becomes visible")
+    expires_at = models.DateTimeField(null=True, blank=True, help_text="When this item expires (also used for countdown)")
+
+    # Display settings
+    order = models.PositiveIntegerField(default=0, help_text="Display order within section")
+    is_active = models.BooleanField(default=True, help_text="Show this item")
+    is_featured = models.BooleanField(default=False, help_text="Featured items get priority display")
+
+    # Styling
+    background_color = models.CharField(max_length=7, default='#B91C1C', help_text="Background color (hex)")
+    text_color = models.CharField(max_length=7, default='#FFFFFF', help_text="Text color (hex)")
+
+    # Tags/labels
+    tag = models.CharField(max_length=50, blank=True, help_text="Badge/tag text (e.g., 'HOT', 'NEW', '50% OFF')")
+    tag_mk = models.CharField(max_length=50, blank=True, help_text="Tag in Macedonian")
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['section', 'order', '-created_at']
+        verbose_name = "Billboard Item"
+        verbose_name_plural = "Billboard Items"
+        indexes = [
+            models.Index(fields=['is_active', 'section', 'order']),
+            models.Index(fields=['item_type', 'is_active']),
+            models.Index(fields=['expires_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} ({self.get_item_type_display()})"
+
+    @property
+    def is_expired(self):
+        """Check if this item has expired"""
+        if not self.expires_at:
+            return False
+        from django.utils import timezone
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_visible(self):
+        """Check if this item should be visible now"""
+        if not self.is_active:
+            return False
+        if self.is_expired:
+            return False
+        if self.starts_at:
+            from django.utils import timezone
+            if timezone.now() < self.starts_at:
+                return False
+        return True
+
+    @property
+    def linked_content_type(self):
+        """Return the type of linked content as string"""
+        if self.content_type:
+            return self.content_type.model
+        return None

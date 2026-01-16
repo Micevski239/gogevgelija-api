@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.forms import Textarea
 # Modeltranslation will automatically add language fields to admin
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem
 
 
 class GroupedAdminSite(admin.AdminSite):
@@ -16,7 +16,7 @@ class GroupedAdminSite(admin.AdminSite):
     index_title = "Management"
 
     model_groups = {
-        "MAIN": [Listing, Blog, Event, Promotion, Category, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton],
+        "MAIN": [Listing, Blog, Event, Promotion, Category, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem],
         "USERS": [User, Group, GuestUser, UserPermission, UserProfile, VerificationCode],
         "INTERACTIONS": [Wishlist, HelpSupport, CollaborationContact, EventJoin],
     }
@@ -802,3 +802,89 @@ class TourismCategoryButtonAdmin(MultilingualAdminMixin, admin.ModelAdmin):
         self.message_user(request, f"{updated} category buttons deactivated.")
     deactivate_buttons.short_description = "❌ Deactivate selected buttons"
 
+
+# ============================================================================
+# BILLBOARD ADMIN - Magazine-style promotional content
+# ============================================================================
+
+@admin.register(BillboardItem, site=admin_site)
+class BillboardItemAdmin(admin.ModelAdmin):
+    """Admin interface for Billboard Items"""
+    list_display = (
+        "title", "item_type", "section", "tag", "is_active",
+        "is_featured", "order", "expires_at", "created_at"
+    )
+    list_editable = ("order", "is_active", "is_featured")
+    list_filter = ("item_type", "section", "is_active", "is_featured", "created_at")
+    search_fields = ("title", "title_mk", "subtitle", "subtitle_mk", "tag")
+    ordering = ("section", "order", "-created_at")
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        ("Content", {
+            "fields": (
+                ("item_type", "section"),
+                ("title", "title_mk"),
+                ("subtitle", "subtitle_mk"),
+                "image",
+            )
+        }),
+        ("Link / Action", {
+            "fields": (
+                ("content_type", "object_id"),
+                "external_url",
+                ("button_text", "button_text_mk"),
+            ),
+            "description": "Link to internal content OR provide an external URL"
+        }),
+        ("Timing", {
+            "fields": (("starts_at", "expires_at"),),
+            "description": "Optional: Schedule when this item appears and expires"
+        }),
+        ("Display Settings", {
+            "fields": (
+                ("order", "is_active", "is_featured"),
+                ("tag", "tag_mk"),
+            )
+        }),
+        ("Styling", {
+            "fields": (("background_color", "text_color"),),
+            "classes": ("collapse",)
+        }),
+        ("Metadata", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
+        }),
+    )
+
+    readonly_fields = ("created_at", "updated_at")
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "content_type":
+            kwargs["queryset"] = ContentType.objects.filter(
+                model__in=["listing", "event", "promotion"]
+            )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    # Bulk actions
+    actions = ["activate_items", "deactivate_items", "mark_as_featured", "unmark_as_featured"]
+
+    def activate_items(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} billboard items activated.")
+    activate_items.short_description = "✅ Activate selected items"
+
+    def deactivate_items(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f"{updated} billboard items deactivated.")
+    deactivate_items.short_description = "❌ Deactivate selected items"
+
+    def mark_as_featured(self, request, queryset):
+        updated = queryset.update(is_featured=True)
+        self.message_user(request, f"{updated} billboard items marked as featured.")
+    mark_as_featured.short_description = "⭐ Mark as featured"
+
+    def unmark_as_featured(self, request, queryset):
+        updated = queryset.update(is_featured=False)
+        self.message_user(request, f"{updated} billboard items unmarked as featured.")
+    unmark_as_featured.short_description = "Remove featured status"
