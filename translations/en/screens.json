@@ -276,5 +276,16 @@
     "selectAvatar": "Select an avatar",
     "saveSuccess": "Avatar updated successfully!",
     "saveError": "Failed to update avatar"
+  },
+  "billboard": {
+    "title": "Billboard",
+    "empty": "No announcements",
+    "emptySubtitle": "Check back later for updates and promotions",
+    "limitedTime": "Limited Time",
+    "spotlight": "Spotlight",
+    "comingSoon": "Coming Soon",
+    "announcements": "Announcements",
+    "learnMore": "Learn More",
+    "viewDetails": "View Details"
   }
 }

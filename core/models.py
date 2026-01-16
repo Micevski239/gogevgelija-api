@@ -1270,3 +1270,17 @@ class BillboardItem(models.Model):
         if self.content_type:
             return self.content_type.model
         return None
+
+
+# ============================================================================
+# CACHE CLEARING SIGNALS
+# ============================================================================
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.core.cache import cache
+
+@receiver([post_save, post_delete], sender=BillboardItem)
+def clear_billboard_cache(sender, **kwargs):
+    """Clear the billboard cache when items are created, updated, or deleted"""
+    cache.clear()  # Clears all cache - simple but effective
