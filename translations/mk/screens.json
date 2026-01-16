@@ -277,5 +277,16 @@
     "selectAvatar": "Изберете аватар",
     "saveSuccess": "Аватарот е успешно ажуриран!",
     "saveError": "Неуспешно ажурирање на аватарот"
+  },
+  "billboard": {
+    "title": "Огласна табла",
+    "empty": "Нема објави",
+    "emptySubtitle": "Навратете се подоцна за новости и промоции",
+    "limitedTime": "Ограничено време",
+    "spotlight": "Во фокус",
+    "comingSoon": "Наскоро",
+    "announcements": "Објави",
+    "learnMore": "Дознај повеќе",
+    "viewDetails": "Погледни детали"
   }
 }

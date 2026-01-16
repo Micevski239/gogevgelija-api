@@ -35,5 +35,9 @@
   "promotions": {
     "label": "Promotions",
     "hint": "Navigate to promotions screen"
+  },
+  "billboard": {
+    "label": "Billboard",
+    "hint": "View announcements and promotions"
   }
 }
