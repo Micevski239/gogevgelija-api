@@ -410,6 +410,7 @@ class Listing(models.Model):
         help_text="Random value for shuffling order (auto-updated by cron job for fair rotation)"
     )
     promotions = models.ManyToManyField('Promotion', blank=True, related_name='listings', help_text="Select promotions associated with this listing (optional)")
+    blogs = models.ManyToManyField('Blog', blank=True, related_name='listings', help_text="Select blog articles related to this listing (optional)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1273,6 +1274,112 @@ class BillboardItem(models.Model):
 
 
 # ============================================================================
+# BILLBOARD SECTION MODELS - HomeSection-style for Blog articles
+# ============================================================================
+
+class BillboardSection(models.Model):
+    """
+    Represents a configurable section on the Billboard screen.
+    Similar to HomeSection but specifically for Blog articles.
+    """
+    CARD_TYPE_CHOICES = [
+        ('small', 'Small Cards'),      # Vertical list - compact cards
+        ('big', 'Big Cards'),          # Horizontal scroll - large image cards
+        ('carousel', 'Carousel'),      # Auto-scrolling slideshow
+    ]
+
+    label = models.CharField(
+        max_length=100,
+        help_text="Section title displayed on Billboard (e.g., 'Travel Guides', 'Food & Dining')"
+    )
+    label_mk = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Section title in Macedonian"
+    )
+
+    card_type = models.CharField(
+        max_length=10,
+        choices=CARD_TYPE_CHOICES,
+        default='big',
+        help_text="Visual style: small (compact list), big (large cards), or carousel (auto-scrolling)"
+    )
+
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order on Billboard (lower numbers appear first)"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Show this section on the Billboard"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', '-created_at']
+        verbose_name = "Billboard Section"
+        verbose_name_plural = "Billboard Sections"
+        indexes = [
+            models.Index(fields=['is_active', 'order']),
+        ]
+
+    def __str__(self):
+        return f"{self.label} ({self.card_type})"
+
+    @property
+    def item_count(self):
+        """Return number of active items in this section"""
+        return self.items.filter(is_active=True).count()
+
+
+class BillboardSectionItem(models.Model):
+    """
+    Represents a single Blog item within a BillboardSection.
+    """
+    section = models.ForeignKey(
+        BillboardSection,
+        on_delete=models.CASCADE,
+        related_name='items',
+        help_text="The section this blog belongs to"
+    )
+
+    blog = models.ForeignKey(
+        'Blog',
+        on_delete=models.CASCADE,
+        related_name='billboard_items',
+        help_text="Select a blog article"
+    )
+
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order within the section (lower numbers appear first)"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Show this item in the section"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', '-created_at']
+        verbose_name = "Billboard Section Item"
+        verbose_name_plural = "Billboard Section Items"
+        indexes = [
+            models.Index(fields=['section', 'is_active', 'order']),
+        ]
+        # Ensure no duplicate blogs in same section
+        unique_together = [['section', 'blog']]
+
+    def __str__(self):
+        return f"{self.section.label} - {self.blog.title}"
+
+
+# ============================================================================
 # CACHE CLEARING SIGNALS
 # ============================================================================
 
@@ -1283,4 +1390,14 @@ from django.core.cache import cache
 @receiver([post_save, post_delete], sender=BillboardItem)
 def clear_billboard_cache(sender, **kwargs):
     """Clear the billboard cache when items are created, updated, or deleted"""
-    cache.clear()  # Clears all cache - simple but effective
+    cache.clear()
+
+@receiver([post_save, post_delete], sender=BillboardSection)
+def clear_billboard_section_cache(sender, **kwargs):
+    """Clear cache when billboard sections change"""
+    cache.clear()
+
+@receiver([post_save, post_delete], sender=BillboardSectionItem)
+def clear_billboard_section_item_cache(sender, **kwargs):
+    """Clear cache when billboard section items change"""
+    cache.clear()
