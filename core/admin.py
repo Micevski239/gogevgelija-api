@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.forms import Textarea
 # Modeltranslation will automatically add language fields to admin
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem
 
 
 class GroupedAdminSite(admin.AdminSite):
@@ -16,7 +16,7 @@ class GroupedAdminSite(admin.AdminSite):
     index_title = "Management"
 
     model_groups = {
-        "MAIN": [Listing, Blog, Event, Promotion, Category, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem],
+        "MAIN": [Listing, Blog, Event, Promotion, Category, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem],
         "USERS": [User, Group, GuestUser, UserPermission, UserProfile, VerificationCode],
         "INTERACTIONS": [Wishlist, HelpSupport, CollaborationContact, EventJoin],
     }
@@ -253,7 +253,7 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     search_fields = ('title', 'address', 'category__name')
     list_editable = ('featured', 'trending', 'is_active')
     ordering = ('-created_at',)
-    filter_horizontal = ('promotions',)
+    filter_horizontal = ('promotions', 'blogs')
 
     fieldsets = (
         ('Basic Information', {
@@ -276,6 +276,11 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'fields': ('promotions',),
             'classes': ('wide',),
             'description': 'Select promotions associated with this listing (optional)',
+        }),
+        ('Related Articles', {
+            'fields': ('blogs',),
+            'classes': ('wide',),
+            'description': 'Select blog articles related to this listing (optional)',
         }),
         ('English Content', {
             'fields': ('title', 'description', 'address', 'open_time', 'tags', 'amenities_title', 'amenities', 'working_hours', 'show_open_status', 'manual_open_status'),
@@ -888,3 +893,75 @@ class BillboardItemAdmin(admin.ModelAdmin):
         updated = queryset.update(is_featured=False)
         self.message_user(request, f"{updated} billboard items unmarked as featured.")
     unmark_as_featured.short_description = "Remove featured status"
+
+
+# ============================================================================
+# BILLBOARD SECTION ADMIN - HomeSection-style for Blog articles
+# ============================================================================
+
+class BillboardSectionItemInline(admin.TabularInline):
+    """Inline admin for BillboardSectionItems (Blog articles)"""
+    model = BillboardSectionItem
+    extra = 1
+    fields = ("blog", "order", "is_active")
+    ordering = ["order", "-created_at"]
+    autocomplete_fields = ["blog"]
+
+
+@admin.register(BillboardSection, site=admin_site)
+class BillboardSectionAdmin(admin.ModelAdmin):
+    """Admin interface for Billboard Sections (Blog article sections)"""
+    list_display = ("label", "card_type", "order", "is_active", "item_count_display", "created_at")
+    list_editable = ("order", "is_active")
+    list_filter = ("card_type", "is_active")
+    search_fields = ("label", "label_mk")
+    ordering = ("order", "-created_at")
+    inlines = [BillboardSectionItemInline]
+
+    fieldsets = (
+        ("Section Configuration", {
+            "fields": (
+                ("label", "label_mk"),
+                "card_type",
+            )
+        }),
+        ("Display Settings", {
+            "fields": (("order", "is_active"),)
+        }),
+        ("Metadata", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
+        }),
+    )
+
+    readonly_fields = ("created_at", "updated_at")
+
+    def item_count_display(self, obj):
+        """Display number of items in section"""
+        count = obj.item_count
+        return f"{count} article{'s' if count != 1 else ''}"
+    item_count_display.short_description = "Articles"
+
+    # Bulk actions
+    actions = ["activate_sections", "deactivate_sections"]
+
+    def activate_sections(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} billboard sections activated.")
+    activate_sections.short_description = "✅ Activate selected sections"
+
+    def deactivate_sections(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f"{updated} billboard sections deactivated.")
+    deactivate_sections.short_description = "❌ Deactivate selected sections"
+
+
+@admin.register(BillboardSectionItem, site=admin_site)
+class BillboardSectionItemAdmin(admin.ModelAdmin):
+    """Admin interface for individual Billboard Section Items"""
+    list_display = ("blog", "section", "order", "is_active", "created_at")
+    list_editable = ("order", "is_active")
+    list_filter = ("section", "is_active")
+    search_fields = ("blog__title", "section__label")
+    ordering = ("section", "order", "-created_at")
+    autocomplete_fields = ["blog", "section"]
