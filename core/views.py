@@ -12,14 +12,15 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import authenticate
+from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton
-from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem
+from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, BillboardItemSerializer
 from .utils import get_preferred_language
 from .pagination import StandardResultsSetPagination
 
@@ -1605,3 +1606,64 @@ class TourismScreenView(APIView):
 
         return Response(data)
 
+
+# ============================================================================
+# BILLBOARD SCREEN VIEW - Magazine-style promotional content
+# ============================================================================
+
+class BillboardScreenView(APIView):
+    """
+    Returns all active billboard items grouped by section.
+    Used for the central FAB "Billboard" screen in the mobile app.
+
+    Sections:
+    - hero: Full-width featured banners
+    - limited: Time-sensitive promotions with countdown
+    - spotlight: Featured listings/events
+    - upcoming: Coming soon events
+    - general: General announcements
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @method_decorator(cache_page(60 * 2))  # Cache for 2 minutes
+    def get(self, request):
+        language = get_preferred_language(request)
+        now = timezone.now()
+
+        # Get all visible billboard items
+        items = BillboardItem.objects.filter(
+            is_active=True
+        ).filter(
+            # Either no start date or start date has passed
+            models.Q(starts_at__isnull=True) | models.Q(starts_at__lte=now)
+        ).filter(
+            # Either no expiry or not expired yet
+            models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=now)
+        ).select_related('content_type').order_by('section', 'order', '-created_at')
+
+        context = {
+            'request': request,
+            'language': language
+        }
+
+        # Group items by section
+        sections = {
+            'hero': [],
+            'limited': [],
+            'spotlight': [],
+            'upcoming': [],
+            'general': [],
+        }
+
+        for item in items:
+            section_key = item.section
+            if section_key in sections:
+                sections[section_key].append(item)
+
+        # Serialize each section
+        data = {
+            section: BillboardItemSerializer(items_list, many=True, context=context).data
+            for section, items_list in sections.items()
+        }
+
+        return Response(data)

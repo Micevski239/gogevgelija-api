@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem
 
 
 def _build_image_urls(obj, request, field_names):
@@ -1201,3 +1201,131 @@ class TourismScreenSerializer(serializers.Serializer):
     category_buttons = TourismCategoryButtonSerializer(many=True, read_only=True)
     sections = HomeSectionSerializer(many=True, read_only=True)
 
+
+# ============================================================================
+# BILLBOARD SERIALIZERS
+# ============================================================================
+
+class BillboardItemSerializer(serializers.ModelSerializer):
+    """Serializer for Billboard Items with language support"""
+    title = serializers.SerializerMethodField()
+    subtitle = serializers.SerializerMethodField()
+    button_text = serializers.SerializerMethodField()
+    tag = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
+    linked_content = serializers.SerializerMethodField()
+    linked_content_type = serializers.ReadOnlyField()
+    time_remaining = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BillboardItem
+        fields = [
+            'id', 'item_type', 'section', 'title', 'subtitle', 'image', 'image_thumbnail',
+            'linked_content_type', 'linked_content', 'external_url', 'button_text',
+            'starts_at', 'expires_at', 'time_remaining', 'order', 'is_featured',
+            'background_color', 'text_color', 'tag', 'created_at'
+        ]
+
+    def get_title(self, obj):
+        """Return title in the current language"""
+        lang = self.context.get('language', 'en')
+        if lang == 'mk' and obj.title_mk:
+            return obj.title_mk
+        return obj.title
+
+    def get_subtitle(self, obj):
+        """Return subtitle in the current language"""
+        lang = self.context.get('language', 'en')
+        if lang == 'mk' and obj.subtitle_mk:
+            return obj.subtitle_mk
+        return obj.subtitle
+
+    def get_button_text(self, obj):
+        """Return button text in the current language"""
+        lang = self.context.get('language', 'en')
+        if lang == 'mk' and obj.button_text_mk:
+            return obj.button_text_mk
+        return obj.button_text
+
+    def get_tag(self, obj):
+        """Return tag in the current language"""
+        lang = self.context.get('language', 'en')
+        if lang == 'mk' and obj.tag_mk:
+            return obj.tag_mk
+        return obj.tag
+
+    def get_image(self, obj):
+        """Return the absolute URL for the image"""
+        if not obj.image:
+            return None
+        request = self.context.get('request')
+        try:
+            url = obj.image.url
+            return request.build_absolute_uri(url) if request else url
+        except ValueError:
+            return None
+
+    def get_image_thumbnail(self, obj):
+        """Return the absolute URL for the thumbnail"""
+        if not obj.image:
+            return None
+        request = self.context.get('request')
+        try:
+            url = obj.image_thumbnail.url
+            return request.build_absolute_uri(url) if request else url
+        except (ValueError, AttributeError):
+            return None
+
+    def get_linked_content(self, obj):
+        """Return serialized linked content (Listing, Event, or Promotion)"""
+        if not obj.content_object:
+            return None
+
+        request = self.context.get('request')
+        lang = self.context.get('language', 'en')
+        context = {'request': request, 'language': lang}
+
+        content_type = obj.content_type.model
+        if content_type == 'listing':
+            return {
+                'id': obj.content_object.id,
+                'title': obj.content_object.title,
+                'image': request.build_absolute_uri(obj.content_object.image.url) if obj.content_object.image and request else None,
+            }
+        elif content_type == 'event':
+            return {
+                'id': obj.content_object.id,
+                'title': obj.content_object.title,
+                'image': request.build_absolute_uri(obj.content_object.image.url) if obj.content_object.image and request else None,
+                'date_time': obj.content_object.date_time,
+            }
+        elif content_type == 'promotion':
+            return {
+                'id': obj.content_object.id,
+                'title': obj.content_object.title,
+                'image': request.build_absolute_uri(obj.content_object.image.url) if obj.content_object.image and request else None,
+            }
+        return None
+
+    def get_time_remaining(self, obj):
+        """Return time remaining until expiration in seconds (for countdown)"""
+        if not obj.expires_at:
+            return None
+        from django.utils import timezone
+        remaining = obj.expires_at - timezone.now()
+        if remaining.total_seconds() < 0:
+            return 0
+        return int(remaining.total_seconds())
+
+
+class BillboardScreenSerializer(serializers.Serializer):
+    """
+    Combined serializer for the entire Billboard screen.
+    Groups items by section for easy frontend rendering.
+    """
+    hero = BillboardItemSerializer(many=True, read_only=True)
+    limited = BillboardItemSerializer(many=True, read_only=True)
+    spotlight = BillboardItemSerializer(many=True, read_only=True)
+    upcoming = BillboardItemSerializer(many=True, read_only=True)
+    general = BillboardItemSerializer(many=True, read_only=True)
