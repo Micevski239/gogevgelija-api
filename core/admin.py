@@ -1003,21 +1003,21 @@ from django import forms
 class FeaturedItemAdminForm(forms.ModelForm):
     """Custom form for FeaturedItem with dynamic content selection"""
 
-    # Dynamic fields for selecting content
+    # Dynamic fields for selecting content - use empty querysets, populated in __init__
     listing = forms.ModelChoiceField(
-        queryset=Listing.objects.filter(is_active=True),
+        queryset=Listing.objects.none(),
         required=False,
         label="Listing",
         help_text="Select a listing to feature"
     )
     event = forms.ModelChoiceField(
-        queryset=Event.objects.filter(is_active=True),
+        queryset=Event.objects.none(),
         required=False,
         label="Event",
         help_text="Select an event to feature"
     )
     promotion = forms.ModelChoiceField(
-        queryset=Promotion.objects.filter(is_active=True),
+        queryset=Promotion.objects.none(),
         required=False,
         label="Promotion",
         help_text="Select a promotion to feature"
@@ -1029,6 +1029,11 @@ class FeaturedItemAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Populate querysets lazily
+        self.fields['listing'].queryset = Listing.objects.filter(is_active=True).order_by('title')
+        self.fields['event'].queryset = Event.objects.filter(is_active=True).order_by('title')
+        self.fields['promotion'].queryset = Promotion.objects.filter(is_active=True).order_by('title')
+
         # Pre-populate the correct field based on existing content
         if self.instance and self.instance.pk:
             obj = self.instance.content_object
@@ -1102,9 +1107,6 @@ class FeaturedItemAdmin(admin.ModelAdmin):
             'fields': (('order', 'is_active'),)
         }),
     )
-
-    class Media:
-        js = ('admin/js/featured_item_admin.js',)
 
     def get_title(self, obj):
         """Display the title of the linked content"""
