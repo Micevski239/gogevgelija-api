@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.forms import Textarea
 # Modeltranslation will automatically add language fields to admin
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem
+from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem
 
 
 class GroupedAdminSite(admin.AdminSite):
@@ -396,6 +396,14 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
     readonly_fields = ('created_at', 'updated_at')
 
+class BlogSectionInline(admin.TabularInline):
+    """Inline admin for collapsible blog sections"""
+    model = BlogSection
+    extra = 1
+    fields = ('order', 'title', 'title_en', 'title_mk', 'content', 'content_en', 'content_mk', 'is_expanded_by_default')
+    ordering = ['order']
+
+
 @admin.register(Blog, site=admin_site)
 class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     list_display = ('id', 'title', 'author', 'category', 'read_time_minutes', 'featured', 'published', 'is_active', 'created_at')
@@ -403,6 +411,7 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     search_fields = ('title', 'subtitle', 'content', 'author', 'category')
     list_editable = ('featured', 'published', 'is_active')
     ordering = ('-created_at',)
+    inlines = [BlogSectionInline]
 
     fieldsets = (
         ('Basic Information', {
@@ -440,7 +449,7 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'classes': ('collapse',),
         }),
     )
-    
+
     readonly_fields = ('created_at', 'updated_at')
 
 @admin.register(EventJoin, site=admin_site)

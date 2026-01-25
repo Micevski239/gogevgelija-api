@@ -723,6 +723,30 @@ class Blog(models.Model):
         return self.title
 
 
+class BlogSection(models.Model):
+    """Collapsible content sections for blog posts"""
+    blog = models.ForeignKey(Blog, on_delete=models.CASCADE, related_name='sections')
+
+    title = models.CharField(max_length=200, help_text="Section title")
+    title_en = models.CharField(max_length=200, blank=True)
+    title_mk = models.CharField(max_length=200, blank=True)
+
+    content = models.TextField(help_text="Section content")
+    content_en = models.TextField(blank=True)
+    content_mk = models.TextField(blank=True)
+
+    order = models.PositiveIntegerField(default=0, help_text="Display order (lower numbers appear first)")
+    is_expanded_by_default = models.BooleanField(default=False, help_text="Whether this section is expanded when the page loads")
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = "Blog Section"
+        verbose_name_plural = "Blog Sections"
+
+    def __str__(self):
+        return f"{self.blog.title} - {self.title}"
+
+
 class EventJoin(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_joins')
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='joined_users')

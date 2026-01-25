@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem
+from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem
 
 
 def _build_image_urls(obj, request, field_names):
@@ -646,6 +646,34 @@ class PromotionSerializer(serializers.ModelSerializer):
         images = _build_image_urls(listing, request, ["image", "image_1", "image_2", "image_3", "image_4", "image_5"])
         return images[0] if images else None
 
+class BlogSectionSerializer(serializers.ModelSerializer):
+    """Serializer for collapsible blog sections with language support"""
+    title = serializers.SerializerMethodField()
+    content = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BlogSection
+        fields = ['id', 'title', 'content', 'order', 'is_expanded_by_default']
+
+    def get_title(self, obj):
+        """Return title in the current language"""
+        lang = self.context.get('language', 'en')
+        if lang == 'mk' and obj.title_mk:
+            return obj.title_mk
+        if lang == 'en' and obj.title_en:
+            return obj.title_en
+        return obj.title_en or obj.title_mk or obj.title
+
+    def get_content(self, obj):
+        """Return content in the current language"""
+        lang = self.context.get('language', 'en')
+        if lang == 'mk' and obj.content_mk:
+            return obj.content_mk
+        if lang == 'en' and obj.content_en:
+            return obj.content_en
+        return obj.content_en or obj.content_mk or obj.content
+
+
 class BlogSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
     subtitle = serializers.SerializerMethodField()
@@ -660,13 +688,14 @@ class BlogSerializer(serializers.ModelSerializer):
     cta_button_title = serializers.SerializerMethodField()
     cta_button_subtitle = serializers.SerializerMethodField()
     cta_button_url = serializers.CharField(read_only=True)
+    sections = BlogSectionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Blog
         fields = [
             "id", "title", "subtitle", "content", "author", "category",
             "tags", "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "cover_image", "read_time_minutes", "featured",
-            "published", "is_active", "cta_button_title", "cta_button_subtitle", "cta_button_url", "created_at", "updated_at"
+            "published", "is_active", "cta_button_title", "cta_button_subtitle", "cta_button_url", "sections", "created_at", "updated_at"
         ]
     
     def get_title(self, obj):
