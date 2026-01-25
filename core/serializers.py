@@ -1107,7 +1107,7 @@ class HomeSectionSerializer(serializers.ModelSerializer):
 class TourismCarouselSerializer(serializers.ModelSerializer):
     """
     Serializer for Tourism carousel items.
-    Returns the carousel item with full content object (Listing or Event).
+    Returns the carousel item with full content object (Listing, Event, or Blog).
     """
     type = serializers.SerializerMethodField()
     data = serializers.SerializerMethodField()
@@ -1130,7 +1130,7 @@ class TourismCarouselSerializer(serializers.ModelSerializer):
         return obj.title
 
     def get_type(self, obj):
-        """Return the content type as a string (listing, event)"""
+        """Return the content type as a string (listing, event, blog)"""
         return obj.content_type.model
 
     def get_data(self, obj):
@@ -1150,6 +1150,8 @@ class TourismCarouselSerializer(serializers.ModelSerializer):
             return ListingSerializer(content_object, context=self.context).data
         elif obj.content_type.model == "event":
             return EventSerializer(content_object, context=self.context).data
+        elif obj.content_type.model == "blog":
+            return BlogSerializer(content_object, context=self.context).data
 
         return None
 

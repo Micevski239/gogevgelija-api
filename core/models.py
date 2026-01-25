@@ -1010,7 +1010,7 @@ class HomeSectionItem(models.Model):
 class TourismCarousel(models.Model):
     """
     Manages the hero carousel on the Tourism screen.
-    Admin can add/remove/reorder carousel items from listings and events.
+    Admin can add/remove/reorder carousel items from listings, events, and blogs.
     """
     title = models.CharField(
         max_length=200,
@@ -1019,12 +1019,12 @@ class TourismCarousel(models.Model):
     title_en = models.CharField(max_length=200, blank=True, help_text="Title in English")
     title_mk = models.CharField(max_length=200, blank=True, help_text="Title in Macedonian")
 
-    # GenericForeignKey to support Listing or Event
+    # GenericForeignKey to support Listing, Event, or Blog
     content_type = models.ForeignKey(
         'contenttypes.ContentType',
         on_delete=models.CASCADE,
-        limit_choices_to={'model__in': ('listing', 'event')},
-        help_text="Type of content (Listing or Event)"
+        limit_choices_to={'model__in': ('listing', 'event', 'blog')},
+        help_text="Type of content (Listing, Event, or Blog)"
     )
     object_id = models.PositiveIntegerField(
         help_text="ID of the referenced object"
@@ -1060,7 +1060,7 @@ class TourismCarousel(models.Model):
 
     @property
     def item_type(self):
-        """Return the type of content as a string ('listing', 'event')"""
+        """Return the type of content as a string ('listing', 'event', 'blog')"""
         return self.content_type.model
 
 
