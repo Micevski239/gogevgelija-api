@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.forms import Textarea
 # Modeltranslation will automatically add language fields to admin
-from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem
+from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem, FeaturedListing
 
 
 class GroupedAdminSite(admin.AdminSite):
@@ -17,7 +17,7 @@ class GroupedAdminSite(admin.AdminSite):
 
     model_groups = {
         "CONTENT": [Listing, Blog, Event, Promotion, Category],
-        "SCREENS": [HomeSection, TourismCarousel, BillboardSection, BillboardItem],
+        "SCREENS": [HomeSection, TourismCarousel, FeaturedListing, BillboardSection, BillboardItem],
         "USERS": [User, UserProfile, UserPermission],
         "SUPPORT": [HelpSupport, CollaborationContact],
         "VIEW LOGS": [EventJoin, Wishlist, GuestUser, VerificationCode, Group],
@@ -992,3 +992,45 @@ class BillboardSectionAdmin(admin.ModelAdmin):
 #     search_fields = ("blog__title", "section__label")
 #     ordering = ("section", "order", "-created_at")
 #     autocomplete_fields = ["blog", "section"]
+
+
+# ============================================================================
+# FEATURED LISTINGS ADMIN - Magazine-style featured content
+# ============================================================================
+
+@admin.register(FeaturedListing, site=admin_site)
+class FeaturedListingAdmin(admin.ModelAdmin):
+    """Admin interface for Featured Listings (magazine-style billboard)"""
+    list_display = ('listing', 'card_size', 'promo_text', 'valid_until', 'order', 'is_active', 'created_at')
+    list_editable = ('card_size', 'order', 'is_active')
+    list_filter = ('card_size', 'is_active')
+    autocomplete_fields = ['listing']
+    ordering = ('card_size', 'order', '-created_at')
+    date_hierarchy = 'created_at'
+
+    fieldsets = (
+        ('Select Listing', {
+            'fields': ('listing', 'card_size'),
+            'description': 'Choose a listing and how it should be displayed'
+        }),
+        ('Marketing', {
+            'fields': (('promo_text', 'promo_text_mk'), 'valid_until'),
+            'description': 'Optional promo text overlay and countdown timer'
+        }),
+        ('Display', {
+            'fields': (('order', 'is_active'),)
+        }),
+    )
+
+    # Bulk actions
+    actions = ['activate_items', 'deactivate_items']
+
+    def activate_items(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} featured listings activated.")
+    activate_items.short_description = "✅ Activate selected items"
+
+    def deactivate_items(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f"{updated} featured listings deactivated.")
+    deactivate_items.short_description = "❌ Deactivate selected items"
