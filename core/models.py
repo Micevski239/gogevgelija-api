@@ -697,6 +697,16 @@ class Blog(models.Model):
     featured = models.BooleanField(default=False, help_text="Show in featured blogs")
     published = models.BooleanField(default=True, help_text="Whether the blog is published")
     is_active = models.BooleanField(default=True, help_text="Show this blog in the app. Uncheck to hide from users.")
+
+    # CTA Button (Call to Action) - fully configurable from admin
+    cta_button_title = models.CharField(max_length=100, blank=True, help_text="Button text (e.g., 'Book Now', 'Learn More')")
+    cta_button_title_en = models.CharField(max_length=100, blank=True, help_text="Button text in English")
+    cta_button_title_mk = models.CharField(max_length=100, blank=True, help_text="Button text in Macedonian")
+    cta_button_subtitle = models.CharField(max_length=200, blank=True, help_text="Subtitle below button (e.g., 'Opens in Browser')")
+    cta_button_subtitle_en = models.CharField(max_length=200, blank=True, help_text="Button subtitle in English")
+    cta_button_subtitle_mk = models.CharField(max_length=200, blank=True, help_text="Button subtitle in Macedonian")
+    cta_button_url = models.URLField(max_length=500, blank=True, help_text="URL the button leads to")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

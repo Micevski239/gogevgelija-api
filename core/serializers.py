@@ -657,13 +657,16 @@ class BlogSerializer(serializers.ModelSerializer):
     image_thumbnail = serializers.SerializerMethodField()
     image_medium = serializers.SerializerMethodField()
     cover_image = serializers.SerializerMethodField()
+    cta_button_title = serializers.SerializerMethodField()
+    cta_button_subtitle = serializers.SerializerMethodField()
+    cta_button_url = serializers.CharField(read_only=True)
 
     class Meta:
         model = Blog
         fields = [
             "id", "title", "subtitle", "content", "author", "category",
             "tags", "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "cover_image", "read_time_minutes", "featured",
-            "published", "is_active", "created_at", "updated_at"
+            "published", "is_active", "cta_button_title", "cta_button_subtitle", "cta_button_url", "created_at", "updated_at"
         ]
     
     def get_title(self, obj):
@@ -716,6 +719,24 @@ class BlogSerializer(serializers.ModelSerializer):
         """Return optimized medium URL (430px) for carousel"""
         request = self.context.get('request')
         return _get_optimized_image_url(obj, 'image_medium', request)
+
+    def get_cta_button_title(self, obj):
+        """Return CTA button title in the current language"""
+        language = self.context.get('language', 'en')
+        localized = getattr(obj, f'cta_button_title_{language}', None)
+        if localized:
+            return localized
+        # Fallback to default
+        return obj.cta_button_title or None
+
+    def get_cta_button_subtitle(self, obj):
+        """Return CTA button subtitle in the current language"""
+        language = self.context.get('language', 'en')
+        localized = getattr(obj, f'cta_button_subtitle_{language}', None)
+        if localized:
+            return localized
+        # Fallback to default
+        return obj.cta_button_subtitle or None
 
 class GuestUserSerializer(serializers.ModelSerializer):
     class Meta:
