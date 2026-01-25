@@ -16,9 +16,11 @@ class GroupedAdminSite(admin.AdminSite):
     index_title = "Management"
 
     model_groups = {
-        "MAIN": [Listing, Blog, Event, Promotion, Category, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem],
-        "USERS": [User, Group, GuestUser, UserPermission, UserProfile, VerificationCode],
-        "INTERACTIONS": [Wishlist, HelpSupport, CollaborationContact, EventJoin],
+        "CONTENT": [Listing, Blog, Event, Promotion, Category],
+        "SCREENS": [HomeSection, TourismCarousel, BillboardSection, BillboardItem],
+        "USERS": [User, UserProfile, UserPermission],
+        "SUPPORT": [HelpSupport, CollaborationContact],
+        "VIEW LOGS": [EventJoin, Wishlist, GuestUser, VerificationCode, Group],
     }
 
     def get_app_list(self, request):
@@ -452,13 +454,17 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
     readonly_fields = ('created_at', 'updated_at')
 
+# ============================================================================
+# VIEW LOGS - Read-only admin models for viewing user activity
+# ============================================================================
+
 @admin.register(EventJoin, site=admin_site)
 class EventJoinAdmin(admin.ModelAdmin):
     list_display = ('user', 'event', 'created_at')
     list_filter = ('created_at', 'event')
     search_fields = ('user__username', 'user__email', 'event__title')
     ordering = ('-created_at',)
-    readonly_fields = ('created_at',)
+    readonly_fields = ('user', 'event', 'created_at')
 
 @admin.register(Wishlist, site=admin_site)
 class WishlistAdmin(admin.ModelAdmin):
@@ -466,7 +472,7 @@ class WishlistAdmin(admin.ModelAdmin):
     list_filter = ('content_type', 'created_at')
     search_fields = ('user__username', 'user__email')
     ordering = ('-created_at',)
-    readonly_fields = ('created_at',)
+    readonly_fields = ('user', 'content_type', 'object_id', 'created_at')
 
 @admin.register(VerificationCode, site=admin_site)
 class VerificationCodeAdmin(admin.ModelAdmin):
@@ -474,7 +480,7 @@ class VerificationCodeAdmin(admin.ModelAdmin):
     list_filter = ('is_used', 'created_at', 'expires_at')
     search_fields = ('email', 'code')
     ordering = ('-created_at',)
-    readonly_fields = ('created_at',)
+    readonly_fields = ('email', 'code', 'is_used', 'created_at', 'expires_at')
 
 @admin.register(GuestUser, site=admin_site)
 class GuestUserAdmin(admin.ModelAdmin):
@@ -482,7 +488,7 @@ class GuestUserAdmin(admin.ModelAdmin):
     list_filter = ('language_preference', 'created_at', 'last_active')
     search_fields = ('guest_id',)
     ordering = ('-last_active',)
-    readonly_fields = ('guest_id', 'created_at', 'last_active')
+    readonly_fields = ('guest_id', 'language_preference', 'created_at', 'last_active')
 
 @admin.register(UserProfile, site=admin_site)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -687,42 +693,43 @@ class HomeSectionAdmin(admin.ModelAdmin):
     deactivate_sections.short_description = "❌ Deactivate selected sections"
 
 
-@admin.register(HomeSectionItem, site=admin_site)
-class HomeSectionItemAdmin(admin.ModelAdmin):
-    """Admin interface for HomeSectionItem (standalone view)"""
-    list_display = ("section", "content_type", "object_id", "item_type", "order", "is_active", "created_at")
-    list_filter = ("section", "content_type", "is_active", "created_at")
-    list_editable = ("order", "is_active")
-    search_fields = ("section__label",)
-    ordering = ("section__order", "order", "-created_at")
-
-    fieldsets = (
-        ("Section", {
-            "fields": ("section",)
-        }),
-        ("Content Reference", {
-            "fields": ("content_type", "object_id"),
-            "description": "Select the type and ID of the content to display (Listing, Event, or Promotion)"
-        }),
-        ("Display Settings", {
-            "fields": ("order", "is_active")
-        }),
-    )
-    
-    readonly_fields = ("created_at",)
-    
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """Limit content_type choices to Listing, Event, Promotion"""
-        if db_field.name == "content_type":
-            kwargs["queryset"] = ContentType.objects.filter(
-                model__in=["listing", "event", "promotion"]
-            )
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-    
-    def item_type(self, obj):
-        """Display the content type in a readable format"""
-        return obj.content_type.model.title()
-    item_type.short_description = "Type"
+# HomeSectionItem is managed via inline in HomeSection - disabled standalone admin
+# @admin.register(HomeSectionItem, site=admin_site)
+# class HomeSectionItemAdmin(admin.ModelAdmin):
+#     """Admin interface for HomeSectionItem (standalone view)"""
+#     list_display = ("section", "content_type", "object_id", "item_type", "order", "is_active", "created_at")
+#     list_filter = ("section", "content_type", "is_active", "created_at")
+#     list_editable = ("order", "is_active")
+#     search_fields = ("section__label",)
+#     ordering = ("section__order", "order", "-created_at")
+#
+#     fieldsets = (
+#         ("Section", {
+#             "fields": ("section",)
+#         }),
+#         ("Content Reference", {
+#             "fields": ("content_type", "object_id"),
+#             "description": "Select the type and ID of the content to display (Listing, Event, or Promotion)"
+#         }),
+#         ("Display Settings", {
+#             "fields": ("order", "is_active")
+#         }),
+#     )
+#
+#     readonly_fields = ("created_at",)
+#
+#     def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#         """Limit content_type choices to Listing, Event, Promotion"""
+#         if db_field.name == "content_type":
+#             kwargs["queryset"] = ContentType.objects.filter(
+#                 model__in=["listing", "event", "promotion"]
+#             )
+#         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+#
+#     def item_type(self, obj):
+#         """Display the content type in a readable format"""
+#         return obj.content_type.model.title()
+#     item_type.short_description = "Type"
 
 
 # ============================================================================
@@ -786,44 +793,45 @@ class TourismCarouselAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     deactivate_items.short_description = "❌ Deactivate selected items"
 
 
-@admin.register(TourismCategoryButton, site=admin_site)
-class TourismCategoryButtonAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    """Admin interface for Tourism Category Buttons"""
-    list_display = ("label", "category", "button_size", "icon", "order", "is_active", "created_at")
-    list_editable = ("order", "is_active")
-    list_filter = ("button_size", "is_active", "category")
-    search_fields = ("label", "label_en", "label_mk", "category__name")
-    ordering = ("button_size", "order", "-created_at")
-
-    fieldsets = (
-        ("Button Configuration", {
-            "fields": ("label", "label_en", "label_mk", "category", "icon", "background_image", "button_size")
-        }),
-        ("Display Settings", {
-            "fields": ("order", "is_active")
-        }),
-        ("Metadata", {
-            "fields": ("created_at",),
-            "classes": ("collapse",)
-        }),
-    )
-
-    readonly_fields = ("created_at",)
-
-    # Bulk actions
-    actions = ["activate_buttons", "deactivate_buttons"] + MultilingualAdminMixin.actions
-
-    def activate_buttons(self, request, queryset):
-        """Activate selected category buttons"""
-        updated = queryset.update(is_active=True)
-        self.message_user(request, f"{updated} category buttons activated.")
-    activate_buttons.short_description = "✅ Activate selected buttons"
-
-    def deactivate_buttons(self, request, queryset):
-        """Deactivate selected category buttons"""
-        updated = queryset.update(is_active=False)
-        self.message_user(request, f"{updated} category buttons deactivated.")
-    deactivate_buttons.short_description = "❌ Deactivate selected buttons"
+# TourismCategoryButton - disabled (buttons are hardcoded in frontend)
+# @admin.register(TourismCategoryButton, site=admin_site)
+# class TourismCategoryButtonAdmin(MultilingualAdminMixin, admin.ModelAdmin):
+#     """Admin interface for Tourism Category Buttons"""
+#     list_display = ("label", "category", "button_size", "icon", "order", "is_active", "created_at")
+#     list_editable = ("order", "is_active")
+#     list_filter = ("button_size", "is_active", "category")
+#     search_fields = ("label", "label_en", "label_mk", "category__name")
+#     ordering = ("button_size", "order", "-created_at")
+#
+#     fieldsets = (
+#         ("Button Configuration", {
+#             "fields": ("label", "label_en", "label_mk", "category", "icon", "background_image", "button_size")
+#         }),
+#         ("Display Settings", {
+#             "fields": ("order", "is_active")
+#         }),
+#         ("Metadata", {
+#             "fields": ("created_at",),
+#             "classes": ("collapse",)
+#         }),
+#     )
+#
+#     readonly_fields = ("created_at",)
+#
+#     # Bulk actions
+#     actions = ["activate_buttons", "deactivate_buttons"] + MultilingualAdminMixin.actions
+#
+#     def activate_buttons(self, request, queryset):
+#         """Activate selected category buttons"""
+#         updated = queryset.update(is_active=True)
+#         self.message_user(request, f"{updated} category buttons activated.")
+#     activate_buttons.short_description = "✅ Activate selected buttons"
+#
+#     def deactivate_buttons(self, request, queryset):
+#         """Deactivate selected category buttons"""
+#         updated = queryset.update(is_active=False)
+#         self.message_user(request, f"{updated} category buttons deactivated.")
+#     deactivate_buttons.short_description = "❌ Deactivate selected buttons"
 
 
 # ============================================================================
@@ -974,12 +982,13 @@ class BillboardSectionAdmin(admin.ModelAdmin):
     deactivate_sections.short_description = "❌ Deactivate selected sections"
 
 
-@admin.register(BillboardSectionItem, site=admin_site)
-class BillboardSectionItemAdmin(admin.ModelAdmin):
-    """Admin interface for individual Billboard Section Items"""
-    list_display = ("blog", "section", "order", "is_active", "created_at")
-    list_editable = ("order", "is_active")
-    list_filter = ("section", "is_active")
-    search_fields = ("blog__title", "section__label")
-    ordering = ("section", "order", "-created_at")
-    autocomplete_fields = ["blog", "section"]
+# BillboardSectionItem is managed via inline in BillboardSection - disabled standalone admin
+# @admin.register(BillboardSectionItem, site=admin_site)
+# class BillboardSectionItemAdmin(admin.ModelAdmin):
+#     """Admin interface for individual Billboard Section Items"""
+#     list_display = ("blog", "section", "order", "is_active", "created_at")
+#     list_editable = ("order", "is_active")
+#     list_filter = ("section", "is_active")
+#     search_fields = ("blog__title", "section__label")
+#     ordering = ("section", "order", "-created_at")
+#     autocomplete_fields = ["blog", "section"]
