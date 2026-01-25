@@ -19,8 +19,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem
-from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, BillboardItemSerializer
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedListing
+from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, BillboardItemSerializer, FeaturedListingSerializer
 from .utils import get_preferred_language
 from .pagination import StandardResultsSetPagination
 
@@ -1664,6 +1664,67 @@ class BillboardScreenView(APIView):
         data = {
             section: BillboardItemSerializer(items_list, many=True, context=context).data
             for section, items_list in sections.items()
+        }
+
+        return Response(data)
+
+
+# ============================================================================
+# FEATURED LISTINGS VIEW - Magazine-style billboard with listings
+# ============================================================================
+
+class FeaturedListingsView(APIView):
+    """
+    Returns featured listings grouped by card size for the magazine-style billboard.
+
+    Card sizes:
+    - hero: Full-width hero cards
+    - large: 2-column large cards
+    - medium: 3-column medium cards
+    - small: Horizontal scroll strip
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @method_decorator(cache_page(60 * 2))  # Cache for 2 minutes
+    def get(self, request):
+        from django.utils import timezone
+        now = timezone.now()
+
+        # Get all active featured listings that haven't expired
+        items = FeaturedListing.objects.filter(
+            is_active=True,
+            listing__is_active=True,
+        ).filter(
+            models.Q(valid_until__isnull=True) | models.Q(valid_until__gt=now)
+        ).select_related('listing', 'listing__category').order_by('card_size', 'order')
+
+        context = {
+            'request': request,
+            'language': get_preferred_language(request)
+        }
+
+        # Group items by card size
+        data = {
+            'hero': FeaturedListingSerializer(
+                [i for i in items if i.card_size == 'hero'],
+                many=True,
+                context=context
+            ).data,
+            'large': FeaturedListingSerializer(
+                [i for i in items if i.card_size == 'large'],
+                many=True,
+                context=context
+            ).data,
+            'medium': FeaturedListingSerializer(
+                [i for i in items if i.card_size == 'medium'],
+                many=True,
+                context=context
+            ).data,
+            'small': FeaturedListingSerializer(
+                [i for i in items if i.card_size == 'small'],
+                many=True,
+                context=context
+            ).data,
         }
 
         return Response(data)

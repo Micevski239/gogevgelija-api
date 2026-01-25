@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem
+from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedListing
 
 
 def _build_image_urls(obj, request, field_names):
@@ -1381,3 +1381,25 @@ class BillboardScreenSerializer(serializers.Serializer):
     spotlight = BillboardItemSerializer(many=True, read_only=True)
     upcoming = BillboardItemSerializer(many=True, read_only=True)
     general = BillboardItemSerializer(many=True, read_only=True)
+
+
+# ============================================================================
+# FEATURED LISTINGS SERIALIZERS - Magazine-style billboard
+# ============================================================================
+
+class FeaturedListingSerializer(serializers.ModelSerializer):
+    """Serializer for Featured Listings with nested listing data"""
+    listing = ListingSerializer(read_only=True)
+    promo_text = serializers.SerializerMethodField()
+    time_remaining = serializers.ReadOnlyField()
+
+    class Meta:
+        model = FeaturedListing
+        fields = ['id', 'listing', 'card_size', 'promo_text', 'valid_until', 'time_remaining', 'order']
+
+    def get_promo_text(self, obj):
+        """Return promo text in the current language"""
+        lang = self.context.get('language', 'en')
+        if lang == 'mk' and obj.promo_text_mk:
+            return obj.promo_text_mk
+        return obj.promo_text or None
