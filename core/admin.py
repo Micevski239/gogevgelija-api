@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.forms import Textarea
 # Modeltranslation will automatically add language fields to admin
-from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem, FeaturedListing
+from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem, FeaturedItem
 
 
 class GroupedAdminSite(admin.AdminSite):
@@ -17,7 +17,7 @@ class GroupedAdminSite(admin.AdminSite):
 
     model_groups = {
         "CONTENT": [Listing, Blog, Event, Promotion, Category],
-        "SCREENS": [HomeSection, TourismCarousel, FeaturedListing, BillboardSection, BillboardItem],
+        "SCREENS": [HomeSection, TourismCarousel, FeaturedItem, BillboardSection, BillboardItem],
         "USERS": [User, UserProfile, UserPermission],
         "SUPPORT": [HelpSupport, CollaborationContact],
         "VIEW LOGS": [EventJoin, Wishlist, GuestUser, VerificationCode, Group],
@@ -995,23 +995,104 @@ class BillboardSectionAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
-# FEATURED LISTINGS ADMIN - Magazine-style featured content
+# FEATURED ITEMS ADMIN - Magazine-style featured content
 # ============================================================================
 
-@admin.register(FeaturedListing, site=admin_site)
-class FeaturedListingAdmin(admin.ModelAdmin):
-    """Admin interface for Featured Listings (magazine-style billboard)"""
-    list_display = ('listing', 'card_size', 'promo_text', 'valid_until', 'order', 'is_active', 'created_at')
+from django import forms
+
+class FeaturedItemAdminForm(forms.ModelForm):
+    """Custom form for FeaturedItem with dynamic content selection"""
+
+    # Dynamic fields for selecting content
+    listing = forms.ModelChoiceField(
+        queryset=Listing.objects.filter(is_active=True),
+        required=False,
+        label="Listing",
+        help_text="Select a listing to feature"
+    )
+    event = forms.ModelChoiceField(
+        queryset=Event.objects.filter(is_active=True),
+        required=False,
+        label="Event",
+        help_text="Select an event to feature"
+    )
+    promotion = forms.ModelChoiceField(
+        queryset=Promotion.objects.filter(is_active=True),
+        required=False,
+        label="Promotion",
+        help_text="Select a promotion to feature"
+    )
+
+    class Meta:
+        model = FeaturedItem
+        fields = ['item_type', 'card_size', 'promo_text', 'promo_text_mk', 'valid_until', 'order', 'is_active']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-populate the correct field based on existing content
+        if self.instance and self.instance.pk:
+            obj = self.instance.content_object
+            if self.instance.item_type == 'listing' and obj:
+                self.fields['listing'].initial = obj
+            elif self.instance.item_type == 'event' and obj:
+                self.fields['event'].initial = obj
+            elif self.instance.item_type == 'promotion' and obj:
+                self.fields['promotion'].initial = obj
+
+    def clean(self):
+        cleaned_data = super().clean()
+        item_type = cleaned_data.get('item_type')
+        listing = cleaned_data.get('listing')
+        event = cleaned_data.get('event')
+        promotion = cleaned_data.get('promotion')
+
+        # Validate that the correct content is selected based on item_type
+        if item_type == 'listing' and not listing:
+            raise forms.ValidationError("Please select a Listing for this item type.")
+        elif item_type == 'event' and not event:
+            raise forms.ValidationError("Please select an Event for this item type.")
+        elif item_type == 'promotion' and not promotion:
+            raise forms.ValidationError("Please select a Promotion for this item type.")
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        item_type = self.cleaned_data.get('item_type')
+
+        # Set the content_type and object_id based on item_type
+        if item_type == 'listing':
+            content_obj = self.cleaned_data.get('listing')
+            instance.content_type = ContentType.objects.get_for_model(Listing)
+        elif item_type == 'event':
+            content_obj = self.cleaned_data.get('event')
+            instance.content_type = ContentType.objects.get_for_model(Event)
+        elif item_type == 'promotion':
+            content_obj = self.cleaned_data.get('promotion')
+            instance.content_type = ContentType.objects.get_for_model(Promotion)
+
+        if content_obj:
+            instance.object_id = content_obj.pk
+
+        if commit:
+            instance.save()
+        return instance
+
+
+@admin.register(FeaturedItem, site=admin_site)
+class FeaturedItemAdmin(admin.ModelAdmin):
+    """Admin interface for Featured Items (magazine-style billboard)"""
+    form = FeaturedItemAdminForm
+    list_display = ('get_title', 'item_type', 'card_size', 'promo_text', 'valid_until', 'order', 'is_active', 'created_at')
     list_editable = ('card_size', 'order', 'is_active')
-    list_filter = ('card_size', 'is_active')
-    autocomplete_fields = ['listing']
+    list_filter = ('item_type', 'card_size', 'is_active')
     ordering = ('card_size', 'order', '-created_at')
     date_hierarchy = 'created_at'
 
     fieldsets = (
-        ('Select Listing', {
-            'fields': ('listing', 'card_size'),
-            'description': 'Choose a listing and how it should be displayed'
+        ('Select Content', {
+            'fields': ('item_type', 'listing', 'event', 'promotion', 'card_size'),
+            'description': 'Choose item type first, then select the content and display size'
         }),
         ('Marketing', {
             'fields': (('promo_text', 'promo_text_mk'), 'valid_until'),
@@ -1022,15 +1103,26 @@ class FeaturedListingAdmin(admin.ModelAdmin):
         }),
     )
 
+    class Media:
+        js = ('admin/js/featured_item_admin.js',)
+
+    def get_title(self, obj):
+        """Display the title of the linked content"""
+        content = obj.content_object
+        if content:
+            return getattr(content, 'title', str(content))
+        return f"(Missing #{obj.object_id})"
+    get_title.short_description = "Content"
+
     # Bulk actions
     actions = ['activate_items', 'deactivate_items']
 
     def activate_items(self, request, queryset):
         updated = queryset.update(is_active=True)
-        self.message_user(request, f"{updated} featured listings activated.")
+        self.message_user(request, f"{updated} featured items activated.")
     activate_items.short_description = "✅ Activate selected items"
 
     def deactivate_items(self, request, queryset):
         updated = queryset.update(is_active=False)
-        self.message_user(request, f"{updated} featured listings deactivated.")
+        self.message_user(request, f"{updated} featured items deactivated.")
     deactivate_items.short_description = "❌ Deactivate selected items"
