@@ -426,6 +426,15 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'fields': ('title_mk', 'subtitle_mk', 'content_mk', 'author_mk'),
             'classes': ('lang-tab', 'lang-mk'),
         }),
+        ('CTA Button (Call to Action)', {
+            'fields': (
+                'cta_button_url',
+                ('cta_button_title', 'cta_button_title_en', 'cta_button_title_mk'),
+                ('cta_button_subtitle', 'cta_button_subtitle_en', 'cta_button_subtitle_mk'),
+            ),
+            'classes': ('wide',),
+            'description': 'Optional button that appears in the blog detail. Leave URL empty to hide the button.'
+        }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',),
