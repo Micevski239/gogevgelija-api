@@ -428,8 +428,8 @@ class Listing(models.Model):
         return self.title
 
 
-class FeaturedListing(models.Model):
-    """Featured listings for the magazine-style billboard screen"""
+class FeaturedItem(models.Model):
+    """Featured items (listings, events, promotions) for the magazine-style billboard screen"""
     CARD_SIZE_CHOICES = [
         ('hero', 'Hero (Full Width)'),
         ('large', 'Large (2-Column)'),
@@ -437,7 +437,22 @@ class FeaturedListing(models.Model):
         ('small', 'Small (Horizontal Scroll)'),
     ]
 
-    listing = models.ForeignKey('Listing', on_delete=models.CASCADE, related_name='featured_entries')
+    ITEM_TYPE_CHOICES = [
+        ('listing', 'Listing'),
+        ('event', 'Event'),
+        ('promotion', 'Promotion'),
+    ]
+
+    # Generic foreign key to support Listing, Event, or Promotion
+    item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES, default='listing')
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        limit_choices_to={'model__in': ['listing', 'event', 'promotion']}
+    )
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
     card_size = models.CharField(max_length=10, choices=CARD_SIZE_CHOICES, default='medium')
 
     promo_text = models.CharField(max_length=100, blank=True, help_text="e.g., '20% Off Today!'")
@@ -451,12 +466,14 @@ class FeaturedListing(models.Model):
 
     class Meta:
         ordering = ['card_size', 'order']
-        unique_together = [['listing', 'card_size']]
-        verbose_name = "Featured Listing"
-        verbose_name_plural = "Featured Listings"
+        unique_together = [['content_type', 'object_id', 'card_size']]
+        verbose_name = "Featured Item"
+        verbose_name_plural = "Featured Items"
 
     def __str__(self):
-        return f"{self.listing.title} ({self.get_card_size_display()})"
+        obj = self.content_object
+        title = getattr(obj, 'title', str(obj)) if obj else f"#{self.object_id}"
+        return f"{title} ({self.get_card_size_display()})"
 
     @property
     def time_remaining(self):
@@ -1476,10 +1493,7 @@ def clear_billboard_section_item_cache(sender, **kwargs):
     cache.clear()
 
 
-# Import FeaturedListing for signal (defined above in this file)
-from django.db.models.signals import post_save, post_delete
-
-@receiver([post_save, post_delete], sender='core.FeaturedListing')
-def clear_featured_listing_cache(sender, **kwargs):
-    """Clear cache when featured listings change"""
+@receiver([post_save, post_delete], sender='core.FeaturedItem')
+def clear_featured_item_cache(sender, **kwargs):
+    """Clear cache when featured items change"""
     cache.clear()
