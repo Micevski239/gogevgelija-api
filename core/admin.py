@@ -726,7 +726,7 @@ class TourismCarouselAdmin(MultilingualAdminMixin, admin.ModelAdmin):
         }),
         ("Content Reference", {
             "fields": ("content_type", "object_id"),
-            "description": "Select the type and ID of the content to display (Listing or Event)"
+            "description": "Select the type and ID of the content to display (Listing, Event, or Blog)"
         }),
         ("Display Settings", {
             "fields": ("order", "is_active")
@@ -740,10 +740,10 @@ class TourismCarouselAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """Limit content_type choices to Listing or Event"""
+        """Limit content_type choices to Listing, Event, or Blog"""
         if db_field.name == "content_type":
             kwargs["queryset"] = ContentType.objects.filter(
-                model__in=["listing", "event"]
+                model__in=["listing", "event", "blog"]
             )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
