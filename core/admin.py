@@ -106,11 +106,8 @@ admin_site.register(Group, GroupAdmin)
 
 class MultilingualAdminMixin:
     """Mixin for multilingual admin interfaces with tabbed layout"""
-    
+
     class Media:
-        css = {
-            'all': ('admin/css/multilang.css',)
-        }
         js = ('admin/js/vendor/jquery/jquery.js', 'admin/js/multilang.js')
     
     formfield_overrides = {
@@ -363,7 +360,6 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
 
     class Media:
-        css = {'all': ('admin/css/multilang.css',)}
         js = ('admin/js/vendor/jquery/jquery.js', 'admin/js/multilang.js', 'admin/js/ai_fill.js',)
 
     def get_urls(self):
