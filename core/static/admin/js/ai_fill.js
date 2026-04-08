@@ -8,14 +8,13 @@
   var hash = window.location.hash;
   if (!hash.startsWith("#gg:")) return;
 
+  var payload;
   try {
-    var encoded = hash.slice(4);
-    var data = JSON.parse(decodeURIComponent(atob(encoded)));
-    fill(data.eventContent, data.listingIds || [], data.categoryId || "");
-    // Remove hash from URL so it doesn't persist on refresh
+    payload = JSON.parse(decodeURIComponent(atob(hash.slice(4))));
     history.replaceState(null, "", window.location.pathname);
   } catch (e) {
-    console.error("AI Fill error:", e);
+    console.error("AI Fill decode error:", e);
+    return;
   }
 
   function set(name, value) {
@@ -55,12 +54,12 @@
     if (categoryId) {
       var cat = document.getElementById("id_category");
       if (cat) {
-        cat.value = categoryId;
+        cat.value = String(categoryId);
         cat.dispatchEvent(new Event("change", { bubbles: true }));
       }
     }
 
-    if (listingIds.length && typeof SelectBox !== "undefined") {
+    if (listingIds && listingIds.length && typeof SelectBox !== "undefined") {
       var from = document.getElementById("id_listings_from");
       if (from) {
         for (var i = 0; i < from.options.length; i++) {
@@ -72,4 +71,16 @@
       }
     }
   }
+
+  function run() {
+    fill(payload.eventContent, payload.listingIds || [], payload.categoryId || "");
+  }
+
+  // Wait for DOM to be fully ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+
 })();
