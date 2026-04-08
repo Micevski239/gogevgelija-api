@@ -3,7 +3,50 @@
    White theme · #b91c1c accent · Bootstrap 5 loaded via template
    ═══════════════════════════════════════════════════════════════════ */
 
-:root {
+/* ── FORCE LIGHT MODE — override Django 5.x dark mode ──────────── */
+:root, html[data-theme="light"], html {
+    color-scheme: light only !important;
+
+    /* Django admin CSS custom properties — forced to light */
+    --primary: #b91c1c !important;
+    --primary-fg: #fff !important;
+    --body-fg: #111827 !important;
+    --body-bg: #f9fafb !important;
+    --body-quiet-color: #6b7280 !important;
+    --body-loud-color: #111827 !important;
+    --header-color: #fff !important;
+    --header-branding-color: #b91c1c !important;
+    --header-bg: #fff !important;
+    --header-link-color: #374151 !important;
+    --breadcrumbs-fg: #6b7280 !important;
+    --breadcrumbs-link-fg: #b91c1c !important;
+    --breadcrumbs-bg: #fff !important;
+    --link-fg: #b91c1c !important;
+    --link-hover-color: #991b1b !important;
+    --link-selected-fg: #b91c1c !important;
+    --hairline-color: #e5e7eb !important;
+    --border-color: #e5e7eb !important;
+    --error-fg: #b91c1c !important;
+    --message-success-bg: #f0fdf4 !important;
+    --message-warning-bg: #fffbeb !important;
+    --message-error-bg: #fef2f2 !important;
+    --darkened-bg: #f3f4f6 !important;
+    --selected-bg: #fef2f2 !important;
+    --selected-row: #fef2f2 !important;
+    --button-fg: #fff !important;
+    --button-bg: #b91c1c !important;
+    --button-hover-bg: #991b1b !important;
+    --default-button-bg: #b91c1c !important;
+    --default-button-hover-bg: #991b1b !important;
+    --close-button-bg: #6b7280 !important;
+    --close-button-hover-bg: #4b5563 !important;
+    --delete-button-bg: #b91c1c !important;
+    --delete-button-hover-bg: #991b1b !important;
+    --object-tools-fg: #fff !important;
+    --object-tools-bg: #b91c1c !important;
+    --object-tools-hover-bg: #991b1b !important;
+
+    /* Our variables */
     --gg:       #b91c1c;
     --gg-hover: #991b1b;
     --gg-light: #fef2f2;
@@ -24,6 +67,50 @@
     --shadow-md: 0 4px 12px rgba(0,0,0,.08);
     --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
             "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Block Django's dark mode media query */
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: light only !important;
+        --primary: #b91c1c !important;
+        --primary-fg: #fff !important;
+        --body-fg: #111827 !important;
+        --body-bg: #f9fafb !important;
+        --body-quiet-color: #6b7280 !important;
+        --body-loud-color: #111827 !important;
+        --header-bg: #fff !important;
+        --header-color: #fff !important;
+        --header-branding-color: #b91c1c !important;
+        --header-link-color: #374151 !important;
+        --breadcrumbs-fg: #6b7280 !important;
+        --breadcrumbs-link-fg: #b91c1c !important;
+        --breadcrumbs-bg: #fff !important;
+        --link-fg: #b91c1c !important;
+        --link-hover-color: #991b1b !important;
+        --link-selected-fg: #b91c1c !important;
+        --hairline-color: #e5e7eb !important;
+        --border-color: #e5e7eb !important;
+        --error-fg: #b91c1c !important;
+        --message-success-bg: #f0fdf4 !important;
+        --message-warning-bg: #fffbeb !important;
+        --message-error-bg: #fef2f2 !important;
+        --darkened-bg: #f3f4f6 !important;
+        --selected-bg: #fef2f2 !important;
+        --selected-row: #fef2f2 !important;
+        --button-fg: #fff !important;
+        --button-bg: #b91c1c !important;
+        --button-hover-bg: #991b1b !important;
+        --default-button-bg: #b91c1c !important;
+        --default-button-hover-bg: #991b1b !important;
+        --close-button-bg: #6b7280 !important;
+        --close-button-hover-bg: #4b5563 !important;
+        --delete-button-bg: #b91c1c !important;
+        --delete-button-hover-bg: #991b1b !important;
+        --object-tools-fg: #fff !important;
+        --object-tools-bg: #b91c1c !important;
+        --object-tools-hover-bg: #991b1b !important;
+    }
 }
 
 /* ── Reset ─────────────────────────────────────────────────────────── */
