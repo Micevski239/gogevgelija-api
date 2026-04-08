@@ -5,11 +5,6 @@
     return;
   }
 
-  // Signal to the Dashboard tab that this page is ready to receive data
-  if (window.opener) {
-    window.opener.postMessage({ type: "DJANGO_ADMIN_READY" }, "*");
-  }
-
   // Listen for fill data sent from the Dashboard
   window.addEventListener("message", function (e) {
     if (!e.data || e.data.type !== "GOGEVGELIJA_FILL") return;
