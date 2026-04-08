@@ -1,8 +1,238 @@
-/* Multilingual Tabs CSS */
+/* ── Dark theme for Django admin ──────────────────────────────── */
+:root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --surface2: #0f3460;
+    --border: #2a2a4a;
+    --text: #e0e0f0;
+    --text-muted: #9090b0;
+    --input-bg: #0d1b2a;
+    --accent: #417690;
+    --accent-hover: #2a5a70;
+    --danger: #c0392b;
+    --success: #27ae60;
+}
+
+html, body {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+}
+
+/* Header */
+#header {
+    background: #0d1b2a !important;
+    color: var(--text) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+#header a, #header a:visited { color: #a0c4e4 !important; }
+#branding h1, #branding h1 a { color: var(--text) !important; }
+#user-tools { color: var(--text-muted) !important; }
+#user-tools a { color: #a0c4e4 !important; }
+
+/* Breadcrumbs */
+div.breadcrumbs {
+    background: var(--surface) !important;
+    color: var(--text-muted) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+div.breadcrumbs a { color: #a0c4e4 !important; }
+
+/* Content */
+#content, #content-main, .content-title, #content > h1 {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+}
+#content h1, #content h2, #content h3 {
+    color: var(--text) !important;
+}
+
+/* Sidebar / nav */
+#nav-sidebar, .toggle-nav-sidebar {
+    background: var(--surface) !important;
+    border-right: 1px solid var(--border) !important;
+}
+#nav-sidebar a, #nav-sidebar .current-app .section:link {
+    color: #a0c4e4 !important;
+}
+
+/* Modules / fieldsets */
+.module, fieldset.module {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 6px !important;
+}
+.module h2, .module caption, fieldset.module h2 {
+    background: var(--surface2) !important;
+    color: var(--text) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+.module p, .module ul, .module pre {
+    color: var(--text) !important;
+}
+
+/* Form rows */
+.form-row {
+    border-bottom: 1px solid var(--border) !important;
+}
+.form-row label, .required label {
+    color: var(--text) !important;
+}
+p.help, .help {
+    color: var(--text-muted) !important;
+}
+
+/* Inputs */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="url"],
+input[type="search"],
+input[type="tel"],
+input[type="date"],
+input[type="datetime-local"],
+textarea,
+select,
+.vTextField,
+.vURLField {
+    background: var(--input-bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px !important;
+    color-scheme: dark !important;
+}
+input:focus, textarea:focus, select:focus {
+    border-color: var(--accent) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(65,118,144,0.3) !important;
+}
+input[type="checkbox"] {
+    accent-color: var(--accent) !important;
+    color-scheme: dark !important;
+}
+
+/* Select2 / filter_horizontal */
+select[multiple], .selector-available, .selector-chosen {
+    background: var(--input-bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+}
+.selector h2 {
+    background: var(--surface2) !important;
+    color: var(--text) !important;
+}
+.selector-filter input {
+    background: var(--input-bg) !important;
+    color: var(--text) !important;
+}
+.selector-chooser li a {
+    background: var(--surface2) !important;
+    color: var(--text) !important;
+}
+
+/* Submit row */
+.submit-row {
+    background: var(--surface) !important;
+    border-top: 1px solid var(--border) !important;
+}
+.submit-row input[type="submit"],
+.submit-row a.deletelink,
+.submit-row a.closelink {
+    border-radius: 4px !important;
+}
+.default { background: var(--accent) !important; }
+.default:hover { background: var(--accent-hover) !important; }
+
+/* Action buttons */
+a.addlink, a.changelink, a.viewlink {
+    color: #a0c4e4 !important;
+}
+a.deletelink { color: #e07070 !important; }
+
+/* Messages */
+ul.messagelist li { border-radius: 4px !important; }
+ul.messagelist li.success {
+    background: #1a3a2a !important;
+    color: #6fd99f !important;
+    border: 1px solid #27ae60 !important;
+}
+ul.messagelist li.error,
+ul.messagelist li.warning {
+    background: #3a1a1a !important;
+    color: #e09090 !important;
+    border: 1px solid var(--danger) !important;
+}
+
+/* Change list */
+#changelist-filter {
+    background: var(--surface) !important;
+    border-left: 1px solid var(--border) !important;
+}
+#changelist-filter h2, #changelist-filter h3 {
+    color: var(--text) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+#changelist-filter a { color: #a0c4e4 !important; }
+#changelist-filter li.selected a { color: var(--text) !important; font-weight: bold; }
+#changelist {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 6px !important;
+}
+#changelist table thead th {
+    background: var(--surface2) !important;
+    color: var(--text) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+#changelist table tbody tr {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+}
+#changelist table tbody tr:nth-child(even) {
+    background: var(--bg) !important;
+}
+#changelist table tbody tr:hover {
+    background: var(--surface2) !important;
+}
+#changelist table td, #changelist table th {
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+#changelist table a { color: #a0c4e4 !important; }
+
+/* Pagination */
+.paginator a { color: #a0c4e4 !important; }
+.paginator .this-page {
+    background: var(--accent) !important;
+    color: #fff !important;
+    border-radius: 3px !important;
+}
+
+/* Inline admin */
+.inline-group {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 6px !important;
+}
+.inline-group h2 {
+    background: var(--surface2) !important;
+    color: var(--text) !important;
+}
+.inline-related {
+    border-top: 1px solid var(--border) !important;
+}
+.add-row a { color: #a0c4e4 !important; }
+.delete-row a { color: #e07070 !important; }
+
+/* Image/file widgets */
+.file-upload { color: var(--text-muted) !important; }
+p.file-upload a { color: #a0c4e4 !important; }
+
+/* ── Multilingual Tabs ─────────────────────────────────────────── */
 .lang-tabs {
     margin-bottom: 20px;
-    border-bottom: 1px solid #ddd;
-    background: #f8f8f8;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
     padding: 0;
     overflow: hidden;
 }
@@ -11,25 +241,25 @@
     display: inline-block;
     padding: 12px 20px;
     margin-right: 2px;
-    background: #e0e0e0;
-    border: 1px solid #ddd;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-bottom: none;
     cursor: pointer;
     font-weight: bold;
-    color: #666;
-    transition: all 0.3s ease;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
     border-radius: 5px 5px 0 0;
 }
 
 .lang-tab-header:hover {
-    background: #d0d0d0;
-    color: #333;
+    background: var(--surface2);
+    color: var(--text);
 }
 
 .lang-tab-header.active {
-    background: #fff;
-    color: #333;
-    border-bottom: 1px solid #fff;
+    background: var(--surface);
+    color: var(--text);
+    border-bottom: 1px solid var(--surface);
     margin-bottom: -1px;
     z-index: 1;
     position: relative;
@@ -38,8 +268,8 @@
 .lang-tab-content {
     display: none;
     padding: 20px;
-    background: #fff;
-    border: 1px solid #ddd;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-top: none;
     margin-bottom: 20px;
 }
@@ -50,11 +280,12 @@
 
 .lang-tab-content .form-row {
     margin-bottom: 15px;
+    border-bottom: 1px solid var(--border);
 }
 
 .lang-tab-content .form-row label {
     font-weight: bold;
-    color: #333;
+    color: var(--text);
     margin-bottom: 5px;
     display: block;
 }
@@ -65,9 +296,11 @@
     width: 100%;
     max-width: 600px;
     padding: 8px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 4px;
     font-size: 14px;
+    background: var(--input-bg);
+    color: var(--text);
 }
 
 .lang-tab-content .form-row textarea {
@@ -118,27 +351,9 @@
         border-radius: 5px;
         text-align: center;
     }
-    
-    .lang-tabs {
-        border-bottom: none;
-    }
-    
+    .lang-tabs { border-bottom: none; }
     .lang-tab-content {
-        border: 1px solid #ddd;
+        border: 1px solid var(--border);
         border-radius: 5px;
     }
-}
-
-.lang-tab-content .messagelist {
-    margin: 0 0 15px 0;
-}
-
-.lang-tab-content .messagelist .success {
-    background: #dfd;
-    border-color: #6c6;
-}
-
-.lang-tab-content .messagelist .error {
-    background: #fdd;
-    border-color: #c66;
 }
