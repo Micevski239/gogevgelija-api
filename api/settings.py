@@ -175,6 +175,9 @@ TRANSLATIONS_DIR = BASE_DIR / "translations"
 # -------------------- Admin toggle --------------------
 ADMIN_ENABLED = os.getenv("DJANGO_ADMIN_ENABLED", "1" if DEBUG else "0") == "1"
 
+# -------------------- Dashboard --------------------
+DASHBOARD_URL = os.getenv("DASHBOARD_URL", "")
+
 # -------------------- Logging --------------------
 LOGGING = {
     "version": 1,
