@@ -370,8 +370,18 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path('ai-fill/', self.admin_site.admin_view(self.ai_fill_view), name='event_ai_fill'),
+            path('ai-listings/', self.admin_site.admin_view(self.ai_listings_view), name='event_ai_listings'),
         ]
         return custom_urls + urls
+
+    def ai_listings_view(self, request):
+        from .models import Listing
+        listings = list(
+            Listing.objects.filter(is_active=True)
+            .values('id', 'title', 'phone_number', 'website_url', 'facebook_url', 'instagram_url', 'google_maps_url')
+            .order_by('title')
+        )
+        return JsonResponse({'listings': listings})
 
     VALID_ICONS = [
         "musical-notes","restaurant","beer","wine","camera","people","happy","star",
