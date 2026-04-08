@@ -1,9 +1,9 @@
 import json
+import os
 from collections import defaultdict
 
 import requests as http_requests
 
-from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
@@ -373,6 +373,36 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
         ]
         return custom_urls + urls
 
+    VALID_ICONS = [
+        "musical-notes","restaurant","beer","wine","camera","people","happy","star",
+        "heart","flash","time","location","ticket","gift","trophy","mic","headset",
+        "bonfire","cafe","cart","fitness","football","game-controller","globe","leaf",
+        "paw","ribbon","rose","sparkles","sunny","water",
+    ]
+
+    AI_SYSTEM_PROMPT = """You are an assistant that extracts structured event information from social media post captions for a tourism app in Gevgelija, North Macedonia.
+
+Your task:
+1. Extract event details from the provided caption text
+2. Structure them into specific fields matching the Django Event model
+3. Translate ALL text fields into natural Macedonian (not Google Translate quality — use proper Macedonian phrasing)
+
+Output a JSON object with these exact fields:
+- title: Event title in English (concise, catchy)
+- description: Event description in English (2-4 sentences, engaging)
+- date_time: Date/time string (e.g., "Fri, 20:00" or "Dec 25, 18:00")
+- location: Venue name and/or address in English
+- entry_price: Price string (e.g., "Free", "500 MKD", "10 EUR"). Default to "Free" if not mentioned.
+- age_limit: Age restriction (e.g., "All ages welcome", "18+"). Default to "All ages welcome" if not mentioned.
+- expectations: Array of 3-5 objects with {"icon": string, "text": string}. Icons MUST be from this list: {icons}. Text should be short phrases.
+- title_mk, description_mk, location_mk, entry_price_mk, age_limit_mk: Macedonian translations
+- expectations_mk: Same array structure but text in Macedonian. Icons stay the same.
+
+Rules:
+- If information is missing, make reasonable inferences for a venue in Gevgelija
+- Macedonian translations must sound natural — as if written by a native speaker
+- ONLY output valid JSON, no markdown fences, no extra text"""
+
     def ai_fill_view(self, request):
         if request.method != 'POST':
             return JsonResponse({'error': 'POST required'}, status=405)
@@ -387,22 +417,40 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
         if not caption:
             return JsonResponse({'error': 'Caption is required'}, status=400)
 
-        dashboard_url = getattr(settings, 'DASHBOARD_URL', '').rstrip('/')
-        if not dashboard_url:
-            return JsonResponse({'error': 'DASHBOARD_URL is not configured in settings'}, status=500)
+        api_key = os.getenv('OPENAI_API_KEY', '')
+        if not api_key:
+            return JsonResponse({'error': 'OPENAI_API_KEY not configured'}, status=500)
+
+        api_url = 'https://api.openai.com/v1/chat/completions'
+        model = 'gpt-4o-mini'
+
+        system_prompt = self.AI_SYSTEM_PROMPT.format(icons=', '.join(self.VALID_ICONS))
 
         try:
             resp = http_requests.post(
-                f'{dashboard_url}/api/process',
-                json={'caption': caption, 'platform': platform, 'sourceUrl': ''},
+                api_url,
+                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+                json={
+                    'model': model,
+                    'response_format': {'type': 'json_object'},
+                    'messages': [
+                        {'role': 'system', 'content': system_prompt},
+                        {'role': 'user', 'content': f'Extract event information from this {platform} post caption:\n\n{caption}'},
+                    ],
+                    'temperature': 0.3,
+                },
                 timeout=30,
             )
             resp.raise_for_status()
-            return JsonResponse(resp.json())
+            data = resp.json()
+            content = data['choices'][0]['message']['content']
+            return JsonResponse(json.loads(content))
         except http_requests.exceptions.Timeout:
-            return JsonResponse({'error': 'Dashboard request timed out'}, status=504)
+            return JsonResponse({'error': 'AI request timed out'}, status=504)
         except http_requests.exceptions.RequestException as e:
             return JsonResponse({'error': str(e)}, status=502)
+        except (KeyError, json.JSONDecodeError) as e:
+            return JsonResponse({'error': f'Failed to parse AI response: {e}'}, status=500)
 
 @admin.register(Promotion, site=admin_site)
 class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
