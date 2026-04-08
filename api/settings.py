@@ -35,6 +35,7 @@ X_FRAME_OPTIONS = "DENY"
 
 # -------------------- Apps --------------------
 INSTALLED_APPS = [
+    "jazzmin",  # must be before django.contrib.admin
     "django.contrib.admin","django.contrib.auth","django.contrib.contenttypes",
     "django.contrib.sessions","django.contrib.messages","django.contrib.staticfiles",
     "rest_framework","corsheaders","imagekit","modeltranslation","core.apps.CoreConfig",
@@ -171,6 +172,89 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Directory that holds shared translation resources
 TRANSLATIONS_DIR = BASE_DIR / "translations"
+
+# -------------------- Jazzmin --------------------
+JAZZMIN_SETTINGS = {
+    "site_title": "GoGevgelija",
+    "site_header": "GoGevgelija",
+    "site_brand": "GoGevgelija",
+    "site_logo": None,
+    "site_icon": None,
+    "welcome_sign": "GoGevgelija Admin",
+    "copyright": "GoGevgelija",
+    "search_model": ["auth.user", "core.Listing", "core.Event", "core.Promotion"],
+    "user_avatar": None,
+    "topmenu_links": [],
+    "usermenu_links": [],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "icons": {
+        "auth.user": "fas fa-user",
+        "auth.group": "fas fa-users",
+        "core.listing": "fas fa-store",
+        "core.event": "fas fa-calendar-alt",
+        "core.promotion": "fas fa-tag",
+        "core.blog": "fas fa-newspaper",
+        "core.category": "fas fa-folder",
+        "core.homesection": "fas fa-home",
+        "core.tourismcarousel": "fas fa-images",
+        "core.billboardsection": "fas fa-layer-group",
+        "core.billboarditem": "fas fa-image",
+        "core.featureditem": "fas fa-star",
+        "core.userprofile": "fas fa-id-card",
+        "core.userpermission": "fas fa-lock",
+        "core.helpsupport": "fas fa-question-circle",
+        "core.collaborationcontact": "fas fa-handshake",
+        "core.eventjoin": "fas fa-sign-in-alt",
+        "core.wishlist": "fas fa-heart",
+        "core.guestuser": "fas fa-user-secret",
+        "core.verificationcode": "fas fa-key",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": True,
+    "custom_css": "admin/css/multilang.css",
+    "custom_js": None,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+    "changeform_format": "single",
+    "changeform_format_overrides": {},
+    "language_chooser": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": False,
+    "accent": "accent-danger",
+    "navbar": "navbar-white navbar-light",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-light-danger",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": True,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-outline-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
+    },
+}
 
 # -------------------- Admin toggle --------------------
 ADMIN_ENABLED = os.getenv("DJANGO_ADMIN_ENABLED", "1" if DEBUG else "0") == "1"
