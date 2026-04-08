@@ -5,19 +5,24 @@
     return;
   }
 
-  // Listen for fill data sent from the Dashboard
-  window.addEventListener("message", function (e) {
-    if (!e.data || e.data.type !== "GOGEVGELIJA_FILL") return;
-    var data = e.data.eventContent;
-    var listingIds = e.data.listingIds || [];
-    var categoryId = e.data.categoryId || "";
-    if (data) fill(data, listingIds, categoryId);
-  });
+  var hash = window.location.hash;
+  if (!hash.startsWith("#gg:")) return;
+
+  try {
+    var encoded = hash.slice(4);
+    var data = JSON.parse(decodeURIComponent(atob(encoded)));
+    fill(data.eventContent, data.listingIds || [], data.categoryId || "");
+    // Remove hash from URL so it doesn't persist on refresh
+    history.replaceState(null, "", window.location.pathname);
+  } catch (e) {
+    console.error("AI Fill error:", e);
+  }
 
   function set(name, value) {
+    if (!value) return;
     var el = document.getElementById("id_" + name) ||
               document.getElementById("id_" + name + "_en");
-    if (!el || !value) return;
+    if (!el) return;
     el.value = value;
     el.dispatchEvent(new Event("change", { bubbles: true }));
   }
