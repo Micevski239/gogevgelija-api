@@ -1,0 +1,127 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+/* force Inter on this page */
+.gg-dash * { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gg-dash" style="max-width:1200px;">
+
+  <!-- ── STAT CARDS ───────────────────────────────────────────── -->
+  <div class="gg-stats">
+    {% for s in stats %}
+    <a href="{{ s.url }}" class="gg-stat-card">
+      <div class="gg-stat-icon"><i class="bi {{ s.icon }}"></i></div>
+      <div class="gg-stat-body">
+        <span class="gg-stat-count">{{ s.count }}</span>
+        <span class="gg-stat-label">{{ s.label }}</span>
+      </div>
+      {% if s.delta > 0 %}
+      <span class="gg-stat-delta">+{{ s.delta }} this week</span>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ── NEEDS ATTENTION ──────────────────────────────────────── -->
+  {% if attention %}
+  <div class="gg-attention">
+    <div class="gg-section-title"><i class="bi bi-bell" style="color:#b91c1c;margin-right:8px;"></i>Needs Attention</div>
+    {% for a in attention %}
+    <a href="{{ a.url }}" class="gg-attention-item">
+      <i class="bi {{ a.icon }}" style="color:{{ a.color }};font-size:16px;"></i>
+      <span>{{ a.text }}</span>
+      <i class="bi bi-chevron-right" style="color:#9ca3af;margin-left:auto;font-size:12px;"></i>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── QUICK ACTIONS ────────────────────────────────────────── -->
+  <div class="gg-quick-actions">
+    <div class="gg-section-title"><i class="bi bi-lightning-charge" style="color:#b91c1c;margin-right:8px;"></i>Quick Actions</div>
+    <div class="gg-actions-grid">
+      {% for qa in quick_actions %}
+      <a href="{{ qa.url }}" class="gg-action-btn">
+        <i class="bi {{ qa.icon }}"></i>
+        <span>{{ qa.label }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── RECENT + ENGAGEMENT ROW ──────────────────────────────── -->
+  <div class="gg-bottom-row">
+    <!-- Recent Content -->
+    <div class="gg-recent">
+      <div class="gg-section-title"><i class="bi bi-clock-history" style="color:#b91c1c;margin-right:8px;"></i>Recent Content</div>
+      {% for item in recent_content %}
+      <a href="{{ item.url }}" class="gg-recent-item">
+        <span class="gg-recent-badge" style="background:{{ item.color }};">{{ item.type }}</span>
+        <span class="gg-recent-title">{{ item.title|truncatechars:45 }}</span>
+        <span class="gg-recent-date">{{ item.date|timesince }} ago</span>
+      </a>
+      {% endfor %}
+      {% if not recent_content %}
+      <div style="padding:20px;color:#9ca3af;font-size:13px;">No content yet.</div>
+      {% endif %}
+    </div>
+
+    <!-- Engagement -->
+    <div class="gg-engagement">
+      <div class="gg-section-title"><i class="bi bi-graph-up" style="color:#b91c1c;margin-right:8px;"></i>Engagement</div>
+      <div class="gg-engage-grid">
+        <div class="gg-engage-item">
+          <i class="bi bi-hand-thumbs-up" style="color:#b91c1c;"></i>
+          <div class="gg-engage-num">{{ engagement.event_joins }}</div>
+          <div class="gg-engage-label">Event Joins</div>
+        </div>
+        <div class="gg-engage-item">
+          <i class="bi bi-heart" style="color:#b91c1c;"></i>
+          <div class="gg-engage-num">{{ engagement.wishlists }}</div>
+          <div class="gg-engage-label">Wishlists</div>
+        </div>
+        <div class="gg-engage-item">
+          <i class="bi bi-person-check" style="color:#b91c1c;"></i>
+          <div class="gg-engage-num">{{ engagement.active_today }}</div>
+          <div class="gg-engage-label">Active Today</div>
+        </div>
+        <div class="gg-engage-item">
+          <i class="bi bi-person-walking" style="color:#b91c1c;"></i>
+          <div class="gg-engage-num">{{ engagement.guest_users }}</div>
+          <div class="gg-engage-label">Guest Users</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ALL MODELS (original Django list) ────────────────────── -->
+  <div class="gg-models-section">
+    <div class="gg-section-title" style="margin-bottom:16px;"><i class="bi bi-grid" style="color:#b91c1c;margin-right:8px;"></i>All Sections</div>
+    <div class="gg-models-grid">
+      {% for app in app_list %}
+      <div class="gg-model-group">
+        <div class="gg-model-group-title">{{ app.name }}</div>
+        {% for model in app.models %}
+        <div class="gg-model-row">
+          <a href="{{ model.admin_url }}" class="gg-model-name">{{ model.name }}</a>
+          <div class="gg-model-links">
+            {% if model.add_url %}<a href="{{ model.add_url }}" class="gg-model-add">+ Add</a>{% endif %}
+            <a href="{{ model.admin_url }}" class="gg-model-change">View</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

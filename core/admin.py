@@ -1,10 +1,14 @@
 import json
 import os
 from collections import defaultdict
+from datetime import timedelta
+from itertools import chain
+from operator import attrgetter
 
 import requests as http_requests
 
 from django.contrib import admin
+from django.utils import timezone
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
@@ -97,6 +101,123 @@ class GroupedAdminSite(admin.AdminSite):
 
         grouped_apps.extend(entry for entry in remaining_apps.values() if entry["models"])
         return grouped_apps
+
+    def index(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        now = timezone.now()
+        week_ago = now - timedelta(days=7)
+        today = now.date()
+
+        # ── Stat cards ──
+        extra_context['stats'] = [
+            {
+                'label': 'Listings',
+                'count': Listing.objects.filter(is_active=True).count(),
+                'delta': Listing.objects.filter(created_at__gte=week_ago).count(),
+                'icon': 'bi-shop',
+                'url': '/admin/core/listing/',
+                'add_url': '/admin/core/listing/add/',
+            },
+            {
+                'label': 'Events',
+                'count': Event.objects.filter(is_active=True).count(),
+                'delta': Event.objects.filter(created_at__gte=week_ago).count(),
+                'icon': 'bi-calendar-event',
+                'url': '/admin/core/event/',
+                'add_url': '/admin/core/event/add/',
+            },
+            {
+                'label': 'Promotions',
+                'count': Promotion.objects.filter(is_active=True).count(),
+                'delta': Promotion.objects.filter(created_at__gte=week_ago).count(),
+                'icon': 'bi-tag',
+                'url': '/admin/core/promotion/',
+                'add_url': '/admin/core/promotion/add/',
+            },
+            {
+                'label': 'Blogs',
+                'count': Blog.objects.filter(is_active=True).count(),
+                'delta': Blog.objects.filter(created_at__gte=week_ago).count(),
+                'icon': 'bi-newspaper',
+                'url': '/admin/core/blog/',
+                'add_url': '/admin/core/blog/add/',
+            },
+            {
+                'label': 'Users',
+                'count': User.objects.count(),
+                'delta': User.objects.filter(date_joined__gte=week_ago).count(),
+                'icon': 'bi-people',
+                'url': '/admin/auth/user/',
+                'add_url': '/admin/auth/user/add/',
+            },
+        ]
+
+        # ── Needs attention ──
+        attention = []
+        open_tickets = HelpSupport.objects.filter(status__in=['open', 'in_progress']).count()
+        if open_tickets:
+            attention.append({
+                'text': f'{open_tickets} open support ticket{"s" if open_tickets != 1 else ""}',
+                'icon': 'bi-exclamation-triangle',
+                'color': '#dc2626',
+                'url': '/admin/core/helpsupport/?status__exact=open',
+            })
+        new_collabs = CollaborationContact.objects.filter(status='new').count()
+        if new_collabs:
+            attention.append({
+                'text': f'{new_collabs} new collaboration request{"s" if new_collabs != 1 else ""}',
+                'icon': 'bi-handshake',
+                'color': '#d97706',
+                'url': '/admin/core/collaborationcontact/?status__exact=new',
+            })
+        expiring = Promotion.objects.filter(
+            valid_until__range=[today, today + timedelta(days=7)],
+            is_active=True,
+        ).count()
+        if expiring:
+            attention.append({
+                'text': f'{expiring} promotion{"s" if expiring != 1 else ""} expiring within 7 days',
+                'icon': 'bi-clock',
+                'color': '#ea580c',
+                'url': '/admin/core/promotion/',
+            })
+        extra_context['attention'] = attention
+
+        # ── Quick actions ──
+        extra_context['quick_actions'] = [
+            {'label': 'Add Event', 'url': '/admin/core/event/add/', 'icon': 'bi-calendar-plus'},
+            {'label': 'Add Listing', 'url': '/admin/core/listing/add/', 'icon': 'bi-shop-window'},
+            {'label': 'Add Promotion', 'url': '/admin/core/promotion/add/', 'icon': 'bi-megaphone'},
+            {'label': 'Write Blog', 'url': '/admin/core/blog/add/', 'icon': 'bi-pencil-square'},
+        ]
+
+        # ── Recent content (last 8 across types) ──
+        recent_events = Event.objects.order_by('-created_at')[:4]
+        recent_listings = Listing.objects.order_by('-created_at')[:4]
+        recent_promos = Promotion.objects.order_by('-created_at')[:4]
+
+        combined = []
+        for item in recent_events:
+            combined.append({'title': item.title, 'type': 'Event', 'date': item.created_at,
+                             'url': f'/admin/core/event/{item.pk}/change/', 'color': '#b91c1c'})
+        for item in recent_listings:
+            combined.append({'title': item.title, 'type': 'Listing', 'date': item.created_at,
+                             'url': f'/admin/core/listing/{item.pk}/change/', 'color': '#2563eb'})
+        for item in recent_promos:
+            combined.append({'title': item.title, 'type': 'Promotion', 'date': item.created_at,
+                             'url': f'/admin/core/promotion/{item.pk}/change/', 'color': '#059669'})
+        combined.sort(key=lambda x: x['date'], reverse=True)
+        extra_context['recent_content'] = combined[:8]
+
+        # ── Engagement ──
+        extra_context['engagement'] = {
+            'event_joins': EventJoin.objects.count(),
+            'wishlists': Wishlist.objects.count(),
+            'active_today': GuestUser.objects.filter(last_active__date=today).count(),
+            'guest_users': GuestUser.objects.count(),
+        }
+
+        return super().index(request, extra_context)
 
 
 admin_site = GroupedAdminSite()
