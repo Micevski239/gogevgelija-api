@@ -1,11 +1,18 @@
+import json
 from collections import defaultdict
 
+import requests as http_requests
+
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.forms import Textarea
+from django.http import JsonResponse
+from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 # Modeltranslation will automatically add language fields to admin
 from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem, FeaturedItem
 
@@ -104,7 +111,7 @@ class MultilingualAdminMixin:
         css = {
             'all': ('admin/css/multilang.css',)
         }
-        js = ('admin/js/multilang.js',)
+        js = ('admin/js/vendor/jquery/jquery.js', 'admin/js/multilang.js')
     
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 4, 'cols': 80})},
@@ -354,6 +361,48 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     )
     
     readonly_fields = ('created_at', 'updated_at')
+
+    class Media:
+        css = {'all': ('admin/css/multilang.css',)}
+        js = ('admin/js/vendor/jquery/jquery.js', 'admin/js/multilang.js', 'admin/js/ai_fill.js')
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('ai-fill/', self.admin_site.admin_view(self.ai_fill_view), name='event_ai_fill'),
+        ]
+        return custom_urls + urls
+
+    def ai_fill_view(self, request):
+        if request.method != 'POST':
+            return JsonResponse({'error': 'POST required'}, status=405)
+
+        try:
+            body = json.loads(request.body)
+            caption = body.get('caption', '')
+            platform = body.get('platform', 'instagram')
+        except (json.JSONDecodeError, AttributeError):
+            return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+
+        if not caption:
+            return JsonResponse({'error': 'Caption is required'}, status=400)
+
+        dashboard_url = getattr(settings, 'DASHBOARD_URL', '').rstrip('/')
+        if not dashboard_url:
+            return JsonResponse({'error': 'DASHBOARD_URL is not configured in settings'}, status=500)
+
+        try:
+            resp = http_requests.post(
+                f'{dashboard_url}/api/process',
+                json={'caption': caption, 'platform': platform, 'sourceUrl': ''},
+                timeout=30,
+            )
+            resp.raise_for_status()
+            return JsonResponse(resp.json())
+        except http_requests.exceptions.Timeout:
+            return JsonResponse({'error': 'Dashboard request timed out'}, status=504)
+        except http_requests.exceptions.RequestException as e:
+            return JsonResponse({'error': str(e)}, status=502)
 
 @admin.register(Promotion, site=admin_site)
 class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
