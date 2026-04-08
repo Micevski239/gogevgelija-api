@@ -424,7 +424,7 @@ Rules:
         api_url = 'https://api.openai.com/v1/chat/completions'
         model = 'gpt-4o-mini'
 
-        system_prompt = self.AI_SYSTEM_PROMPT.format(icons=', '.join(self.VALID_ICONS))
+        system_prompt = self.AI_SYSTEM_PROMPT.replace('{icons}', ', '.join(self.VALID_ICONS))
 
         try:
             resp = http_requests.post(
