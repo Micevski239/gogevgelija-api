@@ -565,6 +565,7 @@ class Event(models.Model):
     website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official website URL")
     google_maps_url = models.URLField(max_length=500, blank=True, null=True, help_text="Google Maps URL for directions (optional - if not provided, will use location field)")
     listings = models.ManyToManyField('Listing', blank=True, related_name='events', help_text="Select listings associated with this event (optional)")
+    sections = models.ManyToManyField('HomeSection', blank=True, related_name='direct_events', help_text="Sections this event should appear in")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

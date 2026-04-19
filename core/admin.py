@@ -432,7 +432,7 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     search_fields = ('title', 'location', 'description', 'category')
     list_editable = ('featured', 'is_active', 'show_join_button')
     ordering = ('-created_at',)
-    filter_horizontal = ('listings',)
+    filter_horizontal = ('listings', 'sections',)
 
     fieldsets = (
         ('Basic Information', {
@@ -447,6 +447,11 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'join_count'
             ),
             'classes': ('wide',),
+        }),
+        ('Sections', {
+            'fields': ('sections',),
+            'classes': ('wide',),
+            'description': 'Select which screen sections this event should appear in',
         }),
         ('Listings', {
             'fields': ('listings',),
