@@ -380,7 +380,7 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     search_fields = ('title', 'address', 'category__name')
     list_editable = ('featured', 'trending', 'is_active')
     ordering = ('-created_at',)
-    filter_horizontal = ('promotions', 'blogs')
+    filter_horizontal = ('promotions', 'blogs', 'sections')
 
     fieldsets = (
         ('Basic Information', {
@@ -398,6 +398,11 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'google_maps_url'
             ),
             'classes': ('wide',),
+        }),
+        ('Sections', {
+            'fields': ('sections',),
+            'classes': ('wide',),
+            'description': 'Select which screen sections this listing should appear in',
         }),
         ('Promotions', {
             'fields': ('promotions',),
@@ -424,6 +429,52 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     )
 
     readonly_fields = ('created_at', 'updated_at')
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        if request.method == 'GET':
+            from django.contrib.contenttypes.models import ContentType
+            from .models import HomeSectionItem, Listing
+            try:
+                listing = Listing.objects.get(pk=object_id)
+                listing_ct = ContentType.objects.get_for_model(Listing)
+                hsi_section_ids = HomeSectionItem.objects.filter(
+                    content_type=listing_ct,
+                    object_id=listing.id,
+                    is_active=True,
+                ).values_list('section_id', flat=True)
+                listing.sections.add(*hsi_section_ids)
+            except Listing.DoesNotExist:
+                pass
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        from django.contrib.contenttypes.models import ContentType
+        from .models import HomeSectionItem
+        listing = form.instance
+        listing_ct = ContentType.objects.get_for_model(listing)
+
+        selected_ids = set(listing.sections.values_list('id', flat=True))
+
+        HomeSectionItem.objects.filter(
+            content_type=listing_ct,
+            object_id=listing.id,
+        ).exclude(section_id__in=selected_ids).delete()
+
+        existing_ids = set(
+            HomeSectionItem.objects.filter(
+                content_type=listing_ct,
+                object_id=listing.id,
+            ).values_list('section_id', flat=True)
+        )
+        for section_id in selected_ids - existing_ids:
+            HomeSectionItem.objects.create(
+                section_id=section_id,
+                content_type=listing_ct,
+                object_id=listing.id,
+                order=0,
+                is_active=True,
+            )
 
 @admin.register(Event, site=admin_site)
 class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
@@ -641,6 +692,7 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     search_fields = ('title', 'discount_code', 'description')
     list_editable = ('featured', 'is_active')
     ordering = ('-created_at',)
+    filter_horizontal = ('sections',)
 
     fieldsets = (
         ('Basic Information', {
@@ -661,6 +713,11 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             ),
             'classes': ('wide',),
         }),
+        ('Sections', {
+            'fields': ('sections',),
+            'classes': ('wide',),
+            'description': 'Select which screen sections this promotion should appear in',
+        }),
         ('English Content', {
             'fields': ('title', 'description', 'tags'),
             'classes': ('lang-tab', 'lang-en'),
@@ -676,6 +733,52 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     )
 
     readonly_fields = ('created_at', 'updated_at')
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        if request.method == 'GET':
+            from django.contrib.contenttypes.models import ContentType
+            from .models import HomeSectionItem, Promotion
+            try:
+                promo = Promotion.objects.get(pk=object_id)
+                promo_ct = ContentType.objects.get_for_model(Promotion)
+                hsi_section_ids = HomeSectionItem.objects.filter(
+                    content_type=promo_ct,
+                    object_id=promo.id,
+                    is_active=True,
+                ).values_list('section_id', flat=True)
+                promo.sections.add(*hsi_section_ids)
+            except Promotion.DoesNotExist:
+                pass
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        from django.contrib.contenttypes.models import ContentType
+        from .models import HomeSectionItem
+        promo = form.instance
+        promo_ct = ContentType.objects.get_for_model(promo)
+
+        selected_ids = set(promo.sections.values_list('id', flat=True))
+
+        HomeSectionItem.objects.filter(
+            content_type=promo_ct,
+            object_id=promo.id,
+        ).exclude(section_id__in=selected_ids).delete()
+
+        existing_ids = set(
+            HomeSectionItem.objects.filter(
+                content_type=promo_ct,
+                object_id=promo.id,
+            ).values_list('section_id', flat=True)
+        )
+        for section_id in selected_ids - existing_ids:
+            HomeSectionItem.objects.create(
+                section_id=section_id,
+                content_type=promo_ct,
+                object_id=promo.id,
+                order=0,
+                is_active=True,
+            )
 
 class BlogSectionInline(admin.TabularInline):
     """Inline admin for collapsible blog sections"""
