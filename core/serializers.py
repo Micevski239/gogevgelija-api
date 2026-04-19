@@ -1138,16 +1138,31 @@ class HomeSectionSerializer(serializers.ModelSerializer):
         return obj.label
 
     def get_items(self, obj):
-        """Return only active items with valid content objects"""
+        """Return active items from HomeSectionItem + events linked via M2M"""
+        # Items added via HomeSectionItem (inline in section admin)
         active_items = obj.items.filter(is_active=True).select_related("content_type")
         serializer = HomeSectionItemSerializer(
             active_items,
             many=True,
             context=self.context
         )
+        items = [item for item in serializer.data if item["data"] is not None]
 
-        # Filter out items where content object is None or inactive
-        return [item for item in serializer.data if item["data"] is not None]
+        # Events linked directly via M2M (from event admin)
+        existing_event_ids = {
+            item["data"]["id"] for item in items if item["type"] == "event"
+        }
+        direct_events = obj.direct_events.filter(is_active=True)
+        for event in direct_events:
+            if event.id not in existing_event_ids:
+                items.append({
+                    "id": f"m2m-event-{event.id}",
+                    "type": "event",
+                    "data": EventSerializer(event, context=self.context).data,
+                    "order": 999,  # M2M events appear at the end
+                })
+
+        return items
 
 
 # ============================================================================
