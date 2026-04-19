@@ -485,6 +485,56 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     
     readonly_fields = ('created_at', 'updated_at')
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        """On GET, sync HomeSectionItem entries into the M2M so the widget reflects reality."""
+        if request.method == 'GET':
+            from django.contrib.contenttypes.models import ContentType
+            from .models import HomeSectionItem, Event
+            try:
+                event = Event.objects.get(pk=object_id)
+                event_ct = ContentType.objects.get_for_model(Event)
+                hsi_section_ids = HomeSectionItem.objects.filter(
+                    content_type=event_ct,
+                    object_id=event.id,
+                    is_active=True,
+                ).values_list('section_id', flat=True)
+                event.sections.add(*hsi_section_ids)
+            except Event.DoesNotExist:
+                pass
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def save_related(self, request, form, formsets, change):
+        """On save, sync the M2M selection back to HomeSectionItem entries."""
+        super().save_related(request, form, formsets, change)
+        from django.contrib.contenttypes.models import ContentType
+        from .models import HomeSectionItem
+        event = form.instance
+        event_ct = ContentType.objects.get_for_model(event)
+
+        selected_ids = set(event.sections.values_list('id', flat=True))
+
+        # Remove HomeSectionItem entries for deselected sections
+        HomeSectionItem.objects.filter(
+            content_type=event_ct,
+            object_id=event.id,
+        ).exclude(section_id__in=selected_ids).delete()
+
+        # Create HomeSectionItem entries for newly selected sections
+        existing_ids = set(
+            HomeSectionItem.objects.filter(
+                content_type=event_ct,
+                object_id=event.id,
+            ).values_list('section_id', flat=True)
+        )
+        for section_id in selected_ids - existing_ids:
+            HomeSectionItem.objects.create(
+                section_id=section_id,
+                content_type=event_ct,
+                object_id=event.id,
+                order=0,
+                is_active=True,
+            )
+
     class Media:
         js = ('admin/js/vendor/jquery/jquery.js', 'admin/js/multilang.js', 'admin/js/ai_fill.js',)
 
