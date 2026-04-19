@@ -981,10 +981,18 @@ class HomeSection(models.Model):
         ('carousel', 'Carousel'),      # Auto-scrolling slideshow - full-width cards with gradient overlay
     ]
 
+    SCREEN_HOME = 'home'
+    SCREEN_TOURISM = 'tourism'
+    SCREEN_EVENTS = 'events'
+
     DISPLAY_ON_CHOICES = [
-        ('both', 'Both Home & Tourism'),
-        ('home', 'Home Screen Only'),
-        ('tourism', 'Tourism Screen Only'),
+        ('home', 'Home'),
+        ('tourism', 'Tourism'),
+        ('events', 'Events'),
+        ('home,tourism', 'Home & Tourism'),
+        ('home,events', 'Home & Events'),
+        ('tourism,events', 'Tourism & Events'),
+        ('home,tourism,events', 'All Screens'),
     ]
 
     label = models.CharField(
@@ -1002,10 +1010,10 @@ class HomeSection(models.Model):
     )
 
     display_on = models.CharField(
-        max_length=10,
+        max_length=25,
         choices=DISPLAY_ON_CHOICES,
-        default='both',
-        help_text="Where should this section be displayed"
+        default='home,tourism,events',
+        help_text="Which screens should this section appear on"
     )
 
     order = models.PositiveIntegerField(
@@ -1031,6 +1039,10 @@ class HomeSection(models.Model):
 
     def __str__(self):
         return f"{self.label} ({self.card_type})"
+
+    def shows_on(self, screen):
+        """Check if this section should display on a given screen"""
+        return screen in self.display_on.split(',')
 
     @property
     def item_count(self):

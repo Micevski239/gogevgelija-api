@@ -1505,11 +1505,9 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Return only active sections for home screen with their items prefetched"""
-        from django.db.models import Q
         return HomeSection.objects.filter(
-            is_active=True
-        ).filter(
-            Q(display_on='both') | Q(display_on='home')
+            is_active=True,
+            display_on__contains='home',
         ).prefetch_related(
             "items",
             "items__content_type"
@@ -1566,11 +1564,9 @@ class TourismScreenView(APIView):
             print(f"  Category buttons: {list(category_buttons.values('id', 'label', 'button_size', 'is_active'))}")
 
         # Get dynamic sections (filtered by display_on field for tourism screen)
-        from django.db.models import Q
         sections = HomeSection.objects.filter(
-            is_active=True
-        ).filter(
-            Q(display_on='both') | Q(display_on='tourism')
+            is_active=True,
+            display_on__contains='tourism',
         ).prefetch_related(
             "items",
             "items__content_type"
@@ -1603,6 +1599,48 @@ class TourismScreenView(APIView):
 
         # Filter out carousel items with no content
         data['carousel'] = [item for item in data['carousel'] if item['data'] is not None]
+
+        return Response(data)
+
+
+# ============================================================================
+# EVENTS SCREEN VIEW - Dynamic sections for Events screen
+# ============================================================================
+
+class EventsScreenView(APIView):
+    """
+    Returns dynamic sections for the Events screen.
+    Uses the same HomeSection model filtered by display_on containing 'events'.
+
+    Endpoint:
+    - GET /api/events-screen/ - Get sections for the events screen
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @method_decorator(cache_page(60 * 5))
+    def get(self, request):
+        language = get_preferred_language(request)
+
+        sections = HomeSection.objects.filter(
+            is_active=True,
+            display_on__contains='events',
+        ).prefetch_related(
+            "items",
+            "items__content_type"
+        ).order_by("order", "-created_at")
+
+        context = {
+            'request': request,
+            'language': language,
+        }
+
+        data = {
+            'sections': HomeSectionSerializer(
+                sections,
+                many=True,
+                context=context,
+            ).data,
+        }
 
         return Response(data)
 
