@@ -411,6 +411,7 @@ class Listing(models.Model):
     )
     promotions = models.ManyToManyField('Promotion', blank=True, related_name='listings', help_text="Select promotions associated with this listing (optional)")
     blogs = models.ManyToManyField('Blog', blank=True, related_name='listings', help_text="Select blog articles related to this listing (optional)")
+    sections = models.ManyToManyField('HomeSection', blank=True, related_name='direct_listings', help_text="Sections this listing should appear in")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -657,6 +658,7 @@ class Promotion(models.Model):
     instagram_url = models.URLField(max_length=500, blank=True, help_text="Instagram profile URL")
     address = models.CharField(max_length=500, blank=True, help_text="Physical address")
     google_maps_url = models.URLField(max_length=500, blank=True, null=True, help_text="Google Maps URL for directions (optional - if not provided, will use address field)")
+    sections = models.ManyToManyField('HomeSection', blank=True, related_name='direct_promotions', help_text="Sections this promotion should appear in")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

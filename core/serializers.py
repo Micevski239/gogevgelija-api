@@ -1148,18 +1148,36 @@ class HomeSectionSerializer(serializers.ModelSerializer):
         )
         items = [item for item in serializer.data if item["data"] is not None]
 
-        # Events linked directly via M2M (from event admin)
-        existing_event_ids = {
-            item["data"]["id"] for item in items if item["type"] == "event"
+        # Items linked directly via M2M (from listing/event/promotion admin)
+        existing_ids = {
+            (item["type"], item["data"]["id"]) for item in items
         }
-        direct_events = obj.direct_events.filter(is_active=True)
-        for event in direct_events:
-            if event.id not in existing_event_ids:
+
+        for listing in obj.direct_listings.filter(is_active=True):
+            if ("listing", listing.id) not in existing_ids:
+                items.append({
+                    "id": f"m2m-listing-{listing.id}",
+                    "type": "listing",
+                    "data": ListingSerializer(listing, context=self.context).data,
+                    "order": 999,
+                })
+
+        for event in obj.direct_events.filter(is_active=True):
+            if ("event", event.id) not in existing_ids:
                 items.append({
                     "id": f"m2m-event-{event.id}",
                     "type": "event",
                     "data": EventSerializer(event, context=self.context).data,
-                    "order": 999,  # M2M events appear at the end
+                    "order": 999,
+                })
+
+        for promo in obj.direct_promotions.filter(is_active=True):
+            if ("promotion", promo.id) not in existing_ids:
+                items.append({
+                    "id": f"m2m-promotion-{promo.id}",
+                    "type": "promotion",
+                    "data": PromotionSerializer(promo, context=self.context).data,
+                    "order": 999,
                 })
 
         return items
