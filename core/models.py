@@ -791,7 +791,11 @@ class Blog(models.Model):
 
 class BlogSection(models.Model):
     """Collapsible content sections for blog posts"""
-    blog = models.ForeignKey(Blog, on_delete=models.CASCADE, related_name='sections')
+    blog = models.ForeignKey(
+        Blog,
+        on_delete=models.CASCADE,
+        related_name='blog_sections',
+    )
 
     title = models.CharField(max_length=200, help_text="Section title")
     title_en = models.CharField(max_length=200, blank=True)

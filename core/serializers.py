@@ -688,7 +688,7 @@ class BlogSerializer(serializers.ModelSerializer):
     cta_button_title = serializers.SerializerMethodField()
     cta_button_subtitle = serializers.SerializerMethodField()
     cta_button_url = serializers.CharField(read_only=True)
-    sections = BlogSectionSerializer(many=True, read_only=True)
+    sections = BlogSectionSerializer(source='blog_sections', many=True, read_only=True)
 
     class Meta:
         model = Blog
