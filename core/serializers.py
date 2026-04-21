@@ -1068,6 +1068,11 @@ class CollaborationContactCreateSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class AssistantQuerySerializer(serializers.Serializer):
+    """Validate in-app assistant queries."""
+    message = serializers.CharField(max_length=300)
+
+
 
 # ============================================================================
 # HOME SECTION SERIALIZERS - Backend-driven homescreen
@@ -1109,6 +1114,8 @@ class HomeSectionItemSerializer(serializers.ModelSerializer):
             return EventSerializer(content_object, context=self.context).data
         elif obj.content_type.model == "promotion":
             return PromotionSerializer(content_object, context=self.context).data
+        elif obj.content_type.model == "blog":
+            return BlogSerializer(content_object, context=self.context).data
 
         return None
 
@@ -1177,6 +1184,15 @@ class HomeSectionSerializer(serializers.ModelSerializer):
                     "id": f"m2m-promotion-{promo.id}",
                     "type": "promotion",
                     "data": PromotionSerializer(promo, context=self.context).data,
+                    "order": 999,
+                })
+
+        for blog in obj.direct_blogs.filter(is_active=True, published=True):
+            if ("blog", blog.id) not in existing_ids:
+                items.append({
+                    "id": f"m2m-blog-{blog.id}",
+                    "type": "blog",
+                    "data": BlogSerializer(blog, context=self.context).data,
                     "order": 999,
                 })
 

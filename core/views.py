@@ -1,5 +1,6 @@
 import json
 import random
+import re
 from pathlib import Path
 from datetime import timedelta
 
@@ -20,7 +21,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedItem
-from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, BillboardItemSerializer, FeaturedItemSerializer
+from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, BillboardItemSerializer, FeaturedItemSerializer, AssistantQuerySerializer
 from .utils import get_preferred_language
 from .pagination import StandardResultsSetPagination
 
@@ -199,10 +200,14 @@ class ListingViewSet(viewsets.ModelViewSet):
             .order_by('random_order') \
             .prefetch_related('promotions', 'events')
 
-        # Filter by category
+        # Filter by category — accepts single id or comma-separated list (e.g. "1,2,3").
         category = self.request.query_params.get('category', None)
         if category:
-            queryset = queryset.filter(category_id=category)
+            ids = [i for i in category.split(',') if i.strip().isdigit()]
+            if len(ids) > 1:
+                queryset = queryset.filter(category_id__in=ids)
+            elif ids:
+                queryset = queryset.filter(category_id=ids[0])
 
         # Order: featured first, then random order for fair rotation
         return queryset.order_by('-featured', 'random_order')
@@ -1360,6 +1365,514 @@ class CollaborationContactViewSet(viewsets.ModelViewSet):
         return Response(types)
 
 
+ASSISTANT_BORDER_CAMERA_URL = "https://roads.org.mk/patna-mreza/video-kameri/"
+
+
+def _localized_text(language, en_text, mk_text):
+    return mk_text if language == 'mk' else en_text
+
+
+def _normalize_assistant_message(message):
+    return re.sub(r"\s+", " ", re.sub(r"[^\w\s]+", " ", message.lower())).strip()
+
+
+def _assistant_action(action_type, label, screen=None, params=None, url=None):
+    payload = {
+        'type': action_type,
+        'label': label,
+    }
+    if screen:
+        payload['screen'] = screen
+    if params:
+        payload['params'] = params
+    if url:
+        payload['url'] = url
+    return payload
+
+
+def _assistant_default_suggestions(language):
+    return [
+        _localized_text(language, "Show me hotels", "Покажи ми сместување"),
+        _localized_text(language, "What events are coming up?", "Кои настани се претстојни?"),
+        _localized_text(language, "Any deals right now?", "Има ли актуелни понуди?"),
+        _localized_text(language, "How do I change language?", "Како да го сменам јазикот?"),
+    ]
+
+
+def _assistant_search_suggestions(language, query):
+    return [
+        _localized_text(language, "Show full search results", "Покажи ги сите резултати"),
+        _localized_text(language, f"More like {query}", f"Повеќе како {query}"),
+        _localized_text(language, "Ask about another place", "Прашај за друго место"),
+    ]
+
+
+def _compact_text(value, max_length=140):
+    if not value:
+        return ""
+    text = str(value).strip()
+    if len(text) <= max_length:
+        return text
+    return f"{text[:max_length - 3].rstrip()}..."
+
+
+def _assistant_listing_answer(listing, language):
+    category_name = listing.get('category', {}).get('name') if isinstance(listing.get('category'), dict) else None
+    parts = [listing.get('title')]
+    if category_name:
+        parts.append(_localized_text(language, f"is a {category_name}", f"е {category_name.lower()}"))
+    if listing.get('address'):
+        parts.append(_localized_text(language, f"at {listing['address']}", f"на {listing['address']}"))
+    if listing.get('open_time'):
+        parts.append(_localized_text(language, f"Hours: {listing['open_time']}", f"Работно време: {listing['open_time']}"))
+    if listing.get('phone_number'):
+        parts.append(_localized_text(language, f"Phone: {listing['phone_number']}", f"Телефон: {listing['phone_number']}"))
+    return ". ".join(part for part in parts if part) + "."
+
+
+def _assistant_event_answer(event, language):
+    parts = [event.get('title')]
+    if event.get('date_time'):
+        parts.append(_localized_text(language, f"is happening on {event['date_time']}", f"се одржува на {event['date_time']}"))
+    if event.get('location'):
+        parts.append(_localized_text(language, f"at {event['location']}", f"во {event['location']}"))
+    if event.get('entry_price'):
+        parts.append(_localized_text(language, f"Entry: {event['entry_price']}", f"Влез: {event['entry_price']}"))
+    return ". ".join(part for part in parts if part) + "."
+
+
+def _assistant_promotion_answer(promotion, language):
+    parts = [promotion.get('title')]
+    description = _compact_text(promotion.get('description'))
+    if description:
+        parts.append(description)
+    if promotion.get('has_discount_code') and promotion.get('discount_code'):
+        parts.append(_localized_text(language, f"Code: {promotion['discount_code']}", f"Код: {promotion['discount_code']}"))
+    if promotion.get('valid_until'):
+        parts.append(_localized_text(language, f"Valid until {promotion['valid_until']}", f"Важи до {promotion['valid_until']}"))
+    return ". ".join(part for part in parts if part) + "."
+
+
+def _assistant_blog_answer(blog, language):
+    parts = [blog.get('title')]
+    subtitle = _compact_text(blog.get('subtitle') or blog.get('content'))
+    if subtitle:
+        parts.append(subtitle)
+    if blog.get('author'):
+        parts.append(_localized_text(language, f"By {blog['author']}", f"Од {blog['author']}"))
+    return ". ".join(part for part in parts if part) + "."
+
+
+def _serialize_search_results(query, content_type='all', limit=20, language='en', request=None):
+    from django.db.models import Q
+
+    cleaned_query = query.strip()
+    empty = {
+        'listings': [],
+        'events': [],
+        'promotions': [],
+        'blogs': [],
+        'total_count': 0,
+        'query': cleaned_query,
+    }
+    if len(cleaned_query) < 2:
+        return empty
+
+    results = {}
+
+    if content_type in ['all', 'listings']:
+        listings = Listing.objects.filter(
+            Q(title__icontains=cleaned_query) |
+            Q(title_en__icontains=cleaned_query) |
+            Q(title_mk__icontains=cleaned_query) |
+            Q(address__icontains=cleaned_query) |
+            Q(description__icontains=cleaned_query) |
+            Q(description_en__icontains=cleaned_query) |
+            Q(description_mk__icontains=cleaned_query) |
+            Q(category__name__icontains=cleaned_query) |
+            Q(category__name_en__icontains=cleaned_query) |
+            Q(category__name_mk__icontains=cleaned_query),
+            is_active=True
+        ).distinct()[:limit]
+        results['listings'] = ListingSerializer(listings, many=True, context={'request': request, 'language': language}).data
+
+    if content_type in ['all', 'events']:
+        events = Event.objects.filter(
+            Q(title__icontains=cleaned_query) |
+            Q(title_en__icontains=cleaned_query) |
+            Q(title_mk__icontains=cleaned_query) |
+            Q(location__icontains=cleaned_query) |
+            Q(description__icontains=cleaned_query) |
+            Q(description_en__icontains=cleaned_query) |
+            Q(description_mk__icontains=cleaned_query) |
+            Q(category__name__icontains=cleaned_query) |
+            Q(category__name_en__icontains=cleaned_query) |
+            Q(category__name_mk__icontains=cleaned_query),
+            is_active=True
+        ).distinct()[:limit]
+        results['events'] = EventSerializer(events, many=True, context={'request': request, 'language': language}).data
+
+    if content_type in ['all', 'promotions']:
+        promotions = Promotion.objects.filter(
+            Q(title__icontains=cleaned_query) |
+            Q(title_en__icontains=cleaned_query) |
+            Q(title_mk__icontains=cleaned_query) |
+            Q(description__icontains=cleaned_query) |
+            Q(description_en__icontains=cleaned_query) |
+            Q(description_mk__icontains=cleaned_query) |
+            Q(discount_code__icontains=cleaned_query),
+            is_active=True
+        ).distinct()[:limit]
+        results['promotions'] = PromotionSerializer(promotions, many=True, context={'request': request, 'language': language}).data
+
+    if content_type in ['all', 'blogs']:
+        blogs = Blog.objects.filter(
+            Q(title__icontains=cleaned_query) |
+            Q(title_en__icontains=cleaned_query) |
+            Q(title_mk__icontains=cleaned_query) |
+            Q(subtitle__icontains=cleaned_query) |
+            Q(subtitle_en__icontains=cleaned_query) |
+            Q(subtitle_mk__icontains=cleaned_query) |
+            Q(content__icontains=cleaned_query) |
+            Q(content_en__icontains=cleaned_query) |
+            Q(content_mk__icontains=cleaned_query),
+            is_active=True,
+            published=True
+        ).distinct()[:limit]
+        results['blogs'] = BlogSerializer(blogs, many=True, context={'request': request, 'language': language}).data
+
+    total = sum(len(items) for items in results.values())
+    return {
+        'listings': results.get('listings', []),
+        'events': results.get('events', []),
+        'promotions': results.get('promotions', []),
+        'blogs': results.get('blogs', []),
+        'total_count': total,
+        'query': cleaned_query,
+    }
+
+
+def _assistant_results_from_category_terms(category_terms, language, request, limit=3):
+    listing_filters = models.Q()
+    for term in category_terms:
+        listing_filters |= (
+            models.Q(category__name__icontains=term) |
+            models.Q(category__name_en__icontains=term) |
+            models.Q(category__name_mk__icontains=term)
+        )
+
+    queryset = Listing.objects.filter(listing_filters, is_active=True).distinct()[:limit]
+    return ListingSerializer(queryset, many=True, context={'request': request, 'language': language}).data
+
+
+def _assistant_faq_response(normalized_message, language):
+    faq_map = [
+        {
+            'keywords': ['language', 'change language', 'смени јазик', 'јазик'],
+            'intent': 'language_help',
+            'answer': _localized_text(
+                language,
+                "To change language, tap the globe icon in the header or open Profile and choose Language.",
+                "За промена на јазик, допрете ја иконата со глобус во заглавјето или отворете Профил и изберете Јазик."
+            ),
+            'actions': [],
+        },
+        {
+            'keywords': ['wishlist', 'favorite', 'favourite', 'омилени', 'листа на желби'],
+            'intent': 'wishlist_help',
+            'answer': _localized_text(
+                language,
+                "Tap the heart icon on any place, event, promotion, or article to save it. You can open everything later from Wishlist.",
+                "Допрете ја иконата со срце на место, настан, промоција или статија за да ја зачувате. Подоцна сè можете да отворите од Листа на желби."
+            ),
+            'actions': [
+                _assistant_action('navigate', _localized_text(language, "Open Wishlist", "Отвори листа на желби"), screen='Wishlist')
+            ],
+        },
+        {
+            'keywords': ['support', 'contact support', 'bug', 'problem', 'issue', 'поддршка', 'помош и поддршка', 'проблем'],
+            'intent': 'support_help',
+            'answer': _localized_text(
+                language,
+                "You can contact support from the Help & Support screen and describe your issue there.",
+                "Можете да контактирате поддршка преку екранот Помош и поддршка и таму да го опишете проблемот."
+            ),
+            'actions': [
+                _assistant_action('navigate', _localized_text(language, "Contact Support", "Контактирај поддршка"), screen='HelpSupport')
+            ],
+        },
+        {
+            'keywords': ['collaboration', 'partner', 'business', 'partnership', 'соработка', 'колаборација', 'партнерство'],
+            'intent': 'collaboration_help',
+            'answer': _localized_text(
+                language,
+                "If you want to work with GoGevgelija, open the collaboration form and send your proposal.",
+                "Ако сакате да соработувате со GoGevgelija, отворете го формуларот за соработка и испратете го вашиот предлог."
+            ),
+            'actions': [
+                _assistant_action('navigate', _localized_text(language, "Open Collaboration Form", "Отвори формулар за соработка"), screen='CollaborationContact')
+            ],
+        },
+        {
+            'keywords': ['currency', 'exchange', 'rate', 'валута', 'курс', 'менувачница'],
+            'intent': 'currency_help',
+            'answer': _localized_text(
+                language,
+                "You can check the latest exchange rates in the Currency screen inside the app.",
+                "Најновите девизни курсеви можете да ги проверите на екранот Валути во апликацијата."
+            ),
+            'actions': [
+                _assistant_action('navigate', _localized_text(language, "Open Currency", "Отвори валути"), screen='Currency')
+            ],
+        },
+        {
+            'keywords': ['border', 'camera', 'граница', 'камери'],
+            'intent': 'border_help',
+            'answer': _localized_text(
+                language,
+                "You can open the border cameras link from the app to check the current situation.",
+                "Можете да го отворите линкот за гранични камери од апликацијата за да ја проверите моменталната состојба."
+            ),
+            'actions': [
+                _assistant_action('external', _localized_text(language, "Open Border Cameras", "Отвори гранични камери"), url=ASSISTANT_BORDER_CAMERA_URL)
+            ],
+        },
+        {
+            'keywords': ['guest', 'sign up', 'register', 'login', 'најава', 'регистрација', 'гостин'],
+            'intent': 'account_help',
+            'answer': _localized_text(
+                language,
+                "Guests can browse the app, but creating an account unlocks saved favorites, profile settings, and account-based support features.",
+                "Гостите можат да ја разгледуваат апликацијата, но со креирање профил добивате зачувани омилени, профилни поставки и функции за поддршка поврзани со сметка."
+            ),
+            'actions': [],
+        },
+        {
+            'keywords': ['what can you do', 'who are you', 'assistant', 'што можеш', 'кој си', 'асистент'],
+            'intent': 'intro',
+            'answer': _localized_text(
+                language,
+                "I can help with places, events, promotions, tourism shortcuts, and basic app questions like language, wishlist, support, and collaboration.",
+                "Можам да помогнам со места, настани, промоции, туристички кратенки и основни прашања за апликацијата како јазик, листа на желби, поддршка и соработка."
+            ),
+            'actions': [],
+        },
+    ]
+
+    for item in faq_map:
+        if any(keyword in normalized_message for keyword in item['keywords']):
+            return {
+                'answer': item['answer'],
+                'intent': item['intent'],
+                'confidence': 'high',
+                'results': [],
+                'actions': item['actions'],
+                'suggestions': _assistant_default_suggestions(language),
+            }
+
+    return None
+
+
+def _assistant_category_response(normalized_message, language, request):
+    category_rules = [
+        {
+            'keywords': ['hotel', 'hotels', 'accommodation', 'stay', 'sleep', 'сместување', 'хотел'],
+            'intent': 'accommodation',
+            'terms': ['Sleep & Rest', 'Accommodation', 'Hotel'],
+            'answer': _localized_text(
+                language,
+                "Here are a few accommodation options I found.",
+                "Еве неколку опции за сместување што ги пронајдов."
+            ),
+        },
+        {
+            'keywords': ['food', 'restaurant', 'restaurants', 'eat', 'cafe', 'coffee', 'кафе', 'храна', 'ресторан'],
+            'intent': 'food',
+            'terms': ['Food', 'Restaurant', 'Cafe'],
+            'answer': _localized_text(
+                language,
+                "Here are a few food and cafe places you can check.",
+                "Еве неколку места за храна и кафе што можете да ги проверите."
+            ),
+        },
+        {
+            'keywords': ['dentist', 'dental', 'стоматолог', 'забар'],
+            'intent': 'dental',
+            'terms': ['Dental Clinic', 'Dentist'],
+            'answer': _localized_text(
+                language,
+                "Here are dental options available in the app.",
+                "Еве стоматолошки опции достапни во апликацијата."
+            ),
+        },
+        {
+            'keywords': ['gas', 'petrol', 'fuel', 'бензин', 'пумпа'],
+            'intent': 'fuel',
+            'terms': ['Petrol Station'],
+            'answer': _localized_text(
+                language,
+                "Here are petrol station options I found.",
+                "Еве бензински пумпи што ги пронајдов."
+            ),
+        },
+        {
+            'keywords': ['service', 'auto', 'mechanic', 'сервис', 'авто'],
+            'intent': 'services',
+            'terms': ['Auto services', 'Services'],
+            'answer': _localized_text(
+                language,
+                "Here are service-related places from the app.",
+                "Еве сервисни места од апликацијата."
+            ),
+        },
+    ]
+
+    for rule in category_rules:
+        if any(keyword in normalized_message for keyword in rule['keywords']):
+            results = _assistant_results_from_category_terms(rule['terms'], language, request)
+            if results:
+                return {
+                    'answer': rule['answer'],
+                    'intent': rule['intent'],
+                    'confidence': 'high',
+                    'results': [{'type': 'listing', 'data': item} for item in results],
+                    'actions': [],
+                    'suggestions': _assistant_default_suggestions(language),
+                }
+
+    return None
+
+
+def _assistant_generic_feed_response(normalized_message, language, request):
+    if any(keyword in normalized_message for keyword in ['event', 'events', 'happening', 'настан', 'настани']):
+        events = Event.objects.filter(is_active=True)[:3]
+        serialized = EventSerializer(events, many=True, context={'request': request, 'language': language}).data
+        if serialized:
+            return {
+                'answer': _localized_text(
+                    language,
+                    "Here are some upcoming events from the app.",
+                    "Еве неколку претстојни настани од апликацијата."
+                ),
+                'intent': 'events_overview',
+                'confidence': 'medium',
+                'results': [{'type': 'event', 'data': item} for item in serialized],
+                'actions': [],
+                'suggestions': _assistant_default_suggestions(language),
+            }
+
+    if any(keyword in normalized_message for keyword in ['deal', 'deals', 'promo', 'promotion', 'offer', 'понуда', 'промоција', 'попуст']):
+        promotions = Promotion.objects.filter(is_active=True)[:3]
+        serialized = PromotionSerializer(promotions, many=True, context={'request': request, 'language': language}).data
+        if serialized:
+            return {
+                'answer': _localized_text(
+                    language,
+                    "Here are some active deals from the app.",
+                    "Еве неколку активни понуди од апликацијата."
+                ),
+                'intent': 'promotions_overview',
+                'confidence': 'medium',
+                'results': [{'type': 'promotion', 'data': item} for item in serialized],
+                'actions': [],
+                'suggestions': _assistant_default_suggestions(language),
+            }
+
+    return None
+
+
+def _build_assistant_search_response(query, language, request):
+    search_data = _serialize_search_results(query, 'all', 3, language, request)
+    total_count = search_data['total_count']
+    if total_count == 0:
+        return {
+            'answer': _localized_text(
+                language,
+                "I couldn't find a clear match for that. Try asking about a place, event, deal, currency, support, or language settings.",
+                "Не најдов јасно совпаѓање за тоа. Обидете се да прашате за место, настан, понуда, валути, поддршка или поставки за јазик."
+            ),
+            'intent': 'fallback',
+            'confidence': 'low',
+            'results': [],
+            'actions': [],
+            'suggestions': _assistant_default_suggestions(language),
+        }
+
+    flattened_results = []
+    for result_type in ['listings', 'events', 'promotions', 'blogs']:
+        singular_type = result_type[:-1] if result_type.endswith('s') else result_type
+        flattened_results.extend({'type': singular_type, 'data': item} for item in search_data[result_type])
+
+    top_result = flattened_results[0]
+    actions = [
+        _assistant_action(
+            'navigate',
+            _localized_text(language, "Open Search Results", "Отвори резултати од пребарување"),
+            screen='SearchResults',
+            params={'query': search_data['query']},
+        )
+    ]
+
+    if total_count == 1:
+        detailed_answers = {
+            'listing': _assistant_listing_answer,
+            'event': _assistant_event_answer,
+            'promotion': _assistant_promotion_answer,
+            'blog': _assistant_blog_answer,
+        }
+        answer_builder = detailed_answers.get(top_result['type'])
+        answer = answer_builder(top_result['data'], language) if answer_builder else _localized_text(language, "I found one matching result.", "Пронајдов еден соодветен резултат.")
+        return {
+            'answer': answer,
+            'intent': f"{top_result['type']}_match",
+            'confidence': 'high',
+            'results': [top_result],
+            'actions': actions,
+            'suggestions': _assistant_search_suggestions(language, search_data['query']),
+        }
+
+    return {
+        'answer': _localized_text(
+            language,
+            f'I found {total_count} results related to "{search_data["query"]}". Here are the top matches.',
+            f'Пронајдов {total_count} резултати поврзани со "{search_data["query"]}". Еве ги најрелевантните.'
+        ),
+        'intent': 'search_results',
+        'confidence': 'medium',
+        'results': flattened_results,
+        'actions': actions,
+        'suggestions': _assistant_search_suggestions(language, search_data['query']),
+    }
+
+
+class AssistantQueryView(APIView):
+    """Basic in-app assistant backed by existing structured content."""
+    permission_classes = [permissions.AllowAny]
+    parser_classes = [JSONParser]
+
+    def post(self, request):
+        serializer = AssistantQuerySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        message = serializer.validated_data['message'].strip()
+        language = get_preferred_language(request)
+        normalized_message = _normalize_assistant_message(message)
+
+        faq_response = _assistant_faq_response(normalized_message, language)
+        if faq_response:
+            return Response(faq_response)
+
+        category_response = _assistant_category_response(normalized_message, language, request)
+        if category_response:
+            return Response(category_response)
+
+        feed_response = _assistant_generic_feed_response(normalized_message, language, request)
+        if feed_response:
+            return Response(feed_response)
+
+        return Response(_build_assistant_search_response(message, language, request))
+
+
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
 def global_search(request):
@@ -1372,118 +1885,11 @@ def global_search(request):
     - type: Content type to search (optional: all, listings, events, promotions, blogs)
     - limit: Max results per type (optional, default: 20)
     """
-    from django.db.models import Q
-
     query = request.query_params.get('q', '').strip()
     content_type = request.query_params.get('type', 'all')
     limit = int(request.query_params.get('limit', 20))
-
-    # Minimum query length
-    if len(query) < 2:
-        return Response({
-            'listings': [],
-            'events': [],
-            'promotions': [],
-            'blogs': [],
-            'total_count': 0,
-            'query': query
-        })
-
-    results = {}
     language = get_preferred_language(request)
-
-    # Search listings
-    if content_type in ['all', 'listings']:
-        listings = Listing.objects.filter(
-            Q(title__icontains=query) |
-            Q(title_en__icontains=query) |
-            Q(title_mk__icontains=query) |
-            Q(address__icontains=query) |
-            Q(description__icontains=query) |
-            Q(description_en__icontains=query) |
-            Q(description_mk__icontains=query) |
-            Q(category__name__icontains=query) |
-            Q(category__name_en__icontains=query) |
-            Q(category__name_mk__icontains=query),
-            is_active=True
-        ).distinct()[:limit]
-
-        results['listings'] = ListingSerializer(
-            listings,
-            many=True,
-            context={'language': language}
-        ).data
-
-    # Search events
-    if content_type in ['all', 'events']:
-        events = Event.objects.filter(
-            Q(title__icontains=query) |
-            Q(title_en__icontains=query) |
-            Q(title_mk__icontains=query) |
-            Q(location__icontains=query) |
-            Q(description__icontains=query) |
-            Q(description_en__icontains=query) |
-            Q(description_mk__icontains=query) |
-            Q(category__name__icontains=query) |
-            Q(category__name_en__icontains=query) |
-            Q(category__name_mk__icontains=query),
-            is_active=True
-        ).distinct()[:limit]
-
-        results['events'] = EventSerializer(
-            events,
-            many=True,
-            context={'language': language}
-        ).data
-
-    # Search promotions
-    if content_type in ['all', 'promotions']:
-        promotions = Promotion.objects.filter(
-            Q(title__icontains=query) |
-            Q(title_en__icontains=query) |
-            Q(title_mk__icontains=query) |
-            Q(description__icontains=query) |
-            Q(description_en__icontains=query) |
-            Q(description_mk__icontains=query) |
-            Q(discount_code__icontains=query),
-            is_active=True
-        ).distinct()[:limit]
-
-        results['promotions'] = PromotionSerializer(
-            promotions,
-            many=True,
-            context={'language': language}
-        ).data
-
-    # Search blogs
-    if content_type in ['all', 'blogs']:
-        blogs = Blog.objects.filter(
-            Q(title__icontains=query) |
-            Q(title_en__icontains=query) |
-            Q(title_mk__icontains=query) |
-            Q(subtitle__icontains=query) |
-            Q(subtitle_en__icontains=query) |
-            Q(subtitle_mk__icontains=query) |
-            Q(content__icontains=query) |
-            Q(content_en__icontains=query) |
-            Q(content_mk__icontains=query),
-            is_active=True,
-            published=True
-        ).distinct()[:limit]
-
-        results['blogs'] = BlogSerializer(
-            blogs,
-            many=True,
-            context={'language': language}
-        ).data
-
-    total = sum(len(v) for v in results.values())
-
-    return Response({
-        **results,
-        'total_count': total,
-        'query': query
-    })
+    return Response(_serialize_search_results(query, content_type, limit, language, request))
 
 
 

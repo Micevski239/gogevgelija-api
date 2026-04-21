@@ -796,6 +796,7 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     list_editable = ('featured', 'published', 'is_active')
     ordering = ('-created_at',)
     inlines = [BlogSectionInline]
+    filter_horizontal = ('sections',)
 
     fieldsets = (
         ('Basic Information', {
@@ -807,7 +808,8 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
                 'thumbnail_image',
                 'read_time_minutes',
-                'tags'
+                'tags',
+                'sections',
             ),
             'classes': ('wide',),
         }),
@@ -1023,10 +1025,10 @@ class HomeSectionItemInline(admin.TabularInline):
     ordering = ["order", "-created_at"]
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """Limit content_type choices to Listing, Event, Promotion"""
+        """Limit content_type choices to Listing, Event, Promotion, Blog"""
         if db_field.name == "content_type":
             kwargs["queryset"] = ContentType.objects.filter(
-                model__in=["listing", "event", "promotion"]
+                model__in=["listing", "event", "promotion", "blog"]
             )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 

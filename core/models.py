@@ -757,6 +757,13 @@ class Blog(models.Model):
     published = models.BooleanField(default=True, help_text="Whether the blog is published")
     is_active = models.BooleanField(default=True, help_text="Show this blog in the app. Uncheck to hide from users.")
 
+    sections = models.ManyToManyField(
+        'HomeSection',
+        blank=True,
+        related_name='direct_blogs',
+        help_text="Sections this blog should appear in",
+    )
+
     # CTA Button (Call to Action) - fully configurable from admin
     cta_button_title = models.CharField(max_length=100, blank=True, help_text="Button text (e.g., 'Book Now', 'Learn More')")
     cta_button_title_en = models.CharField(max_length=100, blank=True, help_text="Button text in English")
@@ -1065,11 +1072,12 @@ class HomeSectionItem(models.Model):
         help_text="The section this item belongs to"
     )
 
-    # GenericForeignKey to support Listing, Event, or Promotion
+    # GenericForeignKey to support Listing, Event, Promotion, or Blog
     content_type = models.ForeignKey(
         'contenttypes.ContentType',
         on_delete=models.CASCADE,
-        help_text="Type of content (Listing, Event, or Promotion)"
+        limit_choices_to={'model__in': ('listing', 'event', 'promotion', 'blog')},
+        help_text="Type of content (Listing, Event, Promotion, or Blog)"
     )
     object_id = models.PositiveIntegerField(
         help_text="ID of the referenced object"
