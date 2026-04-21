@@ -220,11 +220,39 @@
     "error": "I couldn't answer that right now. Please try again in a moment.",
     "authSupport": "Sign up to contact support",
     "authCollaboration": "Sign up to send collaboration requests",
+    "askThisPlace": "Ask Assistant about this place",
+    "askThisEvent": "Ask Assistant about this event",
+    "askThisPromotion": "Ask Assistant about this promotion",
+    "askingAbout": "Asking about",
+    "clearContext": "Clear",
+    "contextTypes": {
+      "place": "this place",
+      "event": "this event",
+      "promotion": "this promotion",
+      "article": "this article",
+      "general": "this topic"
+    },
     "suggestions": {
       "hotels": "Show me hotels",
       "events": "What events are coming up?",
       "deals": "Any deals right now?",
-      "language": "How do I change language?"
+      "language": "How do I change language?",
+      "context": {
+        "listingOpen": "Is this place open now?",
+        "listingCall": "Call this place",
+        "listingPromotions": "Show promotions here",
+        "directions": "How do I get there?",
+        "eventWhen": "When is this event?",
+        "eventPrice": "What is the entry price?",
+        "eventListings": "Where is this event available?",
+        "promotionCode": "What is the discount code?",
+        "promotionWhere": "Where can I use this?",
+        "promotionCall": "Call them",
+        "promotionExpires": "When does this expire?",
+        "blogSummary": "Summarize this article",
+        "blogLink": "Open the related link",
+        "blogAbout": "What is this article about?"
+      }
     }
   },
   "overlays": {

@@ -1366,6 +1366,12 @@ class CollaborationContactViewSet(viewsets.ModelViewSet):
 
 
 ASSISTANT_BORDER_CAMERA_URL = "https://roads.org.mk/patna-mreza/video-kameri/"
+ASSISTANT_ENTITY_SCREEN_MAP = {
+    'listing': 'listing_detail',
+    'event': 'event_detail',
+    'promotion': 'promotion_detail',
+    'blog': 'blog_detail',
+}
 
 
 def _localized_text(language, en_text, mk_text):
@@ -1390,6 +1396,51 @@ def _assistant_action(action_type, label, screen=None, params=None, url=None):
     return payload
 
 
+def _assistant_response(
+    answer,
+    intent,
+    confidence,
+    results=None,
+    actions=None,
+    suggestions=None,
+    resolved_context=None,
+):
+    return {
+        'answer': answer,
+        'intent': intent,
+        'confidence': confidence,
+        'results': results or [],
+        'actions': actions or [],
+        'suggestions': suggestions or [],
+        'resolved_context': resolved_context,
+    }
+
+
+def _assistant_context_payload(screen=None, entity_type=None, entity_id=None, entity_label=None):
+    if not entity_type or not entity_id:
+        return None
+    return {
+        'screen': screen or ASSISTANT_ENTITY_SCREEN_MAP.get(entity_type),
+        'entity_type': entity_type,
+        'entity_id': entity_id,
+        'entity_label': entity_label,
+    }
+
+
+def _assistant_result_to_context(result_type, data, screen=None):
+    entity_label = data.get('title') or data.get('name') or data.get('subject')
+    return _assistant_context_payload(
+        screen=screen or ASSISTANT_ENTITY_SCREEN_MAP.get(result_type),
+        entity_type=result_type,
+        entity_id=data.get('id'),
+        entity_label=entity_label,
+    )
+
+
+def _assistant_message_mentions(normalized_message, keywords):
+    return any(keyword in normalized_message for keyword in keywords)
+
+
 def _assistant_default_suggestions(language):
     return [
         _localized_text(language, "Show me hotels", "Покажи ми сместување"),
@@ -1397,6 +1448,567 @@ def _assistant_default_suggestions(language):
         _localized_text(language, "Any deals right now?", "Има ли актуелни понуди?"),
         _localized_text(language, "How do I change language?", "Како да го сменам јазикот?"),
     ]
+
+
+def _assistant_context_suggestions(language, context_entity):
+    if not context_entity:
+        return _assistant_default_suggestions(language)
+
+    entity_type = context_entity['entity_type']
+    if entity_type == 'listing':
+        return [
+            _localized_text(language, "Is this place open now?", "Дали ова место е отворено сега?"),
+            _localized_text(language, "Call this place", "Јави се на ова место"),
+            _localized_text(language, "Show promotions here", "Покажи промоции за ова место"),
+            _localized_text(language, "How do I get there?", "Како да стигнам таму?"),
+        ]
+    if entity_type == 'event':
+        return [
+            _localized_text(language, "When is this event?", "Кога е овој настан?"),
+            _localized_text(language, "What is the entry price?", "Која е цената за влез?"),
+            _localized_text(language, "How do I get there?", "Како да стигнам таму?"),
+            _localized_text(language, "Where is this event available?", "Каде е достапен овој настан?"),
+        ]
+    if entity_type == 'promotion':
+        return [
+            _localized_text(language, "What is the discount code?", "Кој е кодот за попуст?"),
+            _localized_text(language, "Where can I use this?", "Каде можам да го користам ова?"),
+            _localized_text(language, "Call them", "Јави им се"),
+            _localized_text(language, "When does this expire?", "Кога истекува ова?"),
+        ]
+    if entity_type == 'blog':
+        return [
+            _localized_text(language, "Summarize this article", "Сумирај ја оваа статија"),
+            _localized_text(language, "Open the related link", "Отвори го поврзаниот линк"),
+            _localized_text(language, "What is this article about?", "За што е оваа статија?"),
+        ]
+    return _assistant_default_suggestions(language)
+
+
+def _assistant_current_context_payload(context_entity):
+    if not context_entity:
+        return None
+    return _assistant_context_payload(
+        screen=context_entity.get('screen'),
+        entity_type=context_entity.get('entity_type'),
+        entity_id=context_entity.get('entity_id'),
+        entity_label=context_entity.get('entity_label') or context_entity.get('data', {}).get('title'),
+    )
+
+
+def _assistant_finalize_response(payload, language, context_entity=None):
+    payload.setdefault('results', [])
+    payload.setdefault('actions', [])
+    payload.setdefault('suggestions', _assistant_context_suggestions(language, context_entity))
+    payload.setdefault('resolved_context', _assistant_current_context_payload(context_entity))
+    return payload
+
+
+def _assistant_load_context_entity(context_data, language, request):
+    if not context_data:
+        return None
+
+    entity_type = context_data.get('entity_type')
+    entity_id = context_data.get('entity_id')
+    if not entity_type or not entity_id:
+        return None
+
+    serializer_context = {'request': request, 'language': language}
+    queryset = None
+    serializer_class = None
+
+    if entity_type == 'listing':
+        queryset = Listing.objects.filter(id=entity_id, is_active=True)
+        serializer_class = ListingSerializer
+    elif entity_type == 'event':
+        queryset = Event.objects.filter(id=entity_id, is_active=True)
+        serializer_class = EventSerializer
+    elif entity_type == 'promotion':
+        queryset = Promotion.objects.filter(id=entity_id, is_active=True)
+        serializer_class = PromotionSerializer
+    elif entity_type == 'blog':
+        queryset = Blog.objects.filter(id=entity_id, is_active=True, published=True)
+        serializer_class = BlogSerializer
+
+    if queryset is None or serializer_class is None:
+        return None
+
+    instance = queryset.first()
+    if not instance:
+        return None
+
+    serialized = serializer_class(instance, context=serializer_context).data
+    return {
+        'screen': context_data.get('screen') or ASSISTANT_ENTITY_SCREEN_MAP.get(entity_type),
+        'entity_type': entity_type,
+        'entity_id': entity_id,
+        'entity_label': context_data.get('entity_label') or serialized.get('title'),
+        'data': serialized,
+    }
+
+
+def _assistant_entity_actions(entity_type, data, language):
+    actions = []
+    phone_number = data.get('phone_number')
+    if phone_number:
+        actions.append(
+            _assistant_action(
+                'external',
+                _localized_text(language, "Call", "Јави се"),
+                url=f"tel:{phone_number}",
+            )
+        )
+
+    if data.get('google_maps_url'):
+        actions.append(
+            _assistant_action(
+                'external',
+                _localized_text(language, "Open Map", "Отвори мапа"),
+                url=data['google_maps_url'],
+            )
+        )
+
+    external_url = None
+    if entity_type == 'listing':
+        external_url = data.get('website_url')
+    elif entity_type == 'event':
+        external_url = data.get('website_url')
+    elif entity_type == 'promotion':
+        external_url = data.get('website')
+    elif entity_type == 'blog':
+        external_url = data.get('cta_button_url')
+
+    if external_url:
+        actions.append(
+            _assistant_action(
+                'external',
+                _localized_text(language, "Open Link", "Отвори линк"),
+                url=external_url,
+            )
+        )
+
+    return actions
+
+
+def _assistant_listing_hours_answer(listing, language):
+    if listing.get('show_open_status') and listing.get('is_open') is not None:
+        status_text = _localized_text(
+            language,
+            "This place is marked as open right now." if listing.get('is_open') else "This place is marked as closed right now.",
+            "Ова место е означено како отворено во моментов." if listing.get('is_open') else "Ова место е означено како затворено во моментов.",
+        )
+        if listing.get('open_time'):
+            return _localized_text(
+                language,
+                f"{status_text} Listed hours: {listing['open_time']}",
+                f"{status_text} Наведено работно време: {listing['open_time']}",
+            )
+        return status_text
+
+    if listing.get('open_time'):
+        return _localized_text(
+            language,
+            f"The listed hours are {listing['open_time']}.",
+            f"Наведеното работно време е {listing['open_time']}.",
+        )
+
+    working_hours = listing.get('working_hours') or {}
+    if isinstance(working_hours, dict):
+        if 'working_hours' in working_hours and isinstance(working_hours['working_hours'], dict):
+            working_hours = working_hours['working_hours']
+
+        now = timezone.localtime()
+        today_key = now.strftime('%A').lower()
+        short_key = now.strftime('%a').lower()
+        today_hours = working_hours.get(today_key) or working_hours.get(short_key)
+        if today_hours:
+            return _localized_text(
+                language,
+                f"Today's hours are {today_hours}.",
+                f"Денешното работно време е {today_hours}.",
+            )
+
+    return _localized_text(
+        language,
+        "I couldn't find opening hours for this place.",
+        "Не пронајдов работно време за ова место.",
+    )
+
+
+def _assistant_related_results_response(answer, intent, result_type, items, language, context_entity, actions=None):
+    return _assistant_response(
+        answer=answer,
+        intent=intent,
+        confidence='high' if items else 'medium',
+        results=[{'type': result_type, 'data': item} for item in items],
+        actions=actions or [],
+        suggestions=_assistant_context_suggestions(language, context_entity),
+        resolved_context=_assistant_current_context_payload(context_entity),
+    )
+
+
+def _assistant_context_response(normalized_message, language, context_entity):
+    if not context_entity:
+        return None
+
+    entity_type = context_entity['entity_type']
+    data = context_entity['data']
+    actions = _assistant_entity_actions(entity_type, data, language)
+
+    if entity_type == 'listing':
+        if _assistant_message_mentions(normalized_message, ['open', 'hours', 'working time', 'when', 'отвор', 'работно време', 'часови']):
+            return _assistant_response(
+                answer=_assistant_listing_hours_answer(data, language),
+                intent='listing_hours',
+                confidence='high',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['call', 'phone', 'contact', 'number', 'јави', 'телефон', 'контакт', 'број']):
+            if data.get('phone_number'):
+                return _assistant_response(
+                    answer=_localized_text(
+                        language,
+                        f"You can call {data['title']} on {data['phone_number']}.",
+                        f"Можете да се јавите во {data['title']} на {data['phone_number']}.",
+                    ),
+                    intent='listing_contact',
+                    confidence='high',
+                    actions=actions,
+                    suggestions=_assistant_context_suggestions(language, context_entity),
+                    resolved_context=_assistant_current_context_payload(context_entity),
+                )
+            return _assistant_response(
+                answer=_localized_text(
+                    language,
+                    "I couldn't find a phone number for this place.",
+                    "Не пронајдов телефонски број за ова место.",
+                ),
+                intent='listing_contact',
+                confidence='medium',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['map', 'direction', 'where', 'there', 'address', 'route', 'мапа', 'насока', 'каде', 'адреса']):
+            if data.get('google_maps_url') or data.get('address'):
+                answer = _localized_text(
+                    language,
+                    f"{data['title']} is at {data.get('address') or 'the saved address in the app'}.",
+                    f"{data['title']} се наоѓа на {data.get('address') or 'зачуваната адреса во апликацијата'}.",
+                )
+                return _assistant_response(
+                    answer=answer,
+                    intent='listing_directions',
+                    confidence='high',
+                    actions=actions,
+                    suggestions=_assistant_context_suggestions(language, context_entity),
+                    resolved_context=_assistant_current_context_payload(context_entity),
+                )
+
+        if _assistant_message_mentions(normalized_message, ['promotion', 'deal', 'offer', 'discount', 'промоција', 'понуда', 'попуст']):
+            promotions = data.get('promotions') or []
+            if promotions:
+                return _assistant_related_results_response(
+                    answer=_localized_text(
+                        language,
+                        f"I found {len(promotions)} promotions for {data['title']}.",
+                        f"Пронајдов {len(promotions)} промоции за {data['title']}.",
+                    ),
+                    intent='listing_promotions',
+                    result_type='promotion',
+                    items=promotions,
+                    language=language,
+                    context_entity=context_entity,
+                    actions=actions,
+                )
+            return _assistant_response(
+                answer=_localized_text(
+                    language,
+                    "I couldn't find active promotions for this place right now.",
+                    "Во моментов не пронајдов активни промоции за ова место.",
+                ),
+                intent='listing_promotions',
+                confidence='medium',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['event', 'events', 'happening', 'настан', 'настани']):
+            events = data.get('events') or []
+            if events:
+                return _assistant_related_results_response(
+                    answer=_localized_text(
+                        language,
+                        f"I found {len(events)} events linked to {data['title']}.",
+                        f"Пронајдов {len(events)} настани поврзани со {data['title']}.",
+                    ),
+                    intent='listing_events',
+                    result_type='event',
+                    items=events,
+                    language=language,
+                    context_entity=context_entity,
+                    actions=actions,
+                )
+            return _assistant_response(
+                answer=_localized_text(
+                    language,
+                    "I couldn't find events linked to this place right now.",
+                    "Во моментов не пронајдов настани поврзани со ова место.",
+                ),
+                intent='listing_events',
+                confidence='medium',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['this place', 'about this', 'tell me about', 'details', 'info', 'information', 'ова место', 'кажи ми за', 'инфо', 'информации']):
+            return _assistant_response(
+                answer=_assistant_listing_answer(data, language),
+                intent='listing_summary',
+                confidence='high',
+                results=[{'type': 'listing', 'data': data}],
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+    if entity_type == 'event':
+        if _assistant_message_mentions(normalized_message, ['when', 'date', 'time', 'calendar', 'кога', 'датум', 'време']):
+            return _assistant_response(
+                answer=_localized_text(
+                    language,
+                    f"{data['title']} is scheduled for {data.get('date_time') or 'the listed date in the app'}.",
+                    f"{data['title']} е закажан за {data.get('date_time') or 'наведениот датум во апликацијата'}.",
+                ),
+                intent='event_time',
+                confidence='high',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['price', 'ticket', 'entry', 'cost', 'цена', 'влез', 'билет']):
+            answer = _localized_text(
+                language,
+                f"The listed entry price is {data['entry_price']}." if data.get('entry_price') else "I couldn't find an entry price for this event.",
+                f"Наведената цена за влез е {data['entry_price']}." if data.get('entry_price') else "Не пронајдов цена за влез за овој настан.",
+            )
+            return _assistant_response(
+                answer=answer,
+                intent='event_price',
+                confidence='high' if data.get('entry_price') else 'medium',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['age', 'limit', 'adult', 'child', 'возраст', 'ограничување']):
+            answer = _localized_text(
+                language,
+                f"The age limit is {data['age_limit']}." if data.get('age_limit') else "I couldn't find an age limit for this event.",
+                f"Возрасното ограничување е {data['age_limit']}." if data.get('age_limit') else "Не пронајдов возрасно ограничување за овој настан.",
+            )
+            return _assistant_response(
+                answer=answer,
+                intent='event_age_limit',
+                confidence='high' if data.get('age_limit') else 'medium',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['map', 'direction', 'where', 'location', 'address', 'мапа', 'насока', 'каде', 'локација']):
+            return _assistant_response(
+                answer=_localized_text(
+                    language,
+                    f"{data['title']} is happening at {data.get('location') or 'the saved location in the app'}.",
+                    f"{data['title']} се одржува во {data.get('location') or 'зачуваната локација во апликацијата'}.",
+                ),
+                intent='event_location',
+                confidence='high',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['listing', 'place', 'venue', 'available', 'where can i find', 'место', 'локација', 'достапен']):
+            listings = data.get('listings') or []
+            if listings:
+                return _assistant_related_results_response(
+                    answer=_localized_text(
+                        language,
+                        f"I found {len(listings)} places linked to this event.",
+                        f"Пронајдов {len(listings)} места поврзани со овој настан.",
+                    ),
+                    intent='event_listings',
+                    result_type='listing',
+                    items=listings,
+                    language=language,
+                    context_entity=context_entity,
+                    actions=actions,
+                )
+
+        if _assistant_message_mentions(normalized_message, ['call', 'phone', 'contact', 'јави', 'телефон', 'контакт']):
+            answer = _localized_text(
+                language,
+                f"You can call on {data['phone_number']}." if data.get('phone_number') else "I couldn't find a phone number for this event.",
+                f"Можете да се јавите на {data['phone_number']}." if data.get('phone_number') else "Не пронајдов телефонски број за овој настан.",
+            )
+            return _assistant_response(
+                answer=answer,
+                intent='event_contact',
+                confidence='high' if data.get('phone_number') else 'medium',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['this event', 'about this', 'tell me about', 'details', 'info', 'information', 'овој настан', 'кажи ми за', 'инфо', 'информации']):
+            return _assistant_response(
+                answer=_assistant_event_answer(data, language),
+                intent='event_summary',
+                confidence='high',
+                results=[{'type': 'event', 'data': data}],
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+    if entity_type == 'promotion':
+        if _assistant_message_mentions(normalized_message, ['code', 'discount code', 'coupon', 'код', 'код за попуст', 'купон']):
+            answer = _localized_text(
+                language,
+                f"The discount code is {data['discount_code']}." if data.get('has_discount_code') and data.get('discount_code') else "I couldn't find a discount code for this promotion.",
+                f"Кодот за попуст е {data['discount_code']}." if data.get('has_discount_code') and data.get('discount_code') else "Не пронајдов код за попуст за оваа промоција.",
+            )
+            return _assistant_response(
+                answer=answer,
+                intent='promotion_code',
+                confidence='high' if data.get('has_discount_code') and data.get('discount_code') else 'medium',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['expire', 'expiry', 'valid until', 'end', 'истек', 'истекува', 'важи до']):
+            answer = _localized_text(
+                language,
+                f"This promotion is valid until {data['valid_until']}." if data.get('valid_until') else "I couldn't find an expiry date for this promotion.",
+                f"Оваа промоција важи до {data['valid_until']}." if data.get('valid_until') else "Не пронајдов датум на истек за оваа промоција.",
+            )
+            return _assistant_response(
+                answer=answer,
+                intent='promotion_expiry',
+                confidence='high' if data.get('valid_until') else 'medium',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['where can i use', 'where to use', 'listing', 'place', 'store', 'каде можам', 'каде да го користам', 'место']):
+            listings = data.get('listings') or []
+            if listings:
+                return _assistant_related_results_response(
+                    answer=_localized_text(
+                        language,
+                        f"You can use this promotion at {len(listings)} places in the app.",
+                        f"Оваа промоција можете да ја користите на {len(listings)} места во апликацијата.",
+                    ),
+                    intent='promotion_listings',
+                    result_type='listing',
+                    items=listings,
+                    language=language,
+                    context_entity=context_entity,
+                    actions=actions,
+                )
+            return _assistant_response(
+                answer=_localized_text(
+                    language,
+                    "I couldn't find linked places for this promotion.",
+                    "Не пронајдов поврзани места за оваа промоција.",
+                ),
+                intent='promotion_listings',
+                confidence='medium',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['call', 'phone', 'contact', 'јави', 'телефон', 'контакт']):
+            answer = _localized_text(
+                language,
+                f"You can call on {data['phone_number']}." if data.get('phone_number') else "I couldn't find a phone number for this promotion.",
+                f"Можете да се јавите на {data['phone_number']}." if data.get('phone_number') else "Не пронајдов телефонски број за оваа промоција.",
+            )
+            return _assistant_response(
+                answer=answer,
+                intent='promotion_contact',
+                confidence='high' if data.get('phone_number') else 'medium',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['map', 'direction', 'where', 'address', 'мапа', 'насока', 'каде', 'адреса']):
+            answer = _localized_text(
+                language,
+                f"This promotion is linked to {data.get('address') or 'the saved address in the app'}.",
+                f"Оваа промоција е поврзана со {data.get('address') or 'зачуваната адреса во апликацијата'}.",
+            )
+            return _assistant_response(
+                answer=answer,
+                intent='promotion_location',
+                confidence='high',
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['this promotion', 'about this', 'tell me about', 'details', 'info', 'information', 'оваа промоција', 'кажи ми за', 'инфо', 'информации']):
+            return _assistant_response(
+                answer=_assistant_promotion_answer(data, language),
+                intent='promotion_summary',
+                confidence='high',
+                results=[{'type': 'promotion', 'data': data}],
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+    if entity_type == 'blog':
+        if _assistant_message_mentions(normalized_message, ['summary', 'summarize', 'about', 'article', 'article about', 'summary', 'сумирај', 'статија', 'за што']):
+            return _assistant_response(
+                answer=_assistant_blog_answer(data, language),
+                intent='blog_summary',
+                confidence='high',
+                results=[{'type': 'blog', 'data': data}],
+                actions=actions,
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+
+        if _assistant_message_mentions(normalized_message, ['open link', 'related link', 'website', 'cta', 'отвори линк', 'поврзан линк']):
+            if data.get('cta_button_url'):
+                return _assistant_response(
+                    answer=_localized_text(
+                        language,
+                        "I found a related link for this article.",
+                        "Пронајдов поврзан линк за оваа статија.",
+                    ),
+                    intent='blog_link',
+                    confidence='high',
+                    actions=actions,
+                    suggestions=_assistant_context_suggestions(language, context_entity),
+                    resolved_context=_assistant_current_context_payload(context_entity),
+                )
+
+    return None
 
 
 def _assistant_search_suggestions(language, query):
@@ -1781,22 +2393,21 @@ def _assistant_generic_feed_response(normalized_message, language, request):
     return None
 
 
-def _build_assistant_search_response(query, language, request):
+def _build_assistant_search_response(query, language, request, context_entity=None):
     search_data = _serialize_search_results(query, 'all', 3, language, request)
     total_count = search_data['total_count']
     if total_count == 0:
-        return {
-            'answer': _localized_text(
+        return _assistant_response(
+            answer=_localized_text(
                 language,
                 "I couldn't find a clear match for that. Try asking about a place, event, deal, currency, support, or language settings.",
                 "Не најдов јасно совпаѓање за тоа. Обидете се да прашате за место, настан, понуда, валути, поддршка или поставки за јазик."
             ),
-            'intent': 'fallback',
-            'confidence': 'low',
-            'results': [],
-            'actions': [],
-            'suggestions': _assistant_default_suggestions(language),
-        }
+            intent='fallback',
+            confidence='low',
+            suggestions=_assistant_context_suggestions(language, context_entity),
+            resolved_context=_assistant_current_context_payload(context_entity),
+        )
 
     flattened_results = []
     for result_type in ['listings', 'events', 'promotions', 'blogs']:
@@ -1822,27 +2433,38 @@ def _build_assistant_search_response(query, language, request):
         }
         answer_builder = detailed_answers.get(top_result['type'])
         answer = answer_builder(top_result['data'], language) if answer_builder else _localized_text(language, "I found one matching result.", "Пронајдов еден соодветен резултат.")
-        return {
-            'answer': answer,
-            'intent': f"{top_result['type']}_match",
-            'confidence': 'high',
-            'results': [top_result],
-            'actions': actions,
-            'suggestions': _assistant_search_suggestions(language, search_data['query']),
-        }
+        return _assistant_response(
+            answer=answer,
+            intent=f"{top_result['type']}_match",
+            confidence='high',
+            results=[top_result],
+            actions=actions,
+            suggestions=_assistant_context_suggestions(
+                language,
+                {
+                    'entity_type': top_result['type'],
+                    'entity_id': top_result['data'].get('id'),
+                    'entity_label': top_result['data'].get('title'),
+                    'screen': ASSISTANT_ENTITY_SCREEN_MAP.get(top_result['type']),
+                    'data': top_result['data'],
+                },
+            ),
+            resolved_context=_assistant_result_to_context(top_result['type'], top_result['data']),
+        )
 
-    return {
-        'answer': _localized_text(
+    return _assistant_response(
+        answer=_localized_text(
             language,
             f'I found {total_count} results related to "{search_data["query"]}". Here are the top matches.',
             f'Пронајдов {total_count} резултати поврзани со "{search_data["query"]}". Еве ги најрелевантните.'
         ),
-        'intent': 'search_results',
-        'confidence': 'medium',
-        'results': flattened_results,
-        'actions': actions,
-        'suggestions': _assistant_search_suggestions(language, search_data['query']),
-    }
+        intent='search_results',
+        confidence='medium',
+        results=flattened_results,
+        actions=actions,
+        suggestions=_assistant_search_suggestions(language, search_data['query']),
+        resolved_context=_assistant_current_context_payload(context_entity),
+    )
 
 
 class AssistantQueryView(APIView):
@@ -1855,22 +2477,38 @@ class AssistantQueryView(APIView):
         serializer.is_valid(raise_exception=True)
 
         message = serializer.validated_data['message'].strip()
+        context_data = serializer.validated_data.get('context') or {}
+        history = serializer.validated_data.get('history') or []
         language = get_preferred_language(request)
         normalized_message = _normalize_assistant_message(message)
+        context_entity = _assistant_load_context_entity(context_data, language, request)
+
+        context_response = _assistant_context_response(normalized_message, language, context_entity)
+        if context_response:
+            return Response(_assistant_finalize_response(context_response, language, context_entity))
 
         faq_response = _assistant_faq_response(normalized_message, language)
         if faq_response:
-            return Response(faq_response)
+            return Response(_assistant_finalize_response(faq_response, language, context_entity))
 
         category_response = _assistant_category_response(normalized_message, language, request)
         if category_response:
-            return Response(category_response)
+            return Response(_assistant_finalize_response(category_response, language, context_entity))
 
         feed_response = _assistant_generic_feed_response(normalized_message, language, request)
         if feed_response:
-            return Response(feed_response)
+            return Response(_assistant_finalize_response(feed_response, language, context_entity))
 
-        return Response(_build_assistant_search_response(message, language, request))
+        if history and not context_entity and _assistant_message_mentions(normalized_message, ['this', 'it', 'them', 'that', 'ова', 'тоа', 'тие']):
+            previous_user_messages = [
+                item.get('text', '').strip()
+                for item in reversed(history)
+                if item.get('role') == 'user' and item.get('text')
+            ]
+            if previous_user_messages:
+                message = f"{previous_user_messages[0]} {message}".strip()
+
+        return Response(_build_assistant_search_response(message, language, request, context_entity))
 
 
 @api_view(['GET'])
