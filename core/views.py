@@ -23,11 +23,13 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedItem
 from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, BillboardItemSerializer, FeaturedItemSerializer, AssistantQuerySerializer
+from .assistant_ai import AssistantAIError, get_assistant_ai_provider
 from .assistant_parser import get_assistant_query_parser
 from .utils import get_preferred_language
 from .pagination import StandardResultsSetPagination
 
 assistant_query_logger = logging.getLogger("assistant_queries")
+core_logger = logging.getLogger("core")
 
 
 class IsSuperUser(permissions.BasePermission):
@@ -1540,6 +1542,7 @@ def _assistant_log_query(request, message, language, context_data, history, unde
             'provider': understanding.get('provider'),
             'confidence': understanding.get('confidence'),
             'intent': understanding.get('intent'),
+            'tool': understanding.get('tool'),
             'faq_intent': understanding.get('faq_intent'),
             'entity_type': understanding.get('entity_type'),
             'content_type': understanding.get('content_type'),
@@ -1565,6 +1568,116 @@ def _assistant_log_query(request, message, language, context_data, history, unde
     }
 
     assistant_query_logger.info(json.dumps(log_payload, ensure_ascii=False))
+
+
+def _assistant_external_ai_context(context_data, context_entity):
+    payload = {
+        'screen': (context_data or {}).get('screen'),
+        'entity_type': (context_data or {}).get('entity_type'),
+        'entity_id': (context_data or {}).get('entity_id'),
+    }
+
+    if context_entity:
+        payload.update(_assistant_current_context_payload(context_entity) or {})
+        payload['entity_title'] = context_entity.get('entity_label') or context_entity.get('data', {}).get('title')
+
+    return {key: value for key, value in payload.items() if value not in (None, '', [])}
+
+
+def _assistant_execute_ai_plan(plan, message, language, request, context_entity):
+    tool = (plan or {}).get('tool')
+    tool_query = ((plan or {}).get('tool_query') or message).strip()
+    normalized_tool_query = _normalize_assistant_message(tool_query)
+    content_type = ((plan or {}).get('content_type') or 'all').strip().lower()
+
+    if tool == 'clarify':
+        clarification_question = ((plan or {}).get('clarification_question') or '').strip()
+        if clarification_question:
+            return _assistant_response(
+                answer=clarification_question,
+                intent='clarify',
+                confidence=(plan or {}).get('confidence') or 'low',
+                suggestions=_assistant_context_suggestions(language, context_entity),
+                resolved_context=_assistant_current_context_payload(context_entity),
+            )
+        return None
+
+    if tool == 'context':
+        return _assistant_context_response(normalized_tool_query, language, context_entity)
+
+    if tool == 'faq':
+        return _assistant_faq_response(normalized_tool_query, language)
+
+    if tool == 'category':
+        return _assistant_category_response(normalized_tool_query, language, request)
+
+    if tool == 'feed':
+        return _assistant_generic_feed_response(normalized_tool_query, language, request)
+
+    if tool == 'search':
+        return _build_assistant_search_response(tool_query, language, request, context_entity, content_type=content_type)
+
+    return None
+
+
+def _assistant_try_external_ai_response(message, language, context_data, history, request, context_entity):
+    provider = get_assistant_ai_provider()
+    if not provider:
+        return None
+
+    ai_context = _assistant_external_ai_context(context_data, context_entity)
+
+    try:
+        plan = provider.plan_query(
+            message=message,
+            language=language,
+            context=ai_context,
+            history=history,
+        )
+    except AssistantAIError as exc:
+        core_logger.warning("Assistant external AI planning failed: %s", exc)
+        return None
+
+    tool_response = _assistant_execute_ai_plan(plan, message, language, request, context_entity)
+    if not tool_response:
+        return None
+
+    understanding = {
+        'provider': provider.provider_name,
+        'confidence': plan.get('confidence'),
+        'intent': plan.get('intent'),
+        'content_type': plan.get('content_type'),
+        'search_query': plan.get('tool_query') or message,
+        'tool': plan.get('tool'),
+    }
+
+    if plan.get('tool') == 'clarify':
+        tool_response['understanding'] = understanding
+        return tool_response
+
+    try:
+        composed = provider.compose_answer(
+            message=message,
+            language=language,
+            context=ai_context,
+            plan=plan,
+            tool_response=tool_response,
+        )
+    except AssistantAIError as exc:
+        core_logger.warning("Assistant external AI answer composition failed: %s", exc)
+        tool_response['understanding'] = understanding
+        return tool_response
+
+    answer = (composed.get('answer') or '').strip()
+    suggestions = [item.strip() for item in (composed.get('suggestions') or []) if isinstance(item, str) and item.strip()]
+
+    if answer:
+        tool_response['answer'] = answer
+    if suggestions:
+        tool_response['suggestions'] = suggestions[:4]
+
+    tool_response['understanding'] = understanding
+    return tool_response
 
 
 def _assistant_load_context_entity(context_data, language, request):
@@ -2456,8 +2569,8 @@ def _assistant_generic_feed_response(normalized_message, language, request):
     return None
 
 
-def _build_assistant_search_response(query, language, request, context_entity=None):
-    search_data = _serialize_search_results(query, 'all', 3, language, request)
+def _build_assistant_search_response(query, language, request, context_entity=None, content_type='all'):
+    search_data = _serialize_search_results(query, content_type, 3, language, request)
     total_count = search_data['total_count']
     if total_count == 0:
         return _assistant_response(
@@ -2543,13 +2656,28 @@ class AssistantQueryView(APIView):
         context_data = serializer.validated_data.get('context') or {}
         history = serializer.validated_data.get('history') or []
         language = get_preferred_language(request)
+        context_entity = _assistant_load_context_entity(context_data, language, request)
+
+        external_response = _assistant_try_external_ai_response(
+            message,
+            language,
+            context_data,
+            history,
+            request,
+            context_entity,
+        )
+        if external_response:
+            understanding = external_response.get('understanding') or {}
+            response_payload = _assistant_finalize_response(external_response, language, context_entity, understanding)
+            _assistant_log_query(request, message, language, context_data, history, understanding, response_payload)
+            return Response(response_payload)
+
         parser = get_assistant_query_parser()
         understanding = parser.parse(message, language=language, context=context_data, history=history).as_dict()
         normalized_message = _assistant_augmented_message(
             _normalize_assistant_message(message),
             understanding,
         )
-        context_entity = _assistant_load_context_entity(context_data, language, request)
 
         context_response = _assistant_context_response(normalized_message, language, context_entity)
         if context_response:
