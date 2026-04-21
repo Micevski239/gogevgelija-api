@@ -212,6 +212,21 @@
     "allCategories": "Categories",
     "trending": "Trending"
   },
+  "assistant": {
+    "title": "Assistant",
+    "subtitle": "Basic info for places, events, deals, and app help",
+    "placeholder": "Ask about a place, event, promotion, or app help",
+    "welcomeMessage": "Ask me about places, events, promotions, currency, support, or how to use the app.",
+    "error": "I couldn't answer that right now. Please try again in a moment.",
+    "authSupport": "Sign up to contact support",
+    "authCollaboration": "Sign up to send collaboration requests",
+    "suggestions": {
+      "hotels": "Show me hotels",
+      "events": "What events are coming up?",
+      "deals": "Any deals right now?",
+      "language": "How do I change language?"
+    }
+  },
   "overlays": {
     "upcomingEvents": "Upcoming Events",
     "promotions": "Promotions",
