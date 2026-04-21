@@ -208,15 +208,31 @@ LOGGING = {
             "backupCount": 5,
             "formatter": "verbose",
         },
+        "assistant_queries": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": os.path.join(BASE_DIR, "logs", "assistant_queries.log"),
+            "maxBytes": 10 * 1024 * 1024,
+            "backupCount": 10,
+            "formatter": "verbose",
+        },
     },
     "loggers": {
         "django": {"handlers": ["console", "file"] if not DEBUG else ["console"], "level": "INFO", "propagate": False},
         "django.security": {"handlers": ["console", "security"] if not DEBUG else ["console"], "level": "INFO", "propagate": False},
         "core": {"handlers": ["console", "file"] if not DEBUG else ["console"], "level": "DEBUG" if DEBUG else "INFO", "propagate": False},
+        "assistant_queries": {
+            "handlers": ["console", "assistant_queries"] if DEBUG else ["assistant_queries"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
     "root": {"handlers": ["console"], "level": "WARNING"},
 }
 os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
+
+# -------------------- Assistant --------------------
+ASSISTANT_QUERY_LOGGING_ENABLED = os.getenv("ASSISTANT_QUERY_LOGGING_ENABLED", "1") == "1"
 
 # -------------------- Health --------------------
 HEALTH_CHECK_ENABLED = os.getenv("HEALTH_CHECK_ENABLED", "1") == "1"

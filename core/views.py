@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 import re
 from pathlib import Path
@@ -22,8 +23,11 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedItem
 from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, BillboardItemSerializer, FeaturedItemSerializer, AssistantQuerySerializer
+from .assistant_parser import get_assistant_query_parser
 from .utils import get_preferred_language
 from .pagination import StandardResultsSetPagination
+
+assistant_query_logger = logging.getLogger("assistant_queries")
 
 
 class IsSuperUser(permissions.BasePermission):
@@ -1382,6 +1386,13 @@ def _normalize_assistant_message(message):
     return re.sub(r"\s+", " ", re.sub(r"[^\w\s]+", " ", message.lower())).strip()
 
 
+def _assistant_augmented_message(normalized_message, understanding):
+    canonical_terms = (understanding or {}).get('canonical_terms') or []
+    if not canonical_terms:
+        return normalized_message
+    return " ".join(part for part in [normalized_message, " ".join(canonical_terms)] if part).strip()
+
+
 def _assistant_action(action_type, label, screen=None, params=None, url=None):
     payload = {
         'type': action_type,
@@ -1496,12 +1507,64 @@ def _assistant_current_context_payload(context_entity):
     )
 
 
-def _assistant_finalize_response(payload, language, context_entity=None):
+def _assistant_finalize_response(payload, language, context_entity=None, understanding=None):
     payload.setdefault('results', [])
     payload.setdefault('actions', [])
     payload.setdefault('suggestions', _assistant_context_suggestions(language, context_entity))
     payload.setdefault('resolved_context', _assistant_current_context_payload(context_entity))
+    if understanding is not None:
+        payload.setdefault('understanding', understanding)
     return payload
+
+
+def _assistant_log_query(request, message, language, context_data, history, understanding, response_payload):
+    if not getattr(settings, 'ASSISTANT_QUERY_LOGGING_ENABLED', True):
+        return
+
+    results = response_payload.get('results') or []
+    resolved_context = response_payload.get('resolved_context') or {}
+    log_payload = {
+        'message': message,
+        'language': language,
+        'actor': {
+            'is_authenticated': bool(getattr(request.user, 'is_authenticated', False)),
+            'user_id': request.user.id if getattr(request.user, 'is_authenticated', False) else None,
+        },
+        'request_context': {
+            'screen': context_data.get('screen'),
+            'entity_type': context_data.get('entity_type'),
+            'entity_id': context_data.get('entity_id'),
+        },
+        'history_count': len(history or []),
+        'understanding': {
+            'provider': understanding.get('provider'),
+            'confidence': understanding.get('confidence'),
+            'intent': understanding.get('intent'),
+            'faq_intent': understanding.get('faq_intent'),
+            'entity_type': understanding.get('entity_type'),
+            'content_type': understanding.get('content_type'),
+            'category_key': understanding.get('category_key'),
+            'filters': understanding.get('filters') or {},
+            'unsupported_filters': understanding.get('unsupported_filters') or [],
+            'canonical_terms': understanding.get('canonical_terms') or [],
+            'matched_terms': understanding.get('matched_terms') or [],
+            'search_query': understanding.get('search_query'),
+        },
+        'response': {
+            'intent': response_payload.get('intent'),
+            'confidence': response_payload.get('confidence'),
+            'results_count': len(results),
+            'result_types': [item.get('type') for item in results[:5] if item.get('type')],
+            'actions_count': len(response_payload.get('actions') or []),
+            'resolved_context': {
+                'screen': resolved_context.get('screen'),
+                'entity_type': resolved_context.get('entity_type'),
+                'entity_id': resolved_context.get('entity_id'),
+            },
+        },
+    }
+
+    assistant_query_logger.info(json.dumps(log_payload, ensure_ascii=False))
 
 
 def _assistant_load_context_entity(context_data, language, request):
@@ -2480,24 +2543,37 @@ class AssistantQueryView(APIView):
         context_data = serializer.validated_data.get('context') or {}
         history = serializer.validated_data.get('history') or []
         language = get_preferred_language(request)
-        normalized_message = _normalize_assistant_message(message)
+        parser = get_assistant_query_parser()
+        understanding = parser.parse(message, language=language, context=context_data, history=history).as_dict()
+        normalized_message = _assistant_augmented_message(
+            _normalize_assistant_message(message),
+            understanding,
+        )
         context_entity = _assistant_load_context_entity(context_data, language, request)
 
         context_response = _assistant_context_response(normalized_message, language, context_entity)
         if context_response:
-            return Response(_assistant_finalize_response(context_response, language, context_entity))
+            response_payload = _assistant_finalize_response(context_response, language, context_entity, understanding)
+            _assistant_log_query(request, message, language, context_data, history, understanding, response_payload)
+            return Response(response_payload)
 
         faq_response = _assistant_faq_response(normalized_message, language)
         if faq_response:
-            return Response(_assistant_finalize_response(faq_response, language, context_entity))
+            response_payload = _assistant_finalize_response(faq_response, language, context_entity, understanding)
+            _assistant_log_query(request, message, language, context_data, history, understanding, response_payload)
+            return Response(response_payload)
 
         category_response = _assistant_category_response(normalized_message, language, request)
         if category_response:
-            return Response(_assistant_finalize_response(category_response, language, context_entity))
+            response_payload = _assistant_finalize_response(category_response, language, context_entity, understanding)
+            _assistant_log_query(request, message, language, context_data, history, understanding, response_payload)
+            return Response(response_payload)
 
         feed_response = _assistant_generic_feed_response(normalized_message, language, request)
         if feed_response:
-            return Response(_assistant_finalize_response(feed_response, language, context_entity))
+            response_payload = _assistant_finalize_response(feed_response, language, context_entity, understanding)
+            _assistant_log_query(request, message, language, context_data, history, understanding, response_payload)
+            return Response(response_payload)
 
         if history and not context_entity and _assistant_message_mentions(normalized_message, ['this', 'it', 'them', 'that', 'ова', 'тоа', 'тие']):
             previous_user_messages = [
@@ -2508,7 +2584,11 @@ class AssistantQueryView(APIView):
             if previous_user_messages:
                 message = f"{previous_user_messages[0]} {message}".strip()
 
-        return Response(_build_assistant_search_response(message, language, request, context_entity))
+        effective_search_query = understanding.get('search_query') or message
+        search_response = _build_assistant_search_response(effective_search_query, language, request, context_entity)
+        response_payload = _assistant_finalize_response(search_response, language, context_entity, understanding)
+        _assistant_log_query(request, message, language, context_data, history, understanding, response_payload)
+        return Response(response_payload)
 
 
 @api_view(['GET'])
