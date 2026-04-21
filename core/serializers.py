@@ -1070,7 +1070,22 @@ class CollaborationContactCreateSerializer(serializers.ModelSerializer):
 
 class AssistantQuerySerializer(serializers.Serializer):
     """Validate in-app assistant queries."""
+    class AssistantContextSerializer(serializers.Serializer):
+        screen = serializers.CharField(max_length=50, required=False, allow_blank=True)
+        entity_type = serializers.ChoiceField(
+            choices=['listing', 'event', 'promotion', 'blog'],
+            required=False,
+        )
+        entity_id = serializers.IntegerField(required=False, min_value=1)
+        entity_label = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+    class AssistantHistoryItemSerializer(serializers.Serializer):
+        role = serializers.ChoiceField(choices=['user', 'assistant'])
+        text = serializers.CharField(max_length=1000)
+
     message = serializers.CharField(max_length=300)
+    context = AssistantContextSerializer(required=False)
+    history = AssistantHistoryItemSerializer(many=True, required=False)
 
 
 
