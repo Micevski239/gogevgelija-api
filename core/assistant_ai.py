@@ -30,17 +30,14 @@ class BaseAssistantAIProvider:
     def is_enabled(self) -> bool:
         return False
 
-    def plan_query(self, *, message: str, language: str, context: dict[str, Any] | None = None, history: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-        raise NotImplementedError
-
-    def compose_answer(
+    def plan_query(
         self,
         *,
         message: str,
         language: str,
-        context: dict[str, Any] | None,
-        plan: dict[str, Any],
-        tool_response: dict[str, Any],
+        context: dict[str, Any] | None = None,
+        history: list[dict[str, Any]] | None = None,
+        catalog: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -51,8 +48,8 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
 
     def __init__(self) -> None:
         self.api_key = (os.getenv("GROQ_API_KEY") or "").strip()
-        self.model = (os.getenv("ASSISTANT_GROQ_MODEL") or "openai/gpt-oss-20b").strip()
-        self.timeout_seconds = float(os.getenv("ASSISTANT_GROQ_TIMEOUT_SECONDS", "20"))
+        self.model = (os.getenv("ASSISTANT_GROQ_MODEL") or "llama-3.3-70b-versatile").strip()
+        self.timeout_seconds = float(os.getenv("ASSISTANT_GROQ_TIMEOUT_SECONDS", "10"))
 
     def is_enabled(self) -> bool:
         return bool(self.api_key)
@@ -87,30 +84,72 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
         except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
             raise AssistantAIError("Groq assistant response was not valid structured JSON") from exc
 
-    def plan_query(self, *, message: str, language: str, context: dict[str, Any] | None = None, history: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    def plan_query(
+        self,
+        *,
+        message: str,
+        language: str,
+        context: dict[str, Any] | None = None,
+        history: list[dict[str, Any]] | None = None,
+        catalog: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         context = context or {}
         history = history or []
+        catalog = catalog or {}
         history_slice = history[-6:]
 
+        category_slugs = catalog.get("category_slugs") or []
+        entity_catalog = catalog.get("entities") or []
+
+        catalog_block = ""
+        if category_slugs:
+            catalog_block += "\nAvailable category_hint values (closed list, pick one or null):\n"
+            catalog_block += ", ".join(category_slugs) + "\n"
+        if entity_catalog:
+            catalog_block += (
+                "\nKnown entities (use for resolved_entity_id when the user names one; "
+                "match loosely across Latin/Cyrillic/English):\n"
+            )
+            catalog_block += "\n".join(
+                f"- {item['type']}#{item['id']}: {item['title']}" for item in entity_catalog[:60]
+            ) + "\n"
+
+        system_prompt = (
+            "You orchestrate the GoGevgelija in-app assistant. "
+            "Your ONLY job is to understand the user and return structured fields. "
+            "You never write user-facing answers — the backend does.\n\n"
+            "Language handling:\n"
+            "- Users may write Macedonian in Cyrillic (каде, музика), Latin-transliterated (kade, muzika), or English.\n"
+            "- Latin-transliterated Macedonian examples: kade=where, da=to, jadam=eat, slusam=listen, vecherva=tonight, nastani=events.\n"
+            "- When ambiguous between mk-latin and English, prefer mk-latin for tourism queries.\n"
+            "- ALWAYS produce BOTH normalized_query_en and normalized_query_mk (Cyrillic) so the "
+            "backend can search bilingual DB fields. Translate and transliterate as needed.\n\n"
+            "Query extraction:\n"
+            "- Users ask full questions, not keywords. Extract the core subject only.\n"
+            "- Strip filler words (kade, where, najdi, find, мислам, please, ima, дали, some).\n"
+            "- Example: 'Kade da slusam muzika vecheras?' -> normalized_query_en='live music tonight', "
+            "normalized_query_mk='музика вечер', category_hint='nightlife' (or closest slug), "
+            "entity_type_hint='event', time_filter='tonight'.\n\n"
+            "Tool selection:\n"
+            "- context: user refers to the entity already open on their screen (hours, phone, price, directions).\n"
+            "- faq: app help (language, wishlist, support, collaboration, currency, border cameras, guest/account).\n"
+            "- category: 'show me restaurants', 'kade da jadam' — category discovery.\n"
+            "- feed: generic overview of events / promotions / blogs without a specific entity in mind.\n"
+            "- search: named entities, specific places, or any broad lookup not matching category/feed.\n"
+            "- clarify: ONLY if the message is truly ambiguous and you cannot make a reasonable guess.\n\n"
+            "Follow-up resolution:\n"
+            "- If the user says 'it', 'that', 'ова', 'тоа', 'тие' and history contains a resolved entity, "
+            "set followup_of_entity_id to its id.\n"
+            "- Re-use the same tool as the prior turn if the follow-up is about the same entity.\n\n"
+            "Filters:\n"
+            "- time_filter: tonight|today|this_week|weekend|null — set whenever user mentions time.\n"
+            "- price_filter: cheap|mid|premium|null — cheap means free entry or budget; premium means paid/upscale.\n"
+            "- open_now_requested: true if user asks 'open now', 'otvoreno sega', 'raboti li', etc.\n\n"
+            + catalog_block
+        )
+
         messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You orchestrate the GoGevgelija in-app assistant. "
-                    "Choose exactly one backend tool. Never answer from general knowledge. "
-                    "Use context when the user refers to the current screen item. "
-                    "Prefer search when in doubt, and clarify only when absolutely needed.\n\n"
-                    "Available tools:\n"
-                    "- context: current listing/event/promotion/blog already open in the app. tool_query should be short keywords like "
-                    "'open hours', 'call phone', 'discount code', 'summary', 'directions', 'events', 'promotions', 'price', 'age limit', 'where use', 'related link'.\n"
-                    "- faq: app help like language, wishlist, support, collaboration, currency, border cameras, guest/account.\n"
-                    "- category: listing discovery for accommodation, food, dental, fuel, services.\n"
-                    "- feed: general overview for events, promotions, or blogs.\n"
-                    "- search: named entities or broad lookup against app content.\n"
-                    "- clarify: ask a short clarification question if intent is too ambiguous.\n\n"
-                    "Return compact tool_query values. Use the user's language."
-                ),
-            },
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
                 "content": json.dumps(
@@ -133,72 +172,63 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
                     "enum": ["context", "faq", "category", "feed", "search", "clarify"],
                 },
                 "intent": {"type": "string"},
-                "confidence": {
-                    "type": "string",
-                    "enum": ["high", "medium", "low"],
-                },
+                "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
                 "tool_query": {"type": "string"},
                 "content_type": {
                     "type": "string",
                     "enum": ["all", "listings", "events", "promotions", "blogs"],
                 },
+                "detected_language": {
+                    "type": "string",
+                    "enum": ["en", "mk-cyrillic", "mk-latin", "unknown"],
+                },
+                "normalized_query_en": {"type": "string"},
+                "normalized_query_mk": {"type": "string"},
+                "category_hint": {"type": ["string", "null"]},
+                "entity_type_hint": {
+                    "type": ["string", "null"],
+                    "enum": ["listing", "event", "promotion", "blog", None],
+                },
+                "resolved_entity_id": {"type": ["integer", "null"]},
+                "resolved_entity_type": {
+                    "type": ["string", "null"],
+                    "enum": ["listing", "event", "promotion", "blog", None],
+                },
+                "time_filter": {
+                    "type": ["string", "null"],
+                    "enum": ["tonight", "today", "this_week", "weekend", None],
+                },
+                "price_filter": {
+                    "type": ["string", "null"],
+                    "enum": ["cheap", "mid", "premium", None],
+                },
+                "open_now_requested": {"type": "boolean"},
+                "followup_of_entity_id": {"type": ["integer", "null"]},
                 "clarification_question": {"type": ["string", "null"]},
             },
-            "required": ["tool", "intent", "confidence", "tool_query", "content_type", "clarification_question"],
+            "required": [
+                "tool",
+                "intent",
+                "confidence",
+                "tool_query",
+                "content_type",
+                "detected_language",
+                "normalized_query_en",
+                "normalized_query_mk",
+                "category_hint",
+                "entity_type_hint",
+                "resolved_entity_id",
+                "resolved_entity_type",
+                "time_filter",
+                "price_filter",
+                "open_now_requested",
+                "followup_of_entity_id",
+                "clarification_question",
+            ],
             "additionalProperties": False,
         }
 
         return self._chat_completion(messages=messages, schema_name="assistant_plan", schema=schema)
-
-    def compose_answer(
-        self,
-        *,
-        message: str,
-        language: str,
-        context: dict[str, Any] | None,
-        plan: dict[str, Any],
-        tool_response: dict[str, Any],
-    ) -> dict[str, Any]:
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You write the final answer for the GoGevgelija in-app assistant. "
-                    "Use only the provided tool result. Do not invent facts. "
-                    "If unsupported filters are present, say so clearly and keep the answer helpful. "
-                    "Keep the answer concise, natural, and in the user's language. "
-                    "Suggestions should be short follow-up prompts."
-                ),
-            },
-            {
-                "role": "user",
-                "content": json.dumps(
-                    {
-                        "message": message,
-                        "language": language,
-                        "context": context or {},
-                        "plan": plan,
-                        "tool_response": tool_response,
-                    },
-                    ensure_ascii=False,
-                ),
-            },
-        ]
-
-        schema = {
-            "type": "object",
-            "properties": {
-                "answer": {"type": "string"},
-                "suggestions": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                },
-            },
-            "required": ["answer", "suggestions"],
-            "additionalProperties": False,
-        }
-
-        return self._chat_completion(messages=messages, schema_name="assistant_answer", schema=schema)
 
 
 def get_assistant_ai_provider() -> BaseAssistantAIProvider | None:
