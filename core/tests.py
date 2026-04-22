@@ -89,3 +89,4 @@ class AssistantV2Tests(TestCase):
         )
         titles = [e["title"] for e in result["events"]]
         self.assertNotIn("Free Jazz Night", titles)
+        self.assertIn("Paid Concert", titles)
