@@ -796,7 +796,7 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
     list_editable = ('featured', 'published', 'is_active')
     ordering = ('-created_at',)
     inlines = [BlogSectionInline]
-    filter_horizontal = ('sections',)
+    filter_horizontal = ('home_sections',)
 
     fieldsets = (
         ('Basic Information', {
@@ -809,7 +809,7 @@ class BlogAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 'thumbnail_image',
                 'read_time_minutes',
                 'tags',
-                'sections',
+                'home_sections',
             ),
             'classes': ('wide',),
         }),
