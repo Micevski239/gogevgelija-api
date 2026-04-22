@@ -245,7 +245,7 @@ SOFT_FILTER_RULES = [
     {
         'filter_key': 'budget',
         'keywords': ['cheap', 'affordable', 'budget', 'low cost', 'евтин', 'евтино', 'пристапно'],
-        'unsupported': True,
+        'unsupported': False,  # price filtering is now supported for events
     },
     {
         'filter_key': 'near_border',
