@@ -1759,7 +1759,7 @@ def _assistant_category_by_hint(category_slug, language, request, limit=5):
     }
 
 
-def _assistant_bilingual_search(query_en, query_mk, content_type, language, request, time_filter=None, open_now=False, limit=3):
+def _assistant_bilingual_search(query_en, query_mk, content_type, language, request, time_filter=None, open_now=False, price_filter=None, limit=3):
     """Search across bilingual fields with EN + MK terms combined, apply optional filters."""
     from django.db.models import Q
 
@@ -1782,31 +1782,39 @@ def _assistant_bilingual_search(query_en, query_mk, content_type, language, requ
             or_match(['title', 'title_en', 'title_mk', 'address', 'description', 'description_en', 'description_mk',
                       'category__name', 'category__name_en', 'category__name_mk']),
             is_active=True,
-        ).distinct()
-        listings = list(qs[: limit * 3])
+        ).select_related('category').distinct()
         if open_now:
-            serialized_all = ListingSerializer(listings, many=True, context=ctx).data
-            listings_ser = [l for l in serialized_all if l.get('is_open')][:limit]
+            batch = list(qs[:limit * 2])
+            serialized_all = ListingSerializer(batch, many=True, context=ctx).data
+            results['listings'] = [l for l in serialized_all if l.get('is_open')][:limit]
         else:
-            listings_ser = ListingSerializer(listings[:limit], many=True, context=ctx).data
-        results['listings'] = listings_ser
+            results['listings'] = ListingSerializer(qs[:limit], many=True, context=ctx).data
 
     if content_type in ('all', 'events'):
         qs = Event.objects.filter(
             or_match(['title', 'title_en', 'title_mk', 'location', 'description', 'description_en', 'description_mk',
                       'category__name', 'category__name_en', 'category__name_mk']),
             is_active=True,
-        ).distinct()
+        ).select_related('category').distinct()
         start, end = _assistant_time_filter_range(time_filter)
         if start and end:
             qs = qs.filter(date_time__gte=start, date_time__lt=end)
+        if price_filter == 'cheap':
+            qs = qs.filter(entry_price__iregex=r'(?i)(^|\b)(free|бесплатно|0(\s|$))')
+        elif price_filter == 'premium':
+            qs = qs.exclude(entry_price__iregex=r'(?i)(^|\b)(free|бесплатно|0(\s|$))').exclude(
+                entry_price__isnull=True
+            ).exclude(entry_price='')
         results['events'] = EventSerializer(qs[:limit], many=True, context=ctx).data
 
     if content_type in ('all', 'promotions'):
+        today = timezone.now().date()
         qs = Promotion.objects.filter(
             or_match(['title', 'title_en', 'title_mk', 'description', 'description_en', 'description_mk', 'discount_code']),
             is_active=True,
-        ).distinct()
+        ).filter(
+            models.Q(valid_until__gte=today) | models.Q(valid_until__isnull=True)
+        ).order_by('valid_until').distinct()
         results['promotions'] = PromotionSerializer(qs[:limit], many=True, context=ctx).data
 
     if content_type in ('all', 'blogs'):
@@ -1827,10 +1835,11 @@ def _assistant_bilingual_search_response(plan, language, request, context_entity
     content_type = (plan.get('content_type') or 'all').strip().lower()
     time_filter = plan.get('time_filter')
     open_now = bool(plan.get('open_now_requested'))
+    price_filter = plan.get('price_filter')
 
     search = _assistant_bilingual_search(
         query_en, query_mk, content_type, language, request,
-        time_filter=time_filter, open_now=open_now, limit=3,
+        time_filter=time_filter, open_now=open_now, price_filter=price_filter, limit=3,
     )
     total = search['total_count']
     display_query = query_en or query_mk or (plan.get('tool_query') or '').strip()
