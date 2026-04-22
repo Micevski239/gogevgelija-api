@@ -111,7 +111,9 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
                 "match loosely across Latin/Cyrillic/English):\n"
             )
             catalog_block += "\n".join(
-                f"- {item['type']}#{item['id']}: {item['title']}" for item in entity_catalog[:60]
+                f"- {item['type']}#{item['id']}: {item['title']}"
+                + (f" / {item['title_mk']}" if item.get('title_mk') else "")
+                for item in entity_catalog[:60]
             ) + "\n"
 
         system_prompt = (
