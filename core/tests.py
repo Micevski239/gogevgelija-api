@@ -90,3 +90,40 @@ class AssistantV2Tests(TestCase):
         titles = [e["title"] for e in result["events"]]
         self.assertNotIn("Free Jazz Night", titles)
         self.assertIn("Paid Concert", titles)
+
+    def test_feed_response_filters_events_by_time(self):
+        from core.views import _assistant_generic_feed_response
+        result = _assistant_generic_feed_response(
+            "event events happening", "en", self.request, time_filter=None, open_now=False
+        )
+        self.assertIsNotNone(result)
+        self.assertEqual(result['intent'], 'events_overview')
+
+    def test_feed_response_excludes_expired_promotions(self):
+        from core.views import _assistant_generic_feed_response
+        result = _assistant_generic_feed_response(
+            "deal deals promo promotion", "en", self.request
+        )
+        self.assertIsNotNone(result)
+        titles = [r['data']['title'] for r in result['results']]
+        self.assertNotIn("Old Deal", titles)
+
+    def test_promo_expiry_note_within_7_days(self):
+        from core.views import _assistant_promo_expiry_note
+        today = timezone.now().date()
+        promo_data = {'valid_until': str(today + timedelta(days=3))}
+        note = _assistant_promo_expiry_note(promo_data, 'en')
+        self.assertIsNotNone(note)
+        self.assertIn('3', note)
+
+    def test_promo_expiry_note_beyond_7_days_returns_none(self):
+        from core.views import _assistant_promo_expiry_note
+        today = timezone.now().date()
+        promo_data = {'valid_until': str(today + timedelta(days=10))}
+        note = _assistant_promo_expiry_note(promo_data, 'en')
+        self.assertIsNone(note)
+
+    def test_promo_expiry_note_no_valid_until_returns_none(self):
+        from core.views import _assistant_promo_expiry_note
+        note = _assistant_promo_expiry_note({}, 'en')
+        self.assertIsNone(note)
