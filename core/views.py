@@ -1971,7 +1971,11 @@ def _assistant_execute_ai_plan(plan, message, language, request, context_entity)
         return _assistant_category_response(normalized_tool_query, language, request)
 
     if tool == 'feed':
-        return _assistant_generic_feed_response(normalized_tool_query, language, request)
+        return _assistant_generic_feed_response(
+            normalized_tool_query, language, request,
+            time_filter=plan.get('time_filter'),
+            open_now=bool(plan.get('open_now_requested')),
+        )
 
     if tool == 'search':
         # V2: bilingual search using Groq's normalized EN+MK terms, with time / open-now filters
@@ -2568,6 +2572,30 @@ def _compact_text(value, max_length=140):
     return f"{text[:max_length - 3].rstrip()}..."
 
 
+def _assistant_promo_expiry_note(promo_data, language):
+    """Return a localized expiry warning if the promo expires within 7 days, else None."""
+    valid_until_str = promo_data.get('valid_until')
+    if not valid_until_str:
+        return None
+    try:
+        from datetime import date as date_type
+        valid_until = (
+            date_type.fromisoformat(str(valid_until_str))
+            if not isinstance(valid_until_str, date_type)
+            else valid_until_str
+        )
+        days_left = (valid_until - timezone.now().date()).days
+        if 0 <= days_left <= 7:
+            return _localized_text(
+                language,
+                f"Expires in {days_left} day{'s' if days_left != 1 else ''}",
+                f"Истекува за {days_left} {'ден' if days_left == 1 else 'дена'}",
+            )
+    except (ValueError, TypeError, AttributeError):
+        pass
+    return None
+
+
 def _assistant_listing_answer(listing, language):
     category_name = listing.get('category', {}).get('name') if isinstance(listing.get('category'), dict) else None
     parts = [listing.get('title')]
@@ -2602,6 +2630,9 @@ def _assistant_promotion_answer(promotion, language):
         parts.append(_localized_text(language, f"Code: {promotion['discount_code']}", f"Код: {promotion['discount_code']}"))
     if promotion.get('valid_until'):
         parts.append(_localized_text(language, f"Valid until {promotion['valid_until']}", f"Важи до {promotion['valid_until']}"))
+    expiry_note = _assistant_promo_expiry_note(promotion, language)
+    if expiry_note:
+        parts.append(expiry_note)
     return ". ".join(part for part in parts if part) + "."
 
 
@@ -2895,16 +2926,19 @@ def _assistant_category_response(normalized_message, language, request):
     return None
 
 
-def _assistant_generic_feed_response(normalized_message, language, request):
+def _assistant_generic_feed_response(normalized_message, language, request, time_filter=None, open_now=False):
     if any(keyword in normalized_message for keyword in ['event', 'events', 'happening', 'настан', 'настани']):
-        events = Event.objects.filter(is_active=True)[:3]
-        serialized = EventSerializer(events, many=True, context={'request': request, 'language': language}).data
+        qs = Event.objects.filter(is_active=True)
+        start, end = _assistant_time_filter_range(time_filter)
+        if start and end:
+            qs = qs.filter(date_time__gte=start, date_time__lt=end)
+        serialized = EventSerializer(qs[:3], many=True, context={'request': request, 'language': language}).data
         if serialized:
             return {
                 'answer': _localized_text(
                     language,
                     "Here are some upcoming events from the app.",
-                    "Еве неколку претстојни настани од апликацијата."
+                    "Еве неколку претстојни настани од апликацијата.",
                 ),
                 'intent': 'events_overview',
                 'confidence': 'medium',
@@ -2914,14 +2948,19 @@ def _assistant_generic_feed_response(normalized_message, language, request):
             }
 
     if any(keyword in normalized_message for keyword in ['deal', 'deals', 'promo', 'promotion', 'offer', 'понуда', 'промоција', 'попуст']):
-        promotions = Promotion.objects.filter(is_active=True)[:3]
-        serialized = PromotionSerializer(promotions, many=True, context={'request': request, 'language': language}).data
+        today = timezone.now().date()
+        qs = Promotion.objects.filter(
+            is_active=True,
+        ).filter(
+            models.Q(valid_until__gte=today) | models.Q(valid_until__isnull=True)
+        ).order_by('valid_until')[:3]
+        serialized = PromotionSerializer(qs, many=True, context={'request': request, 'language': language}).data
         if serialized:
             return {
                 'answer': _localized_text(
                     language,
                     "Here are some active deals from the app.",
-                    "Еве неколку активни понуди од апликацијата."
+                    "Еве неколку активни понуди од апликацијата.",
                 ),
                 'intent': 'promotions_overview',
                 'confidence': 'medium',
