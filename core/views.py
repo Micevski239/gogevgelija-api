@@ -1756,7 +1756,7 @@ def _assistant_category_by_hint(category_slug, language, request, limit=5):
     category = Category.objects.filter(slug=category_slug, is_active=True).first()
     if not category:
         return None
-    listings = Listing.objects.filter(category=category, is_active=True)[:limit]
+    listings = Listing.objects.filter(category=category, is_active=True).select_related('category')[:limit]
     serialized = ListingSerializer(listings, many=True, context={'request': request, 'language': language}).data
     if not serialized:
         return None
