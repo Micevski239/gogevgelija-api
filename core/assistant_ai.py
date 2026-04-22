@@ -48,7 +48,7 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
 
     def __init__(self) -> None:
         self.api_key = (os.getenv("GROQ_API_KEY") or "").strip()
-        self.model = (os.getenv("ASSISTANT_GROQ_MODEL") or "llama-3.3-70b-versatile").strip()
+        self.model = (os.getenv("ASSISTANT_GROQ_MODEL") or "llama-3.3-70b-specdec").strip()
         self.timeout_seconds = float(os.getenv("ASSISTANT_GROQ_TIMEOUT_SECONDS", "10"))
 
     def is_enabled(self) -> bool:
