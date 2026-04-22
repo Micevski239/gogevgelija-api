@@ -1700,8 +1700,8 @@ def _assistant_lookup_resolved_entity(entity_type, entity_id, language, request)
     return None
 
 
-def _assistant_resolved_entity_response(entity_type, data, language):
-    """Compose a single-entity response using existing answer builders (our copy, not Groq's)."""
+def _assistant_resolved_entity_response(entity_type, data, language, request=None):
+    """Compose a single-entity response. For listings, appends related active promotions."""
     builders = {
         'listing': _assistant_listing_answer,
         'event': _assistant_event_answer,
@@ -1712,11 +1712,28 @@ def _assistant_resolved_entity_response(entity_type, data, language):
     answer = builder(data, language) if builder else None
     if not answer:
         return None
+
+    results = [{'type': entity_type, 'data': data}]
+
+    if entity_type == 'listing' and data.get('id') and request is not None:
+        today = timezone.now().date()
+        listing_obj = Listing.objects.filter(id=data['id']).prefetch_related('promotions').first()
+        if listing_obj:
+            related_promos = listing_obj.promotions.filter(
+                is_active=True,
+            ).filter(
+                models.Q(valid_until__gte=today) | models.Q(valid_until__isnull=True)
+            )[:2]
+            ctx = {'request': request, 'language': language}
+            for promo in related_promos:
+                promo_data = PromotionSerializer(promo, context=ctx).data
+                results.append({'type': 'promotion', 'data': promo_data})
+
     return _assistant_response(
         answer=answer,
         intent=f"{entity_type}_match",
         confidence='high',
-        results=[{'type': entity_type, 'data': data}],
+        results=results,
         actions=[],
         suggestions=_assistant_context_suggestions(
             language,
@@ -1941,7 +1958,7 @@ def _assistant_execute_ai_plan(plan, message, language, request, context_entity)
                     suggestions=_assistant_context_suggestions(language, context_entity),
                     resolved_context=_assistant_result_to_context('listing', data),
                 )
-            resp = _assistant_resolved_entity_response(resolved_type, data, language)
+            resp = _assistant_resolved_entity_response(resolved_type, data, language, request=request)
             if resp:
                 return resp
 

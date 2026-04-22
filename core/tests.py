@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 from unittest.mock import MagicMock
 from core.assistant_parser import HeuristicAssistantQueryParser
-from core.models import Category, Event, Promotion
+from core.models import Category, Event, Listing, Promotion
 
 
 class AssistantV2Tests(TestCase):
@@ -12,6 +12,8 @@ class AssistantV2Tests(TestCase):
         self.parser = HeuristicAssistantQueryParser()
         self.request = MagicMock()
         self.request.build_absolute_uri = lambda path: f"http://testserver{path}"
+        self.request.user = MagicMock()
+        self.request.user.is_authenticated = False
 
         self.category = Category.objects.create(name="Food", slug="food", is_active=True)
 
@@ -127,3 +129,23 @@ class AssistantV2Tests(TestCase):
         from core.views import _assistant_promo_expiry_note
         note = _assistant_promo_expiry_note({}, 'en')
         self.assertIsNone(note)
+
+    def test_resolved_listing_includes_related_promotions(self):
+        from core.views import _assistant_resolved_entity_response
+        from core.serializers import ListingSerializer
+
+        listing = Listing.objects.create(
+            title="Test Cafe",
+            title_en="Test Cafe",
+            title_mk="Тест Кафе",
+            is_active=True,
+            category=self.category,
+        )
+        listing.promotions.add(self.promo_active)
+
+        serialized = ListingSerializer(listing, context={'request': self.request, 'language': 'en'}).data
+        response = _assistant_resolved_entity_response('listing', dict(serialized), 'en', request=self.request)
+
+        self.assertIsNotNone(response)
+        result_types = [r['type'] for r in response['results']]
+        self.assertIn('promotion', result_types)
