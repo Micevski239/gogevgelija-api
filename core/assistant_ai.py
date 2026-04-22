@@ -138,8 +138,10 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
             "- category: 'show me restaurants', 'kade da jadam' — category discovery.\n"
             "- feed: generic overview of events / promotions / blogs without a specific entity in mind.\n"
             "- search: named entities, specific places, or any broad lookup not matching category/feed.\n"
-            "- clarify: ONLY if the message is truly ambiguous and you cannot make a reasonable guess, "
-            "OR if the message is a pure greeting with no query (hey, hi, hello, здраво, alo, hej, ej, yo).\n"
+            "- chat: greetings (hey, hi, hello, здраво, alo, hej), identity questions (who are you, what can you do, "
+            "кој си ти, што можеш), general Gevgelija knowledge questions (history, geography, border, spa, lake), "
+            "OR anything clearly out of scope (weather, sports, politics, non-Gevgelija topics).\n"
+            "- clarify: ONLY if the message is truly ambiguous and you cannot make a reasonable guess.\n"
             "- Set content_type to 'all' when the user does not specify a content kind; otherwise pick the closest matching type.\n"
             "- Set clarification_question to null for every tool other than 'clarify'.\n\n"
             "Follow-up resolution:\n"
@@ -174,7 +176,7 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
             "properties": {
                 "tool": {
                     "type": "string",
-                    "enum": ["context", "faq", "category", "feed", "search", "clarify"],
+                    "enum": ["context", "faq", "category", "feed", "search", "chat", "clarify"],
                 },
                 "intent": {"type": "string"},
                 "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
@@ -234,6 +236,84 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
         }
 
         return self._chat_completion(messages=messages, schema_name="assistant_plan", schema=schema)
+
+    def generate_display_message(
+        self,
+        *,
+        user_message: str,
+        language: str,
+        tool: str,
+        results_summary: str,
+        history: list[dict[str, Any]] | None = None,
+    ) -> str:
+        if not self.is_enabled():
+            raise AssistantAIError("Groq provider is not configured")
+
+        history = history or []
+        history_slice = history[-4:]
+
+        system_prompt = (
+            "You are GoAI, Your GoGevgelija Guide — the friendly AI assistant inside the GoGevgelija "
+            "tourism discovery app for Gevgelija, North Macedonia.\n\n"
+            "About Gevgelija:\n"
+            "- City in southern North Macedonia, on the Greek border (Bogorodica/Gevgelija crossing)\n"
+            "- Known for: Negorci thermal spa, Lake Dojran (25 km east), Vardar river, "
+            "warm climate, wine culture, close to Thessaloniki (~70 km)\n"
+            "- Popular with Greek day-trippers and regional tourists\n\n"
+            "About the app:\n"
+            "- GoGevgelija lists: restaurants, cafes, hotels, nightlife, services (Listings), "
+            "upcoming events, active promotions/deals, travel blogs\n"
+            "- You ONLY reference real data provided to you — never invent place names, prices, or hours\n\n"
+            "Response rules:\n"
+            "- Be friendly, warm, and SHORT: 1-3 sentences maximum\n"
+            "- Match the user's language exactly: Macedonian message → Macedonian Cyrillic reply; English → English\n"
+            "- If DB results were provided: mention 1-2 place names naturally, say the cards below show full details\n"
+            "- If no results: honestly say you don't have that in the database right now\n"
+            "- Greetings (hey/hi/здраво): say hi back, introduce yourself as GoAI, offer to help find places/events/deals\n"
+            "- Identity (who are you / кој си): explain you are GoAI, the GoGevgelija assistant; "
+            "you help tourists find restaurants, hotels, events, promotions, and local guides in Gevgelija\n"
+            "- Out-of-scope (weather, sports, politics, non-Gevgelija): politely say you only know Gevgelija "
+            "and offer to help with tourism instead\n"
+            "- Never use bullet points or markdown — plain conversational text only\n"
+        )
+
+        user_parts = [f"User message: {user_message}"]
+        if results_summary:
+            user_parts.append(f"Database results:\n{results_summary}")
+        user_parts.append("Write your short, friendly response now.")
+
+        messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+        for h in history_slice:
+            role = h.get("role") or "user"
+            content = h.get("content") or h.get("text") or ""
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": str(content)})
+        messages.append({"role": "user", "content": "\n\n".join(user_parts)})
+
+        response = requests.post(
+            self.api_url,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": self.model,
+                "temperature": 0.5,
+                "messages": messages,
+                "max_tokens": 140,
+            },
+            timeout=self.timeout_seconds,
+        )
+
+        if response.status_code >= 400:
+            logger.warning("GoAI display message call failed: status=%s body=%s", response.status_code, response.text[:400])
+            raise AssistantAIError(f"GoAI display message call failed with status {response.status_code}")
+
+        try:
+            payload = response.json()
+            return payload["choices"][0]["message"]["content"].strip()
+        except (KeyError, IndexError, TypeError) as exc:
+            raise AssistantAIError("GoAI display message response was not valid") from exc
 
 
 def get_assistant_ai_provider() -> BaseAssistantAIProvider | None:

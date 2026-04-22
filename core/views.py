@@ -1932,6 +1932,31 @@ def _assistant_bilingual_search_response(plan, language, request, context_entity
     )
 
 
+def _build_goai_results_summary(tool_response) -> str:
+    results = (tool_response or {}).get('results') or []
+    if not results:
+        return ''
+    lines = []
+    for r in results[:6]:
+        rtype = r.get('type', '')
+        data = r.get('data') or {}
+        title = data.get('title') or data.get('name') or '?'
+        if rtype == 'listing':
+            cat_data = data.get('category') or {}
+            cat = cat_data.get('name') if isinstance(cat_data, dict) else ''
+            lines.append(f"- listing: {title}" + (f" ({cat})" if cat else ""))
+        elif rtype == 'event':
+            date = (data.get('date_time') or '')[:10]
+            lines.append(f"- event: {title}" + (f" on {date}" if date else ""))
+        elif rtype == 'promotion':
+            lines.append(f"- promotion: {title}")
+        elif rtype == 'blog':
+            lines.append(f"- blog: {title}")
+        else:
+            lines.append(f"- {rtype}: {title}")
+    return "\n".join(lines)
+
+
 def _assistant_execute_ai_plan(plan, message, language, request, context_entity):
     plan = plan or {}
     tool = plan.get('tool')
@@ -1961,6 +1986,14 @@ def _assistant_execute_ai_plan(plan, message, language, request, context_entity)
             resp = _assistant_resolved_entity_response(resolved_type, data, language, request=request)
             if resp:
                 return resp
+
+    if tool == 'chat':
+        return _assistant_response(
+            answer='',
+            intent='chat',
+            confidence=plan.get('confidence') or 'high',
+            suggestions=_assistant_default_suggestions(language),
+        )
 
     if tool == 'clarify':
         clarification_question = (plan.get('clarification_question') or '').strip()
@@ -2040,6 +2073,21 @@ def _assistant_try_external_ai_response(message, language, context_data, history
     if not tool_response:
         core_logger.info("assistant.metric fallback=empty_tool_result tool=%s", plan.get('tool'))
         return None
+
+    if plan.get('tool') not in ('faq', 'clarify'):
+        results_summary = _build_goai_results_summary(tool_response)
+        try:
+            goai_answer = provider.generate_display_message(
+                user_message=message,
+                language=language,
+                tool=plan.get('tool', ''),
+                results_summary=results_summary,
+                history=history,
+            )
+            if goai_answer:
+                tool_response['answer'] = goai_answer
+        except AssistantAIError as exc:
+            core_logger.warning("GoAI display message generation failed: %s", exc)
 
     understanding = {
         'provider': provider.provider_name,
