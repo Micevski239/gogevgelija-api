@@ -1584,19 +1584,365 @@ def _assistant_external_ai_context(context_data, context_entity):
     return {key: value for key, value in payload.items() if value not in (None, '', [])}
 
 
+_ASSISTANT_CATALOG_CACHE_KEY = "assistant:catalog:v1"
+_ASSISTANT_CATALOG_TTL = 3600   # 60 min — catalog rarely changes intraday
+_ASSISTANT_PLAN_CACHE_TTL = 1800  # 30 min — repeated queries stay cached longer
+
+
+def _assistant_build_catalog():
+    """Return cached slug list + top-entity catalog fed into Groq's planner prompt.
+
+    Kept small and cached to avoid per-request DB work.
+    """
+    from django.core.cache import cache
+
+    cached = cache.get(_ASSISTANT_CATALOG_CACHE_KEY)
+    if cached:
+        return cached
+
+    category_slugs = list(
+        Category.objects
+        .filter(is_active=True)
+        .exclude(slug__isnull=True)
+        .exclude(slug__exact='')
+        .values_list('slug', flat=True)
+        .order_by('order', 'name')[:80]
+    )
+
+    entities = []
+    for listing in Listing.objects.filter(is_active=True).only('id', 'title', 'title_mk')[:60]:
+        entities.append({
+            'type': 'listing',
+            'id': listing.id,
+            'title': listing.title or '',
+            'title_mk': getattr(listing, 'title_mk', '') or '',
+        })
+    for event in Event.objects.filter(is_active=True).only('id', 'title', 'title_mk')[:20]:
+        entities.append({
+            'type': 'event',
+            'id': event.id,
+            'title': event.title or '',
+            'title_mk': getattr(event, 'title_mk', '') or '',
+        })
+    for promo in Promotion.objects.filter(is_active=True).only('id', 'title', 'title_mk')[:15]:
+        entities.append({
+            'type': 'promotion',
+            'id': promo.id,
+            'title': promo.title or '',
+            'title_mk': getattr(promo, 'title_mk', '') or '',
+        })
+
+    payload = {'category_slugs': category_slugs, 'entities': entities}
+    cache.set(_ASSISTANT_CATALOG_CACHE_KEY, payload, _ASSISTANT_CATALOG_TTL)
+    return payload
+
+
+def _assistant_plan_cache_key(message, language, context_data):
+    import hashlib
+    context_sig = json.dumps(
+        {
+            'entity_type': (context_data or {}).get('entity_type'),
+            'entity_id': (context_data or {}).get('entity_id'),
+        },
+        sort_keys=True,
+    )
+    raw = f"{(message or '').strip().lower()}|{language}|{context_sig}"
+    digest = hashlib.sha1(raw.encode('utf-8')).hexdigest()
+    return f"assistant:plan:{digest}"
+
+
+def _assistant_time_filter_range(time_filter):
+    """Return (start, end) datetime range for a time_filter hint, or (None, None)."""
+    if not time_filter:
+        return None, None
+    now = timezone.localtime()
+    if time_filter == 'tonight':
+        start = now.replace(hour=17, minute=0, second=0, microsecond=0)
+        end = (now + timedelta(days=1)).replace(hour=4, minute=0, second=0, microsecond=0)
+        return start, end
+    if time_filter == 'today':
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=1)
+        return start, end
+    if time_filter == 'this_week':
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=7)
+        return start, end
+    if time_filter == 'weekend':
+        weekday = now.weekday()  # Mon=0..Sun=6
+        days_to_sat = (5 - weekday) % 7
+        start = (now + timedelta(days=days_to_sat)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=2)
+        return start, end
+    return None, None
+
+
+def _assistant_lookup_resolved_entity(entity_type, entity_id, language, request):
+    """Hydrate a single entity Groq said matches, return a serialized payload dict or None."""
+    if not entity_type or not entity_id:
+        return None
+    ctx = {'request': request, 'language': language}
+    try:
+        if entity_type == 'listing':
+            obj = Listing.objects.filter(id=entity_id, is_active=True).first()
+            return ListingSerializer(obj, context=ctx).data if obj else None
+        if entity_type == 'event':
+            obj = Event.objects.filter(id=entity_id, is_active=True).first()
+            return EventSerializer(obj, context=ctx).data if obj else None
+        if entity_type == 'promotion':
+            obj = Promotion.objects.filter(id=entity_id, is_active=True).first()
+            return PromotionSerializer(obj, context=ctx).data if obj else None
+        if entity_type == 'blog':
+            obj = Blog.objects.filter(id=entity_id, is_active=True, published=True).first()
+            return BlogSerializer(obj, context=ctx).data if obj else None
+    except Exception as exc:  # pragma: no cover — defensive
+        core_logger.warning("Assistant resolved_entity lookup failed: %s", exc)
+    return None
+
+
+def _assistant_resolved_entity_response(entity_type, data, language):
+    """Compose a single-entity response using existing answer builders (our copy, not Groq's)."""
+    builders = {
+        'listing': _assistant_listing_answer,
+        'event': _assistant_event_answer,
+        'promotion': _assistant_promotion_answer,
+        'blog': _assistant_blog_answer,
+    }
+    builder = builders.get(entity_type)
+    answer = builder(data, language) if builder else None
+    if not answer:
+        return None
+    return _assistant_response(
+        answer=answer,
+        intent=f"{entity_type}_match",
+        confidence='high',
+        results=[{'type': entity_type, 'data': data}],
+        actions=[],
+        suggestions=_assistant_context_suggestions(
+            language,
+            {
+                'entity_type': entity_type,
+                'entity_id': data.get('id'),
+                'entity_label': data.get('title'),
+                'screen': ASSISTANT_ENTITY_SCREEN_MAP.get(entity_type),
+                'data': data,
+            },
+        ),
+        resolved_context=_assistant_result_to_context(entity_type, data),
+    )
+
+
+def _assistant_category_by_hint(category_slug, language, request, limit=5):
+    """Look up a category by slug, return its top listings as a response payload."""
+    if not category_slug:
+        return None
+    category = Category.objects.filter(slug=category_slug, is_active=True).first()
+    if not category:
+        return None
+    listings = Listing.objects.filter(category=category, is_active=True)[:limit]
+    serialized = ListingSerializer(listings, many=True, context={'request': request, 'language': language}).data
+    if not serialized:
+        return None
+    display_name = getattr(category, 'name_mk' if language == 'mk' else 'name_en', None) or category.name
+    answer = _localized_text(
+        language,
+        f"Here are {display_name} places I found.",
+        f"Еве места од категоријата {display_name}.",
+    )
+    return {
+        'answer': answer,
+        'intent': f"category_{category_slug}",
+        'confidence': 'high',
+        'results': [{'type': 'listing', 'data': item} for item in serialized],
+        'actions': [],
+        'suggestions': _assistant_default_suggestions(language),
+    }
+
+
+def _assistant_bilingual_search(query_en, query_mk, content_type, language, request, time_filter=None, open_now=False, limit=3):
+    """Search across bilingual fields with EN + MK terms combined, apply optional filters."""
+    from django.db.models import Q
+
+    terms = [t.strip() for t in [query_en, query_mk] if t and t.strip()]
+    if not terms:
+        return {'listings': [], 'events': [], 'promotions': [], 'blogs': [], 'total_count': 0, 'query': ''}
+
+    def or_match(fields):
+        q = Q()
+        for term in terms:
+            for field in fields:
+                q |= Q(**{f"{field}__icontains": term})
+        return q
+
+    ctx = {'request': request, 'language': language}
+    results = {'listings': [], 'events': [], 'promotions': [], 'blogs': []}
+
+    if content_type in ('all', 'listings'):
+        qs = Listing.objects.filter(
+            or_match(['title', 'title_en', 'title_mk', 'address', 'description', 'description_en', 'description_mk',
+                      'category__name', 'category__name_en', 'category__name_mk']),
+            is_active=True,
+        ).distinct()
+        listings = list(qs[: limit * 3])
+        if open_now:
+            serialized_all = ListingSerializer(listings, many=True, context=ctx).data
+            listings_ser = [l for l in serialized_all if l.get('is_open')][:limit]
+        else:
+            listings_ser = ListingSerializer(listings[:limit], many=True, context=ctx).data
+        results['listings'] = listings_ser
+
+    if content_type in ('all', 'events'):
+        qs = Event.objects.filter(
+            or_match(['title', 'title_en', 'title_mk', 'location', 'description', 'description_en', 'description_mk',
+                      'category__name', 'category__name_en', 'category__name_mk']),
+            is_active=True,
+        ).distinct()
+        start, end = _assistant_time_filter_range(time_filter)
+        if start and end:
+            qs = qs.filter(date_time__gte=start, date_time__lt=end)
+        results['events'] = EventSerializer(qs[:limit], many=True, context=ctx).data
+
+    if content_type in ('all', 'promotions'):
+        qs = Promotion.objects.filter(
+            or_match(['title', 'title_en', 'title_mk', 'description', 'description_en', 'description_mk', 'discount_code']),
+            is_active=True,
+        ).distinct()
+        results['promotions'] = PromotionSerializer(qs[:limit], many=True, context=ctx).data
+
+    if content_type in ('all', 'blogs'):
+        qs = Blog.objects.filter(
+            or_match(['title', 'title_en', 'title_mk', 'subtitle', 'subtitle_en', 'subtitle_mk',
+                      'content', 'content_en', 'content_mk']),
+            is_active=True, published=True,
+        ).distinct()
+        results['blogs'] = BlogSerializer(qs[:limit], many=True, context=ctx).data
+
+    total = sum(len(v) for v in results.values())
+    return {**results, 'total_count': total, 'query': query_en or query_mk or ''}
+
+
+def _assistant_bilingual_search_response(plan, language, request, context_entity):
+    query_en = (plan.get('normalized_query_en') or '').strip()
+    query_mk = (plan.get('normalized_query_mk') or '').strip()
+    content_type = (plan.get('content_type') or 'all').strip().lower()
+    time_filter = plan.get('time_filter')
+    open_now = bool(plan.get('open_now_requested'))
+
+    search = _assistant_bilingual_search(
+        query_en, query_mk, content_type, language, request,
+        time_filter=time_filter, open_now=open_now, limit=3,
+    )
+    total = search['total_count']
+    display_query = query_en or query_mk or (plan.get('tool_query') or '').strip()
+
+    if total == 0:
+        return _assistant_response(
+            answer=_localized_text(
+                language,
+                f"I couldn't find anything for \"{display_query}\". Try different words or a category.",
+                f"Не најдов ништо за „{display_query}“. Обидете се со други зборови или категорија.",
+            ),
+            intent='fallback',
+            confidence='low',
+            suggestions=_assistant_context_suggestions(language, context_entity),
+            resolved_context=_assistant_current_context_payload(context_entity),
+        )
+
+    flattened = []
+    for plural in ('listings', 'events', 'promotions', 'blogs'):
+        singular = plural[:-1]
+        flattened.extend({'type': singular, 'data': item} for item in search[plural])
+
+    top = flattened[0]
+    actions = [
+        _assistant_action(
+            'navigate',
+            _localized_text(language, "Open Search Results", "Отвори резултати од пребарување"),
+            screen='SearchResults',
+            params={'query': display_query},
+        )
+    ]
+
+    if total == 1:
+        builders = {
+            'listing': _assistant_listing_answer,
+            'event': _assistant_event_answer,
+            'promotion': _assistant_promotion_answer,
+            'blog': _assistant_blog_answer,
+        }
+        builder = builders.get(top['type'])
+        answer = builder(top['data'], language) if builder else _localized_text(language, "I found one match.", "Пронајдов еден резултат.")
+        return _assistant_response(
+            answer=answer,
+            intent=f"{top['type']}_match",
+            confidence='high',
+            results=[top],
+            actions=actions,
+            suggestions=_assistant_context_suggestions(
+                language,
+                {
+                    'entity_type': top['type'],
+                    'entity_id': top['data'].get('id'),
+                    'entity_label': top['data'].get('title'),
+                    'screen': ASSISTANT_ENTITY_SCREEN_MAP.get(top['type']),
+                    'data': top['data'],
+                },
+            ),
+            resolved_context=_assistant_result_to_context(top['type'], top['data']),
+        )
+
+    return _assistant_response(
+        answer=_localized_text(
+            language,
+            f'I found {total} results for "{display_query}". Here are the top matches.',
+            f'Пронајдов {total} резултати за „{display_query}“. Еве ги најрелевантните.',
+        ),
+        intent='search_results',
+        confidence='medium',
+        results=flattened,
+        actions=actions,
+        suggestions=_assistant_search_suggestions(language, display_query),
+        resolved_context=_assistant_current_context_payload(context_entity),
+    )
+
+
 def _assistant_execute_ai_plan(plan, message, language, request, context_entity):
-    tool = (plan or {}).get('tool')
-    tool_query = ((plan or {}).get('tool_query') or message).strip()
+    plan = plan or {}
+    tool = plan.get('tool')
+    tool_query = (plan.get('tool_query') or message).strip()
     normalized_tool_query = _normalize_assistant_message(tool_query)
-    content_type = ((plan or {}).get('content_type') or 'all').strip().lower()
+    content_type = (plan.get('content_type') or 'all').strip().lower()
+
+    # V3: resolved-entity shortcut — Groq already matched a known entity by name.
+    resolved_id = plan.get('resolved_entity_id')
+    resolved_type = plan.get('resolved_entity_type') or plan.get('entity_type_hint')
+    if resolved_id and resolved_type:
+        data = _assistant_lookup_resolved_entity(resolved_type, resolved_id, language, request)
+        if data:
+            # If the user asked about hours on a resolved listing, use the hours-specific answer.
+            if resolved_type == 'listing' and _assistant_message_mentions(
+                normalized_tool_query,
+                ['open', 'hours', 'working time', 'when', 'отвор', 'работно време', 'часови'],
+            ):
+                return _assistant_response(
+                    answer=_assistant_listing_hours_answer(data, language),
+                    intent='listing_hours',
+                    confidence='high',
+                    results=[{'type': 'listing', 'data': data}],
+                    suggestions=_assistant_context_suggestions(language, context_entity),
+                    resolved_context=_assistant_result_to_context('listing', data),
+                )
+            resp = _assistant_resolved_entity_response(resolved_type, data, language)
+            if resp:
+                return resp
 
     if tool == 'clarify':
-        clarification_question = ((plan or {}).get('clarification_question') or '').strip()
+        clarification_question = (plan.get('clarification_question') or '').strip()
         if clarification_question:
             return _assistant_response(
                 answer=clarification_question,
                 intent='clarify',
-                confidence=(plan or {}).get('confidence') or 'low',
+                confidence=plan.get('confidence') or 'low',
                 suggestions=_assistant_context_suggestions(language, context_entity),
                 resolved_context=_assistant_current_context_payload(context_entity),
             )
@@ -1609,37 +1955,60 @@ def _assistant_execute_ai_plan(plan, message, language, request, context_entity)
         return _assistant_faq_response(normalized_tool_query, language)
 
     if tool == 'category':
+        # V2: prefer slug hint over keyword matching
+        hint_resp = _assistant_category_by_hint(plan.get('category_hint'), language, request)
+        if hint_resp:
+            return hint_resp
         return _assistant_category_response(normalized_tool_query, language, request)
 
     if tool == 'feed':
         return _assistant_generic_feed_response(normalized_tool_query, language, request)
 
     if tool == 'search':
+        # V2: bilingual search using Groq's normalized EN+MK terms, with time / open-now filters
+        if plan.get('normalized_query_en') or plan.get('normalized_query_mk'):
+            return _assistant_bilingual_search_response(plan, language, request, context_entity)
         return _build_assistant_search_response(tool_query, language, request, context_entity, content_type=content_type)
 
     return None
 
 
 def _assistant_try_external_ai_response(message, language, context_data, history, request, context_entity):
+    from django.core.cache import cache
+
     provider = get_assistant_ai_provider()
     if not provider:
         return None
 
     ai_context = _assistant_external_ai_context(context_data, context_entity)
+    catalog = _assistant_build_catalog()
 
-    try:
-        plan = provider.plan_query(
-            message=message,
-            language=language,
-            context=ai_context,
-            history=history,
-        )
-    except AssistantAIError as exc:
-        core_logger.warning("Assistant external AI planning failed: %s", exc)
-        return None
+    plan = None
+    # Only cache when there is no context entity — context-dependent queries are volatile.
+    cacheable = not context_entity
+    cache_key = _assistant_plan_cache_key(message, language, context_data) if cacheable else None
+    if cache_key:
+        plan = cache.get(cache_key)
+
+    if plan is None:
+        try:
+            plan = provider.plan_query(
+                message=message,
+                language=language,
+                context=ai_context,
+                history=history,
+                catalog=catalog,
+            )
+        except AssistantAIError as exc:
+            core_logger.warning("Assistant external AI planning failed: %s", exc)
+            core_logger.info("assistant.metric fallback=groq_error")
+            return None
+        if cache_key:
+            cache.set(cache_key, plan, _ASSISTANT_PLAN_CACHE_TTL)
 
     tool_response = _assistant_execute_ai_plan(plan, message, language, request, context_entity)
     if not tool_response:
+        core_logger.info("assistant.metric fallback=empty_tool_result tool=%s", plan.get('tool'))
         return None
 
     understanding = {
@@ -1647,34 +2016,20 @@ def _assistant_try_external_ai_response(message, language, context_data, history
         'confidence': plan.get('confidence'),
         'intent': plan.get('intent'),
         'content_type': plan.get('content_type'),
-        'search_query': plan.get('tool_query') or message,
+        'search_query': plan.get('normalized_query_en') or plan.get('tool_query') or message,
         'tool': plan.get('tool'),
+        'detected_language': plan.get('detected_language'),
+        'normalized_query_en': plan.get('normalized_query_en'),
+        'normalized_query_mk': plan.get('normalized_query_mk'),
+        'category_hint': plan.get('category_hint'),
+        'entity_type_hint': plan.get('entity_type_hint'),
+        'resolved_entity_id': plan.get('resolved_entity_id'),
+        'resolved_entity_type': plan.get('resolved_entity_type'),
+        'time_filter': plan.get('time_filter'),
+        'price_filter': plan.get('price_filter'),
+        'open_now_requested': plan.get('open_now_requested'),
+        'followup_of_entity_id': plan.get('followup_of_entity_id'),
     }
-
-    if plan.get('tool') == 'clarify':
-        tool_response['understanding'] = understanding
-        return tool_response
-
-    try:
-        composed = provider.compose_answer(
-            message=message,
-            language=language,
-            context=ai_context,
-            plan=plan,
-            tool_response=tool_response,
-        )
-    except AssistantAIError as exc:
-        core_logger.warning("Assistant external AI answer composition failed: %s", exc)
-        tool_response['understanding'] = understanding
-        return tool_response
-
-    answer = (composed.get('answer') or '').strip()
-    suggestions = [item.strip() for item in (composed.get('suggestions') or []) if isinstance(item, str) and item.strip()]
-
-    if answer:
-        tool_response['answer'] = answer
-    if suggestions:
-        tool_response['suggestions'] = suggestions[:4]
 
     tool_response['understanding'] = understanding
     return tool_response
@@ -2643,10 +2998,19 @@ def _build_assistant_search_response(query, language, request, context_entity=No
     )
 
 
+class _AssistantAnonThrottle(__import__('rest_framework.throttling', fromlist=['AnonRateThrottle']).AnonRateThrottle):
+    scope = 'assistant_anon'
+
+
+class _AssistantUserThrottle(__import__('rest_framework.throttling', fromlist=['UserRateThrottle']).UserRateThrottle):
+    scope = 'assistant_user'
+
+
 class AssistantQueryView(APIView):
-    """Basic in-app assistant backed by existing structured content."""
+    """In-app assistant. Groq understands; our code speaks."""
     permission_classes = [permissions.AllowAny]
     parser_classes = [JSONParser]
+    throttle_classes = [_AssistantAnonThrottle, _AssistantUserThrottle]
 
     def post(self, request):
         serializer = AssistantQuerySerializer(data=request.data)
@@ -2672,6 +3036,7 @@ class AssistantQueryView(APIView):
             _assistant_log_query(request, message, language, context_data, history, understanding, response_payload)
             return Response(response_payload)
 
+        core_logger.info("assistant.metric fallback=deterministic_parser")
         parser = get_assistant_query_parser()
         understanding = parser.parse(message, language=language, context=context_data, history=history).as_dict()
         normalized_message = _assistant_augmented_message(
