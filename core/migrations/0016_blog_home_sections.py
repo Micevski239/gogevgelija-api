@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="blog",
-            name="sections",
+            name="home_sections",
             field=models.ManyToManyField(
                 blank=True,
                 help_text="Sections this blog should appear in",

@@ -95,6 +95,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "1000/hour",  # Increased from 100/hour
         "user": "10000/hour",  # Increased from 1000/hour
+        "assistant_anon": "60/hour",
+        "assistant_user": "600/hour",
     },
 }
 SIMPLE_JWT = {

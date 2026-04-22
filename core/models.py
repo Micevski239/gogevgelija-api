@@ -757,11 +757,11 @@ class Blog(models.Model):
     published = models.BooleanField(default=True, help_text="Whether the blog is published")
     is_active = models.BooleanField(default=True, help_text="Show this blog in the app. Uncheck to hide from users.")
 
-    sections = models.ManyToManyField(
+    home_sections = models.ManyToManyField(
         'HomeSection',
         blank=True,
         related_name='direct_blogs',
-        help_text="Sections this blog should appear in",
+        help_text="Home sections this blog should appear in",
     )
 
     # CTA Button (Call to Action) - fully configurable from admin
