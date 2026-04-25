@@ -1784,6 +1784,10 @@ def _assistant_bilingual_search(query_en, query_mk, content_type, language, requ
     if not terms:
         return {'listings': [], 'events': [], 'promotions': [], 'blogs': [], 'total_count': 0, 'query': ''}
 
+    # Also search individual words from multi-word phrases so "good cocktail" matches "cocktail bar"
+    extra = [w for t in terms for w in t.split() if len(w) >= 3 and w not in terms]
+    terms = list(dict.fromkeys(terms + extra))
+
     def or_match(fields):
         q = Q()
         for term in terms:
