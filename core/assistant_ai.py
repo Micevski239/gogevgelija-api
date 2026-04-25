@@ -48,7 +48,7 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
 
     def __init__(self) -> None:
         self.api_key = (os.getenv("GROQ_API_KEY") or "").strip()
-        self.model = (os.getenv("ASSISTANT_GROQ_MODEL") or "llama-3.3-70b-specdec").strip()
+        self.model = (os.getenv("ASSISTANT_GROQ_MODEL") or "llama-3.3-70b-versatile").strip()
         self.timeout_seconds = float(os.getenv("ASSISTANT_GROQ_TIMEOUT_SECONDS", "10"))
 
     def is_enabled(self) -> bool:
@@ -68,7 +68,7 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
                 "model": self.model,
                 "temperature": 0.1,
                 "messages": messages,
-                "response_format": _strict_json_schema(schema_name, schema),
+                "response_format": {"type": "json_object"},
             },
             timeout=self.timeout_seconds,
         )
@@ -153,6 +153,17 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
             "- price_filter: cheap|mid|premium|null — cheap means free entry or budget; premium means paid/upscale.\n"
             "- open_now_requested: true if user asks 'open now', 'otvoreno sega', 'raboti li', etc.\n\n"
             + catalog_block
+            + "\nYou MUST respond with a JSON object containing EXACTLY these fields:\n"
+            '{"tool": "...", "intent": "...", "confidence": "high|medium|low", '
+            '"tool_query": "...", "content_type": "all|listings|events|promotions|blogs", '
+            '"detected_language": "en|mk-cyrillic|mk-latin|unknown", '
+            '"normalized_query_en": "...", "normalized_query_mk": "...", '
+            '"category_hint": "...or null", "entity_type_hint": "listing|event|promotion|blog|null", '
+            '"resolved_entity_id": null, "resolved_entity_type": null, '
+            '"time_filter": "tonight|today|this_week|weekend|null", '
+            '"price_filter": "cheap|mid|premium|null", '
+            '"open_now_requested": false, "followup_of_entity_id": null, '
+            '"clarification_question": "...or null"}\n'
         )
 
         messages = [
