@@ -18,7 +18,7 @@ from django.http import JsonResponse
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 # Modeltranslation will automatically add language fields to admin
-from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem, FeaturedItem
+from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem, FeaturedItem, GalleryPhoto
 
 
 class GroupedAdminSite(admin.AdminSite):
@@ -28,7 +28,7 @@ class GroupedAdminSite(admin.AdminSite):
 
     model_groups = {
         "CONTENT": [Listing, Blog, Event, Promotion, Category],
-        "SCREENS": [HomeSection, TourismCarousel, FeaturedItem, BillboardSection, BillboardItem],
+        "SCREENS": [HomeSection, TourismCarousel, FeaturedItem, BillboardSection, BillboardItem, GalleryPhoto],
         "USERS": [User, UserProfile, UserPermission],
         "SUPPORT": [HelpSupport, CollaborationContact],
         "VIEW LOGS": [EventJoin, Wishlist, GuestUser, VerificationCode, Group],
@@ -1512,3 +1512,10 @@ class FeaturedItemAdmin(admin.ModelAdmin):
         updated = queryset.update(is_active=False)
         self.message_user(request, f"{updated} featured items deactivated.")
     deactivate_items.short_description = "❌ Deactivate selected items"
+
+
+@admin.register(GalleryPhoto, site=admin_site)
+class GalleryPhotoAdmin(admin.ModelAdmin):
+    list_display = ['id', 'caption', 'order', 'is_active']
+    list_editable = ['order', 'is_active']
+    ordering = ['order', 'id']

@@ -1524,3 +1524,27 @@ def clear_billboard_section_item_cache(sender, **kwargs):
 def clear_featured_item_cache(sender, **kwargs):
     """Clear cache when featured items change"""
     cache.clear()
+
+
+def gallery_image_upload_to(instance, filename):
+    return _image_upload_path("gallery", filename)
+
+
+class GalleryPhoto(models.Model):
+    image = models.ImageField(upload_to=gallery_image_upload_to)
+    image_thumbnail = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(400, 400)],
+        format='WEBP',
+        options={'quality': 85},
+    )
+    caption = models.CharField(max_length=255, blank=True)
+    caption_mk = models.CharField(max_length=255, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return self.caption or f"Gallery photo {self.pk}"

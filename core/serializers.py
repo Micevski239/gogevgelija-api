@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedItem
+from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedItem, GalleryPhoto
 
 
 def _build_image_urls(obj, request, field_names):
@@ -1485,3 +1485,28 @@ class FeaturedItemSerializer(serializers.ModelSerializer):
         if lang == 'mk' and obj.promo_text_mk:
             return obj.promo_text_mk
         return obj.promo_text or None
+
+
+class GalleryPhotoSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
+    caption = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GalleryPhoto
+        fields = ['id', 'image_url', 'thumbnail_url', 'caption', 'order']
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image', request)
+
+    def get_thumbnail_url(self, obj):
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_thumbnail', request)
+
+    def get_caption(self, obj):
+        lang = self.context.get('language', 'en')
+        if lang == 'mk' and obj.caption_mk:
+            return obj.caption_mk
+        return obj.caption or ''
+
