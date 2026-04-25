@@ -31,18 +31,10 @@ for m in sorted(r.json().get('data',[]), key=lambda x: x['id']):
 "
 ```
 
-## Test Groq API directly
+## Test Groq API directly (single line)
 
 ```bash
-python manage.py shell -c "
-from core.assistant_ai import GroqAssistantAIProvider
-p = GroqAssistantAIProvider()
-try:
-    result = p.plan_query(message='hey', language='en')
-    print('SUCCESS tool:', result.get('tool'))
-except Exception as e:
-    print('ERROR:', type(e).__name__, e)
-"
+and
 ```
 
 ## Debug: check if Groq provider is loading
