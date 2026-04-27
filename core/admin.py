@@ -18,7 +18,7 @@ from django.http import JsonResponse
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 # Modeltranslation will automatically add language fields to admin
-from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem, FeaturedItem, GalleryPhoto, MenuItem
+from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem, FeaturedItem, GalleryPhoto
 
 
 class GroupedAdminSite(admin.AdminSite):
@@ -1522,18 +1522,3 @@ class GalleryPhotoAdmin(admin.ModelAdmin):
     search_fields = ['caption', 'listing__title_en']
     autocomplete_fields = ['listing']
     ordering = ['listing', 'order', 'id']
-
-
-class MenuItemInline(admin.TabularInline):
-    model = MenuItem
-    extra = 1
-    fields = ['name', 'name_mk', 'category', 'category_mk', 'price', 'currency', 'is_available', 'order']
-
-
-@admin.register(MenuItem, site=admin_site)
-class MenuItemAdmin(admin.ModelAdmin):
-    list_display = ['id', 'listing', 'category', 'name', 'price', 'currency', 'is_available', 'order']
-    list_filter = ['listing', 'is_available']
-    search_fields = ['name', 'name_mk', 'category', 'listing__title_en']
-    list_editable = ['price', 'is_available', 'order']
-    ordering = ['listing', 'category', 'order']

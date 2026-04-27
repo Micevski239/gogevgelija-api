@@ -21,8 +21,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedItem, GalleryPhoto, MenuItem
-from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, BillboardItemSerializer, FeaturedItemSerializer, AssistantQuerySerializer, GalleryPhotoSerializer, MenuItemSerializer, MenuItemWriteSerializer
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedItem, GalleryPhoto
+from .serializers import CategorySerializer, CategoryTreeSerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, BillboardItemSerializer, FeaturedItemSerializer, AssistantQuerySerializer, GalleryPhotoSerializer
 from .assistant_ai import AssistantAIError, get_assistant_ai_provider
 from .assistant_parser import get_assistant_query_parser
 from .utils import get_preferred_language
@@ -3572,60 +3572,3 @@ class ListingGalleryView(APIView):
         return Response(photos)
 
 
-class MenuItemListView(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def _get_listing_or_403(self, request, listing_id):
-        listing = get_object_or_404(Listing, pk=listing_id)
-        user = request.user
-        has_perm = (
-            not user.is_anonymous
-            and (user.is_staff or UserPermission.objects.filter(user=user, listing=listing).exists())
-        )
-        return listing, has_perm
-
-    def get(self, request, listing_id):
-        language = get_preferred_language(request)
-        items = MenuItem.objects.filter(listing_id=listing_id)
-        serializer = MenuItemWriteSerializer(items, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, listing_id):
-        listing, has_perm = self._get_listing_or_403(request, listing_id)
-        if not has_perm:
-            return Response({'detail': 'Permission denied.'}, status=403)
-        serializer = MenuItemWriteSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(listing=listing)
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-
-class MenuItemDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def _get_item_or_403(self, request, listing_id, item_id):
-        item = get_object_or_404(MenuItem, pk=item_id, listing_id=listing_id)
-        user = request.user
-        has_perm = (
-            not user.is_anonymous
-            and (user.is_staff or UserPermission.objects.filter(user=user, listing=item.listing).exists())
-        )
-        return item, has_perm
-
-    def put(self, request, listing_id, item_id):
-        item, has_perm = self._get_item_or_403(request, listing_id, item_id)
-        if not has_perm:
-            return Response({'detail': 'Permission denied.'}, status=403)
-        serializer = MenuItemWriteSerializer(item, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    def delete(self, request, listing_id, item_id):
-        item, has_perm = self._get_item_or_403(request, listing_id, item_id)
-        if not has_perm:
-            return Response({'detail': 'Permission denied.'}, status=403)
-        item.delete()
-        return Response(status=204)

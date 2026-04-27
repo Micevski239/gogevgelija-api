@@ -4,14 +4,15 @@
 
 ## Pending
 
-5. Make gallery button option for listing (every listing has its own gallery)
+<!-- all done -->
 
 ## Done
 
 1. Replace profile icon with settings icon in header
 2. Use the navbar (AppHeader) in gallery screen
 3. Make better UI/UX in gallery (portrait cells, gradient captions, card shadows, better empty state)
-4. Menu feature — MenuItem model, CRUD API, menu section in ListingDetail (grouped by category + price), manage menu in EditListing
+4. Menu — JSONField on Listing (menu/menu_mk), sections with heading + items + optional price, JSON textarea editor in EditListing, grouped display in ListingDetail
+5. Listing gallery — GalleryPhoto gets optional listing FK, ListingGalleryView combines listing images + extra admin photos, Gallery pill button on listing carousel, ListingGalleryScreen with same grid UI
 
 ## Done
 
