@@ -335,6 +335,40 @@ class Listing(models.Model):
         blank=True,
         null=True,
     )
+    MENU_ICON_CHOICES = [
+        ('restaurant-outline', 'Restaurant / Food'),
+        ('cafe-outline', 'Café / Coffee'),
+        ('beer-outline', 'Bar / Drinks'),
+        ('fitness-outline', 'Gym / Fitness'),
+        ('school-outline', 'Education / School'),
+        ('cut-outline', 'Beauty / Barber'),
+        ('medical-outline', 'Medical / Health'),
+        ('briefcase-outline', 'Services / Business'),
+        ('pricetag-outline', 'Pricing / Plans'),
+        ('list-outline', 'General List'),
+        ('construct-outline', 'Repair / Technical'),
+        ('leaf-outline', 'Nature / Spa'),
+    ]
+
+    menu_label = models.CharField(
+        max_length=80,
+        blank=True,
+        default='',
+        help_text='Button label in English (e.g. "Menu", "Memberships", "Services"). Leave blank to use "Menu".',
+    )
+    menu_label_mk = models.CharField(
+        max_length=80,
+        blank=True,
+        default='',
+        help_text='Button label in Macedonian. Leave blank to use "Мени".',
+    )
+    menu_icon = models.CharField(
+        max_length=60,
+        blank=True,
+        default='restaurant-outline',
+        choices=MENU_ICON_CHOICES,
+        help_text='Icon displayed on the menu button in the app.',
+    )
     menu = models.JSONField(
         default=list,
         blank=True,

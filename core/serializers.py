@@ -239,7 +239,9 @@ class ListingSerializer(serializers.ModelSerializer):
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "phone_number",
             "facebook_url", "instagram_url", "website_url", "google_maps_url",
-            "featured", "trending", "is_active", "promotions", "events", "menu", "menu_mk", "created_at", "updated_at", "can_edit"
+            "featured", "trending", "is_active", "promotions", "events",
+            "menu_label", "menu_label_mk", "menu_icon", "menu", "menu_mk",
+            "created_at", "updated_at", "can_edit"
         ]
     
     def get_title(self, obj):
@@ -939,7 +941,8 @@ class EditListingSerializer(serializers.ModelSerializer):
             # Bilingual fields
             "title_en", "title_mk", "description_en", "description_mk",
             "address_en", "address_mk", "open_time_en", "open_time_mk",
-            "working_hours_mk", "tags_mk", "amenities_mk", "menu", "menu_mk"
+            "working_hours_mk", "tags_mk", "amenities_mk",
+            "menu_label", "menu_label_mk", "menu_icon", "menu", "menu_mk"
         ]
     
     def to_representation(self, instance):
@@ -970,6 +973,9 @@ class EditListingSerializer(serializers.ModelSerializer):
         data['working_hours_mk'] = getattr(instance, 'working_hours_mk', None) or {}
         data['tags_mk'] = getattr(instance, 'tags_mk', None) or []
         data['amenities_mk'] = getattr(instance, 'amenities_mk', None) or []
+        data['menu_label'] = getattr(instance, 'menu_label', None) or ''
+        data['menu_label_mk'] = getattr(instance, 'menu_label_mk', None) or ''
+        data['menu_icon'] = getattr(instance, 'menu_icon', None) or 'restaurant-outline'
         data['menu'] = getattr(instance, 'menu', None) or []
         data['menu_mk'] = getattr(instance, 'menu_mk', None) or []
 
