@@ -414,6 +414,10 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'classes': ('wide',),
             'description': 'Select blog articles related to this listing (optional)',
         }),
+        ('Menu / Price List Configuration', {
+            'fields': ('menu_icon', 'menu_label', 'menu_label_mk'),
+            'description': 'Configure the button that opens the price list. Set a label (e.g. "Memberships", "Services") and choose an icon. Leave label blank to use the default "Menu / Мени".',
+        }),
         ('English Content', {
             'fields': ('title', 'description', 'address', 'open_time', 'tags', 'amenities_title', 'amenities', 'working_hours', 'show_open_status', 'manual_open_status', 'menu'),
             'classes': ('lang-tab', 'lang-en'),
