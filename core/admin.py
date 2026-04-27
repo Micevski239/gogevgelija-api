@@ -415,11 +415,11 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'description': 'Select blog articles related to this listing (optional)',
         }),
         ('English Content', {
-            'fields': ('title', 'description', 'address', 'open_time', 'tags', 'amenities_title', 'amenities', 'working_hours', 'show_open_status', 'manual_open_status'),
+            'fields': ('title', 'description', 'address', 'open_time', 'tags', 'amenities_title', 'amenities', 'working_hours', 'show_open_status', 'manual_open_status', 'menu'),
             'classes': ('lang-tab', 'lang-en'),
         }),
         ('Macedonian Content', {
-            'fields': ('title_mk', 'description_mk', 'address_mk', 'open_time_mk', 'tags_mk', 'amenities_title_mk', 'amenities_mk', 'working_hours_mk'),
+            'fields': ('title_mk', 'description_mk', 'address_mk', 'open_time_mk', 'tags_mk', 'amenities_title_mk', 'amenities_mk', 'working_hours_mk', 'menu_mk'),
             'classes': ('lang-tab', 'lang-mk'),
         }),
         ('Timestamps', {
