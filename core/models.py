@@ -1549,6 +1549,11 @@ def gallery_image_upload_to(instance, filename):
 
 
 class GalleryPhoto(models.Model):
+    listing = models.ForeignKey(
+        Listing, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='extra_photos',
+        help_text="Assign to a specific listing, or leave blank for the main city gallery"
+    )
     image = models.ImageField(upload_to=gallery_image_upload_to)
     image_thumbnail = ImageSpecField(
         source='image',
@@ -1565,4 +1570,6 @@ class GalleryPhoto(models.Model):
         ordering = ['order', 'id']
 
     def __str__(self):
+        if self.listing:
+            return f"{self.listing} — {self.caption or f'photo {self.pk}'}"
         return self.caption or f"Gallery photo {self.pk}"

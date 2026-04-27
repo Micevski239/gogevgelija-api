@@ -33,6 +33,7 @@ from core.views import (
     CustomTokenObtainPairView,
     AssistantQueryView,
     GalleryView,
+    ListingGalleryView,
     MenuItemListView,
     MenuItemDetailView,
 )
@@ -72,6 +73,7 @@ urlpatterns = [
     path("api/admin/users/", AdminUsersView.as_view(), name="admin_users"),
     path("api/search/", global_search, name="global_search"),
     path("api/gallery/", GalleryView.as_view(), name="gallery"),
+    path("api/listings/<int:listing_id>/gallery/", ListingGalleryView.as_view(), name="listing-gallery"),
     path("api/listings/<int:listing_id>/menu/", MenuItemListView.as_view(), name="menu-list"),
     path("api/listings/<int:listing_id>/menu/<int:item_id>/", MenuItemDetailView.as_view(), name="menu-detail"),
 ]

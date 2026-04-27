@@ -1516,9 +1516,12 @@ class FeaturedItemAdmin(admin.ModelAdmin):
 
 @admin.register(GalleryPhoto, site=admin_site)
 class GalleryPhotoAdmin(admin.ModelAdmin):
-    list_display = ['id', 'caption', 'order', 'is_active']
+    list_display = ['id', 'listing', 'caption', 'order', 'is_active']
     list_editable = ['order', 'is_active']
-    ordering = ['order', 'id']
+    list_filter = ['listing', 'is_active']
+    search_fields = ['caption', 'listing__title_en']
+    autocomplete_fields = ['listing']
+    ordering = ['listing', 'order', 'id']
 
 
 class MenuItemInline(admin.TabularInline):
