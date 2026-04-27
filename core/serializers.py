@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
-from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedItem, GalleryPhoto, MenuItem
+from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedItem, GalleryPhoto
 
 
 def _build_image_urls(obj, request, field_names):
@@ -229,7 +229,7 @@ class ListingSerializer(serializers.ModelSerializer):
     images_medium = serializers.SerializerMethodField()
     promotions = serializers.SerializerMethodField()
     events = serializers.SerializerMethodField()
-    menu_items = serializers.SerializerMethodField()
+    menu = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -238,7 +238,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "phone_number",
             "facebook_url", "instagram_url", "website_url", "google_maps_url",
-            "featured", "trending", "is_active", "promotions", "events", "menu_items", "created_at", "updated_at", "can_edit"
+            "featured", "trending", "is_active", "promotions", "events", "menu", "created_at", "updated_at", "can_edit"
         ]
     
     def get_title(self, obj):
@@ -439,9 +439,11 @@ class ListingSerializer(serializers.ModelSerializer):
         # Use SimplifiedEventSerializer to avoid circular reference
         return SimplifiedEventSerializer(events, many=True, context=self.context).data
 
-    def get_menu_items(self, obj):
-        items = obj.menu_items.filter(is_available=True)
-        return MenuItemSerializer(items, many=True, context=self.context).data
+    def get_menu(self, obj):
+        lang = self.context.get('language', 'en')
+        if lang == 'mk' and obj.menu_mk:
+            return obj.menu_mk or []
+        return obj.menu or []
 
 class EventSerializer(serializers.ModelSerializer):
     has_joined = serializers.SerializerMethodField()
@@ -917,6 +919,8 @@ class EditListingSerializer(serializers.ModelSerializer):
     working_hours_mk = serializers.JSONField(required=False)
     tags_mk = serializers.ListField(required=False, allow_empty=True)
     amenities_mk = serializers.JSONField(required=False)
+    menu = serializers.JSONField(required=False)
+    menu_mk = serializers.JSONField(required=False)
     image = serializers.ImageField(required=False, allow_null=True)
     image_1 = serializers.ImageField(required=False, allow_null=True)
     image_2 = serializers.ImageField(required=False, allow_null=True)
@@ -934,7 +938,7 @@ class EditListingSerializer(serializers.ModelSerializer):
             # Bilingual fields
             "title_en", "title_mk", "description_en", "description_mk",
             "address_en", "address_mk", "open_time_en", "open_time_mk",
-            "working_hours_mk", "tags_mk", "amenities_mk"
+            "working_hours_mk", "tags_mk", "amenities_mk", "menu", "menu_mk"
         ]
     
     def to_representation(self, instance):
@@ -965,7 +969,9 @@ class EditListingSerializer(serializers.ModelSerializer):
         data['working_hours_mk'] = getattr(instance, 'working_hours_mk', None) or {}
         data['tags_mk'] = getattr(instance, 'tags_mk', None) or []
         data['amenities_mk'] = getattr(instance, 'amenities_mk', None) or []
-        
+        data['menu'] = getattr(instance, 'menu', None) or []
+        data['menu_mk'] = getattr(instance, 'menu_mk', None) or []
+
         return data
     
     def update(self, instance, validated_data):
@@ -978,7 +984,7 @@ class EditListingSerializer(serializers.ModelSerializer):
             if attr in {"working_hours", "working_hours_mk"}:
                 if value in (None, ""):
                     value = {}
-            if attr in {"tags", "tags_mk", "amenities", "amenities_mk"}:
+            if attr in {"tags", "tags_mk", "amenities", "amenities_mk", "menu", "menu_mk"}:
                 if value in (None, ""):
                     value = []
             if attr in {"open_time", "open_time_en", "open_time_mk"}:
@@ -1490,33 +1496,6 @@ class FeaturedItemSerializer(serializers.ModelSerializer):
         if lang == 'mk' and obj.promo_text_mk:
             return obj.promo_text_mk
         return obj.promo_text or None
-
-
-class MenuItemSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    category = serializers.SerializerMethodField()
-
-    class Meta:
-        model = MenuItem
-        fields = ['id', 'name', 'category', 'price', 'currency', 'is_available', 'order']
-
-    def get_name(self, obj):
-        lang = self.context.get('language', 'en')
-        if lang == 'mk' and obj.name_mk:
-            return obj.name_mk
-        return obj.name
-
-    def get_category(self, obj):
-        lang = self.context.get('language', 'en')
-        if lang == 'mk' and obj.category_mk:
-            return obj.category_mk
-        return obj.category
-
-
-class MenuItemWriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MenuItem
-        fields = ['id', 'name', 'name_mk', 'category', 'category_mk', 'price', 'currency', 'is_available', 'order']
 
 
 class GalleryPhotoSerializer(serializers.ModelSerializer):

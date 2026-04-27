@@ -34,8 +34,6 @@ from core.views import (
     AssistantQueryView,
     GalleryView,
     ListingGalleryView,
-    MenuItemListView,
-    MenuItemDetailView,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -74,8 +72,6 @@ urlpatterns = [
     path("api/search/", global_search, name="global_search"),
     path("api/gallery/", GalleryView.as_view(), name="gallery"),
     path("api/listings/<int:listing_id>/gallery/", ListingGalleryView.as_view(), name="listing-gallery"),
-    path("api/listings/<int:listing_id>/menu/", MenuItemListView.as_view(), name="menu-list"),
-    path("api/listings/<int:listing_id>/menu/<int:item_id>/", MenuItemDetailView.as_view(), name="menu-detail"),
 ]
 
 # Conditionally include health check

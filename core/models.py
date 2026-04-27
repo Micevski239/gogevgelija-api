@@ -335,6 +335,18 @@ class Listing(models.Model):
         blank=True,
         null=True,
     )
+    menu = models.JSONField(
+        default=list,
+        blank=True,
+        null=True,
+        help_text='Menu sections in English, e.g. [{"heading": "Coffee", "items": [{"name": "Espresso", "price": "80"}, {"name": "Water"}]}]',
+    )
+    menu_mk = models.JSONField(
+        default=list,
+        blank=True,
+        null=True,
+        help_text='Menu sections in Macedonian, same structure as menu field',
+    )
     image = models.ImageField(
         upload_to=listing_image_upload_to,
         blank=True,
@@ -1524,24 +1536,6 @@ def clear_billboard_section_item_cache(sender, **kwargs):
 def clear_featured_item_cache(sender, **kwargs):
     """Clear cache when featured items change"""
     cache.clear()
-
-
-class MenuItem(models.Model):
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='menu_items')
-    name = models.CharField(max_length=255)
-    name_mk = models.CharField(max_length=255, blank=True)
-    category = models.CharField(max_length=100, blank=True)
-    category_mk = models.CharField(max_length=100, blank=True)
-    price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
-    currency = models.CharField(max_length=10, default='MKD')
-    is_available = models.BooleanField(default=True)
-    order = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        ordering = ['category', 'order', 'id']
-
-    def __str__(self):
-        return f"{self.name} ({self.listing})"
 
 
 def gallery_image_upload_to(instance, filename):
