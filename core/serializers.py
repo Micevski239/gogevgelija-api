@@ -230,6 +230,7 @@ class ListingSerializer(serializers.ModelSerializer):
     promotions = serializers.SerializerMethodField()
     events = serializers.SerializerMethodField()
     menu = serializers.SerializerMethodField()
+    menu_mk = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -238,7 +239,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "phone_number",
             "facebook_url", "instagram_url", "website_url", "google_maps_url",
-            "featured", "trending", "is_active", "promotions", "events", "menu", "created_at", "updated_at", "can_edit"
+            "featured", "trending", "is_active", "promotions", "events", "menu", "menu_mk", "created_at", "updated_at", "can_edit"
         ]
     
     def get_title(self, obj):
@@ -440,10 +441,10 @@ class ListingSerializer(serializers.ModelSerializer):
         return SimplifiedEventSerializer(events, many=True, context=self.context).data
 
     def get_menu(self, obj):
-        lang = self.context.get('language', 'en')
-        if lang == 'mk' and obj.menu_mk:
-            return obj.menu_mk or []
         return obj.menu or []
+
+    def get_menu_mk(self, obj):
+        return obj.menu_mk or []
 
 class EventSerializer(serializers.ModelSerializer):
     has_joined = serializers.SerializerMethodField()
