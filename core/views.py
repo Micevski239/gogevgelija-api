@@ -3514,11 +3514,62 @@ class GalleryView(APIView):
 
     def get(self, request):
         language = get_preferred_language(request)
-        photos = GalleryPhoto.objects.filter(is_active=True).order_by('order', 'id')
+        # Only city-level photos (not assigned to a specific listing)
+        photos = GalleryPhoto.objects.filter(is_active=True, listing__isnull=True).order_by('order', 'id')
         serializer = GalleryPhotoSerializer(
             photos, many=True, context={'request': request, 'language': language}
         )
         return Response(serializer.data)
+
+
+class ListingGalleryView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, listing_id):
+        listing = get_object_or_404(Listing, pk=listing_id, is_active=True)
+        language = get_preferred_language(request)
+        req = request
+
+        def _abs(url):
+            if url and req:
+                return req.build_absolute_uri(url)
+            return url or ''
+
+        photos = []
+
+        # 1. Listing's own images (image, image_1..5)
+        for field_name in ['image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5']:
+            field = getattr(listing, field_name, None)
+            if field:
+                try:
+                    url = field.url
+                except (ValueError, AttributeError):
+                    continue
+                photos.append({
+                    'id': f'listing_{field_name}',
+                    'image_url': _abs(url),
+                    'thumbnail_url': _abs(url),
+                    'caption': '',
+                    'order': len(photos),
+                    'source': 'listing',
+                })
+
+        # 2. Extra photos assigned to this listing via admin
+        extra = GalleryPhoto.objects.filter(listing=listing, is_active=True).order_by('order', 'id')
+        for photo in extra:
+            image_url = _get_optimized_image_url(photo, 'image', req)
+            thumb_url = _get_optimized_image_url(photo, 'image_thumbnail', req)
+            cap = photo.caption_mk if (language == 'mk' and photo.caption_mk) else photo.caption
+            photos.append({
+                'id': photo.pk,
+                'image_url': image_url,
+                'thumbnail_url': thumb_url or image_url,
+                'caption': cap,
+                'order': photo.order,
+                'source': 'extra',
+            })
+
+        return Response(photos)
 
 
 class MenuItemListView(APIView):
