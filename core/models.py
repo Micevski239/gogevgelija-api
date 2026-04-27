@@ -1526,6 +1526,24 @@ def clear_featured_item_cache(sender, **kwargs):
     cache.clear()
 
 
+class MenuItem(models.Model):
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='menu_items')
+    name = models.CharField(max_length=255)
+    name_mk = models.CharField(max_length=255, blank=True)
+    category = models.CharField(max_length=100, blank=True)
+    category_mk = models.CharField(max_length=100, blank=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=10, default='MKD')
+    is_available = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['category', 'order', 'id']
+
+    def __str__(self):
+        return f"{self.name} ({self.listing})"
+
+
 def gallery_image_upload_to(instance, filename):
     return _image_upload_path("gallery", filename)
 
