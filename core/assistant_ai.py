@@ -248,6 +248,68 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
 
         return self._chat_completion(messages=messages, schema_name="assistant_plan", schema=schema)
 
+    def generate_greeting(
+        self,
+        *,
+        language: str,
+        events: list[dict],
+        promotions: list[dict],
+    ) -> str | None:
+        events_block = ""
+        if events:
+            events_block = "Upcoming events:\n" + "\n".join(
+                f"- {e['title']}: {e['date_time']}"
+                + (f" (entry: {e['entry_price']})" if e.get("entry_price") and e["entry_price"] != "Free" else " (free entry)")
+                for e in events
+            )
+        promos_block = ""
+        if promotions:
+            promos_block = "Active promotions:\n" + "\n".join(
+                f"- {p['title']}"
+                + (f" (valid until {p['valid_until']})" if p.get("valid_until") else "")
+                for p in promotions
+            )
+
+        context_block = "\n\n".join(filter(None, [events_block, promos_block]))
+        if not context_block:
+            return None
+
+        lang_instruction = (
+            "Respond in Macedonian using Cyrillic script." if language == "mk"
+            else "Respond in English."
+        )
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a friendly local concierge for GoGevgelija, a tourism app for Gevgelija, North Macedonia. "
+                    "Write a warm, natural 1-2 sentence greeting for a tourist just opening the app. "
+                    "Mention 1-2 specific things from the provided data. "
+                    "Be conversational — like a local friend, not a corporate announcement. "
+                    "No generic phrases like 'Welcome to the app'. "
+                    "Return JSON with a single key: {\"greeting\": \"...\"}. "
+                    f"{lang_instruction}"
+                ),
+            },
+            {
+                "role": "user",
+                "content": f"Write a greeting based on this:\n\n{context_block}",
+            },
+        ]
+
+        result = self._chat_completion(
+            messages=messages,
+            schema_name="greeting",
+            schema={
+                "type": "object",
+                "properties": {"greeting": {"type": "string"}},
+                "required": ["greeting"],
+                "additionalProperties": False,
+            },
+        )
+        return result.get("greeting") or None
+
     def generate_display_message(
         self,
         *,
