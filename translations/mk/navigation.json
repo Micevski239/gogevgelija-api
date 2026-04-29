@@ -6,7 +6,8 @@
     "events": "Настани",
     "promotions": "Промоции",
     "blog": "Блог",
-    "profile": "Профил"
+    "profile": "Профил",
+    "gallery" : "Галерија"
   },
   "headers": {
     "home": "ГоГевгелија",

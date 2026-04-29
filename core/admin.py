@@ -17,6 +17,7 @@ from django.forms import Textarea
 from django.http import JsonResponse
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
+from django.core.cache import cache
 # Modeltranslation will automatically add language fields to admin
 from .models import Category, Listing, Event, Promotion, Blog, BlogSection, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, BillboardSection, BillboardSectionItem, FeaturedItem, GalleryPhoto
 
@@ -1079,6 +1080,21 @@ class HomeSectionAdmin(admin.ModelAdmin):
         updated = queryset.update(is_active=False)
         self.message_user(request, f"{updated} sections deactivated.")
     deactivate_sections.short_description = "❌ Deactivate selected sections"
+
+    def _clear_home_cache(self):
+        cache.delete_pattern('*home/sections*') if hasattr(cache, 'delete_pattern') else cache.clear()
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        self._clear_home_cache()
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        self._clear_home_cache()
+
+    def response_change(self, request, obj):
+        self._clear_home_cache()
+        return super().response_change(request, obj)
 
 
 # HomeSectionItem is managed via inline in HomeSection - disabled standalone admin

@@ -3256,7 +3256,12 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes (most requested endpoint)
     def list(self, request, *args, **kwargs):
         """Get all active home sections with caching"""
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        # Drop sections with no renderable items so the frontend never shows a blank screen
+        if isinstance(response.data, dict) and 'results' in response.data:
+            response.data['results'] = [s for s in response.data['results'] if s.get('items')]
+            response.data['count'] = len(response.data['results'])
+        return response
 
 
 # ============================================================================

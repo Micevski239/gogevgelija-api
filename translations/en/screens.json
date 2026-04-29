@@ -111,7 +111,19 @@
     "visitWebsite": "Visit website",
     "visitPage": "Visit page",
     "visitProfile": "Visit profile",
-    "joinAuthPrompt": "Sign up to join events"
+    "joinAuthPrompt": "Sign up to join events",
+    "availableAt": "Available At",
+    "upcoming": "UPCOMING",
+    "calendarSuccess": "Event added to your calendar!",
+    "noWritableCalendar": "No writable calendar found",
+    "permissionDenied": "Permission Denied",
+    "calendarPermissionRequired": "Calendar access is required to add events.",
+    "calendarAddFailed": "Failed to add event to calendar",
+    "mapsError": "Unable to open Google Maps",
+    "shareFailed": "Failed to share event",
+    "listingLoadFailed": "Unable to load listing details",
+    "networkError": "Network Error",
+    "networkErrorMsg": "Unable to connect to the server. Please check your internet connection."
   },
   "promotions": {
     "title": "Discover Deals",
@@ -145,7 +157,8 @@
     "codeCopied": "Discount code copied to clipboard",
     "noCode": "No Code",
     "noCodeDesc": "This promotion does not require a discount code",
-    "contact": "Contact"
+    "contact": "Contact",
+    "availableAt": "Available At"
   },
   "blogs": {
     "title": "Blog",
