@@ -1,0 +1,490 @@
+{
+  "version": "3.1",
+  "purpose": "Section-based bilingual GoGevgelija knowledge base for GoAI retrieval and answer generation.",
+  "language_fields": [
+    "en",
+    "mk"
+  ],
+  "articles": [
+    {
+      "title_en": "About Gevgelija",
+      "title_mk": "За Гевгелија",
+      "slug": "about-gevgelija",
+      "category": "about",
+      "short_description_en": "A general overview of Gevgelija as a town, destination, and regional point of interest.",
+      "short_description_mk": "Општ преглед на Гевгелија како град, дестинација и регионално важно место.",
+      "sections": [
+        {
+          "title_en": "Overview",
+          "title_mk": "Општ преглед",
+          "content_en": "Gevgelija is a town in southern North Macedonia, located close to the border with Greece. Because of its position, it is both a destination for visitors and a transit point for people traveling between North Macedonia and Greece. The town is known for its warm climate, accessible location, hospitality, and relaxed atmosphere.",
+          "content_mk": "Гевгелија е град во јужниот дел на Македонија, во близина на границата со Грција. Поради својата положба, таа е и дестинација за посетители и транзитна точка за патници кои се движат помеѓу Македонија и Грција. Градот е познат по топлата клима, лесната достапност, гостопримството и опуштената атмосфера."
+        },
+        {
+          "title_en": "Character of the Town",
+          "title_mk": "Карактерот на градот",
+          "content_en": "Gevgelija combines a calm everyday lifestyle with an active social scene. During the day, the town feels relaxed and easy to explore, while in the evenings it becomes livelier through cafés, restaurants, local gatherings, and seasonal events.",
+          "content_mk": "Гевгелија комбинира мирен секојдневен ритам со активна социјална сцена. Преку ден градот има опуштена атмосфера и е лесен за истражување, додека навечер станува пожив преку кафулињата, рестораните, локалните собири и сезонските настани."
+        },
+        {
+          "title_en": "Why Visitors Come",
+          "title_mk": "Зошто доаѓаат посетители",
+          "content_en": "Visitors often come to Gevgelija for short getaways, food, relaxation, and access to nearby nature. It is suitable for weekend visits, day trips, and stops during longer travel. The town’s location makes it practical, while its surroundings give visitors more options beyond the urban area.",
+          "content_mk": "Посетителите често доаѓаат во Гевгелија за краток одмор, храна, релаксација и пристап до природа во близина. Погодна е за викенд посети, еднодневни излети и попатни застанувања при подолги патувања. Нејзината локација ја прави практична, а околината нуди дополнителни можности надвор од градското јадро."
+        },
+        {
+          "title_en": "Connection With Nature",
+          "title_mk": "Поврзаност со природата",
+          "content_en": "The wider Gevgelija area is connected with natural places such as Kozuf Mountain, Smrdliva Voda, and the Vardar valley. These surroundings make the town attractive not only for urban visits, but also for people who want fresh air, views, walking, and a quieter escape from everyday routines.",
+          "content_mk": "Пошироката околина на Гевгелија е поврзана со природни места како Кожуф, Смрдлива Вода и долината на Вардар. Овие локации ја прават Гевгелија привлечна не само за градска посета, туку и за луѓе кои бараат чист воздух, убави глетки, прошетки и помирно бегство од секојдневието."
+        }
+      ],
+      "tags": [
+        "about",
+        "overview",
+        "destination",
+        "gevgelija"
+      ]
+    },
+    {
+      "title_en": "History of Gevgelija",
+      "title_mk": "Историја на Гевгелија",
+      "slug": "history-gevgelija",
+      "category": "history",
+      "short_description_en": "A careful overview of Gevgelija’s historical development and regional importance.",
+      "short_description_mk": "Внимателен преглед на историскиот развој и регионалното значење на Гевгелија.",
+      "sections": [
+        {
+          "title_en": "Early Importance of the Area",
+          "title_mk": "Рано значење на областа",
+          "content_en": "The area around Gevgelija has been important for a long time because of its location in the lower Vardar region. This position connected inland Balkan routes with the wider Aegean area, making the region useful for movement, trade, and settlement through different historical periods.",
+          "content_mk": "Областа околу Гевгелија долго време имала значење поради својата положба во долниот тек на Вардар. Оваа позиција ги поврзувала внатрешните балкански патишта со поширокиот егејски простор, па регионот бил важен за движење, трговија и населување низ различни историски периоди."
+        },
+        {
+          "title_en": "Vardarski Rid and Ancient Traces",
+          "title_mk": "Вардарски Рид и античките траги",
+          "content_en": "One of the most important historical locations near Gevgelija is Vardarski Rid, an archaeological site positioned above the Gevgelija plain and the Vardar valley. The site is connected with long-term settlement and offers insight into the older layers of life in the region. It is especially valuable because it shows that the area was important long before the modern town developed.",
+          "content_mk": "Една од најважните историски локации во близина на Гевгелија е Вардарски Рид, археолошки локалитет поставен над гевгелиското поле и долината на Вардар. Локалитетот е поврзан со долготрајно населување и дава увид во постарите слоеви на животот во регионот. Особено е значаен затоа што покажува дека областа имала важност многу пред развојот на современиот град."
+        },
+        {
+          "title_en": "Development Through Transport",
+          "title_mk": "Развој преку транспортот",
+          "content_en": "A major turning point for Gevgelija was the development of railway transport in the 19th century. The railway connection strengthened the town’s role as a transit and trade point. This helped Gevgelija grow from a smaller settlement into a more important regional center.",
+          "content_mk": "Голем пресврт за Гевгелија претставува развојот на железничкиот транспорт во 19 век. Железничката врска ја зајакнала улогата на градот како транзитна и трговска точка. Тоа помогнало Гевгелија да прерасне од помало населено место во позначаен регионален центар."
+        },
+        {
+          "title_en": "Modern Identity",
+          "title_mk": "Современ идентитет",
+          "content_en": "Today, Gevgelija’s identity is shaped by its border location, tourism, hospitality, transport connections, and natural surroundings. Its history explains why the town has always been connected with movement, exchange, and regional interaction.",
+          "content_mk": "Денес идентитетот на Гевгелија е оформен од нејзината погранична положба, туризмот, угостителството, транспортните врски и природната околина. Нејзината историја објаснува зошто градот отсекогаш бил поврзан со движење, размена и регионална комуникација."
+        }
+      ],
+      "tags": [
+        "history",
+        "vardarski rid",
+        "railway",
+        "heritage"
+      ]
+    },
+    {
+      "title_en": "What Gevgelija Is Known For",
+      "title_mk": "По што е позната Гевгелија",
+      "slug": "known-for-gevgelija",
+      "category": "about",
+      "short_description_en": "The main things people usually associate with Gevgelija.",
+      "short_description_mk": "Главните работи по кои луѓето најчесто ја препознаваат Гевгелија.",
+      "sections": [
+        {
+          "title_en": "Warm Climate",
+          "title_mk": "Топла клима",
+          "content_en": "Gevgelija is known as one of the warmer towns in North Macedonia. Its southern position and Mediterranean influence give it hot summers, mild periods during much of the year, and a sunny character that strongly shapes the local lifestyle.",
+          "content_mk": "Гевгелија е позната како еден од потоплите градови во Македонија. Јужната положба и медитеранското влијание придонесуваат за топли лета, поблаги периоди во голем дел од годината и сончев карактер кој силно го обликува локалниот начин на живот."
+        },
+        {
+          "title_en": "Hospitality and Food",
+          "title_mk": "Гостопримство и храна",
+          "content_en": "The town is also recognized for hospitality, restaurants, cafés, and places where visitors can relax. Food and social life are an important part of the local experience, especially for short-stay visitors and weekend guests.",
+          "content_mk": "Градот е препознатлив и по гостопримството, рестораните, кафулињата и местата за одмор. Храната и социјалниот живот се важен дел од локалното искуство, особено за посетители кои доаѓаат на краток престој или за викенд."
+        },
+        {
+          "title_en": "Location Near Greece",
+          "title_mk": "Близина до Грција",
+          "content_en": "Gevgelija’s location near the Greek border gives it regional importance. Many travelers pass through or stop in the town because it lies on an important route connecting North Macedonia with Greece.",
+          "content_mk": "Близината до грчката граница ѝ дава на Гевгелија регионално значење. Многу патници поминуваат низ градот или застануваат во него затоа што се наоѓа на важен правец кој ја поврзува Македонија со Грција."
+        },
+        {
+          "title_en": "Nature Nearby",
+          "title_mk": "Природа во близина",
+          "content_en": "Gevgelija is not only an urban destination. The surrounding region includes Kozuf Mountain, Smrdliva Voda, and other natural areas suitable for fresh air, views, walks, and relaxation.",
+          "content_mk": "Гевгелија не е само градска дестинација. Во околината се наоѓаат Кожуф, Смрдлива Вода и други природни места погодни за чист воздух, глетки, прошетки и одмор."
+        }
+      ],
+      "tags": [
+        "known for",
+        "climate",
+        "food",
+        "location",
+        "nature"
+      ]
+    },
+    {
+      "title_en": "Tourism in Gevgelija",
+      "title_mk": "Туризам во Гевгелија",
+      "slug": "tourism-gevgelija",
+      "category": "tourism",
+      "short_description_en": "A guide to the tourism character of Gevgelija and its surroundings.",
+      "short_description_mk": "Водич за туристичкиот карактер на Гевгелија и нејзината околина.",
+      "sections": [
+        {
+          "title_en": "Tourism Style",
+          "title_mk": "Туристички стил",
+          "content_en": "Tourism in Gevgelija is mostly built around short visits, weekend stays, food, relaxation, and nearby nature. It is not a destination that depends on one single attraction; instead, it offers a combination of easy access, hospitality, climate, and regional experiences.",
+          "content_mk": "Туризмот во Гевгелија најчесто се поврзува со кратки посети, викенд престои, храна, релаксација и природа во близина. Таа не е дестинација што се потпира само на една атракција, туку нуди комбинација од лесна достапност, угостителство, клима и регионални искуства."
+        },
+        {
+          "title_en": "Urban Experience",
+          "title_mk": "Градско искуство",
+          "content_en": "Inside the town, visitors can explore cafés, restaurants, local events, shops, and everyday city life. The atmosphere is relaxed, which makes it easy for visitors to spend a few hours or a full day without needing a complicated plan.",
+          "content_mk": "Во градот, посетителите можат да истражуваат кафулиња, ресторани, локални настани, продавници и секојдневен градски живот. Атмосферата е опуштена, па лесно може да се поминат неколку часа или цел ден без сложен план."
+        },
+        {
+          "title_en": "Nature-Based Tourism",
+          "title_mk": "Туризам поврзан со природа",
+          "content_en": "The surroundings of Gevgelija are important for tourism because they offer a different experience from the town center. Kozuf Mountain, Smrdliva Voda, and the wider natural landscape are useful for visitors who want fresh air, walking, photography, and peaceful surroundings.",
+          "content_mk": "Околината на Гевгелија е важна за туризмот затоа што нуди поинакво искуство од градскиот центар. Кожуф, Смрдлива Вода и поширокиот природен предел се погодни за посетители кои сакаат чист воздух, прошетки, фотографирање и мирна атмосфера."
+        },
+        {
+          "title_en": "Who It Is Good For",
+          "title_mk": "За кого е погодна",
+          "content_en": "Gevgelija is suitable for visitors who want a short escape, a relaxed food-focused visit, a nature break, or a convenient stop while traveling. It works well for couples, families, groups of friends, and travelers passing through the region.",
+          "content_mk": "Гевгелија е погодна за посетители кои сакаат кратко бегство, опуштена посета со добра храна, одмор во природа или практично застанување при патување. Одговара за парови, семејства, друштва и патници кои поминуваат низ регионот."
+        }
+      ],
+      "tags": [
+        "tourism",
+        "visitors",
+        "travel",
+        "weekend"
+      ]
+    },
+    {
+      "title_en": "Things to Do in Gevgelija",
+      "title_mk": "Што да се прави во Гевгелија",
+      "slug": "things-to-do-gevgelija",
+      "category": "tourism",
+      "short_description_en": "Practical suggestions for visitors looking for activities in Gevgelija.",
+      "short_description_mk": "Практични предлози за посетители кои бараат активности во Гевгелија.",
+      "sections": [
+        {
+          "title_en": "Explore the Town",
+          "title_mk": "Истражете го градот",
+          "content_en": "A simple way to experience Gevgelija is to walk through the town, visit local cafés, try food, and observe the relaxed daily rhythm. This is useful for visitors who do not want a heavy tourist schedule and prefer a more casual experience.",
+          "content_mk": "Едноставен начин да се доживее Гевгелија е прошетка низ градот, посета на локални кафулиња, пробување храна и уживање во опуштениот секојдневен ритам. Ова е добро за посетители кои не сакаат строг туристички распоред, туку полежерно искуство."
+        },
+        {
+          "title_en": "Visit Nature Nearby",
+          "title_mk": "Посетете природа во близина",
+          "content_en": "For a more peaceful experience, visitors can go toward Kozuf Mountain or Smrdliva Voda. These places are suitable for fresh air, short walks, nature views, and a break from the town environment.",
+          "content_mk": "За помирно искуство, посетителите можат да се упатат кон Кожуф или Смрдлива Вода. Овие места се погодни за чист воздух, кратки прошетки, природни глетки и одмор надвор од градската средина."
+        },
+        {
+          "title_en": "Try Local Food",
+          "title_mk": "Пробајте локална храна",
+          "content_en": "Food is one of the easiest ways to enjoy Gevgelija. Visitors can choose between traditional Macedonian meals, grill, cafés, and more modern dining options. For many people, a good meal is one of the main reasons to stop in the town.",
+          "content_mk": "Храната е еден од најлесните начини да се ужива во Гевгелија. Посетителите можат да изберат традиционални македонски јадења, скара, кафулиња и помодерни ресторани. За многумина, добриот оброк е една од главните причини за застанување во градот."
+        },
+        {
+          "title_en": "Enjoy the Evening Atmosphere",
+          "title_mk": "Уживајте во вечерната атмосфера",
+          "content_en": "In the evening, Gevgelija becomes more active through cafés, restaurants, and social places. The town is especially lively during weekends and warmer periods of the year.",
+          "content_mk": "Навечер Гевгелија станува поактивна преку кафулињата, рестораните и местата за дружење. Градот е особено жив за време на викендите и во потоплите периоди од годината."
+        }
+      ],
+      "tags": [
+        "things to do",
+        "activities",
+        "food",
+        "nature",
+        "evening"
+      ]
+    },
+    {
+      "title_en": "Kozuf Mountain",
+      "title_mk": "Планина Кожуф",
+      "slug": "kozuf-mountain",
+      "category": "nature",
+      "short_description_en": "Kozuf Mountain as one of the main natural areas connected with Gevgelija.",
+      "short_description_mk": "Кожуф како една од главните природни области поврзани со Гевгелија.",
+      "sections": [
+        {
+          "title_en": "Overview",
+          "title_mk": "Општ преглед",
+          "content_en": "Kozuf Mountain is one of the most important natural areas connected with Gevgelija. It offers a completely different atmosphere from the town: cooler air, mountain views, forests, and space for outdoor activities.",
+          "content_mk": "Планината Кожуф е една од најважните природни области поврзани со Гевгелија. Таа нуди сосема поинаква атмосфера од градот: посвеж воздух, планински глетки, шуми и простор за активности на отворено."
+        },
+        {
+          "title_en": "Why Visit",
+          "title_mk": "Зошто да се посети",
+          "content_en": "Kozuf is suitable for visitors who want nature, peace, walking, photography, and a break from the warmer town climate. It is often connected with day trips, weekend visits, and relaxation outside the urban area.",
+          "content_mk": "Кожуф е погоден за посетители кои сакаат природа, мир, прошетки, фотографирање и одмор од потоплата градска клима. Често се поврзува со еднодневни излети, викенд посети и релаксација надвор од градската средина."
+        },
+        {
+          "title_en": "Connection With Gevgelija",
+          "title_mk": "Поврзаност со Гевгелија",
+          "content_en": "For Gevgelija, Kozuf is important because it expands the visitor experience beyond restaurants and city life. It gives the region a stronger nature and outdoor identity.",
+          "content_mk": "За Гевгелија, Кожуф е важен затоа што го проширува искуството на посетителите надвор од рестораните и градскиот живот. Тој му дава на регионот посилен природен и планински идентитет."
+        }
+      ],
+      "tags": [
+        "kozuf",
+        "mountain",
+        "nature",
+        "outdoor"
+      ]
+    },
+    {
+      "title_en": "Smrdliva Voda",
+      "title_mk": "Смрдлива Вода",
+      "slug": "smrdliva-voda",
+      "category": "nature",
+      "short_description_en": "A natural area on Kozuf known for mineral water and fresh mountain surroundings.",
+      "short_description_mk": "Природна локација на Кожуф позната по минералната вода и свежата планинска околина.",
+      "sections": [
+        {
+          "title_en": "Overview",
+          "title_mk": "Општ преглед",
+          "content_en": "Smrdliva Voda is a well-known natural location on Kozuf Mountain near Gevgelija. It is associated with mineral water, fresh air, and a peaceful mountain setting. The name comes from the specific smell of the mineral water.",
+          "content_mk": "Смрдлива Вода е позната природна локација на планината Кожуф во близина на Гевгелија. Се поврзува со минерална вода, свеж воздух и мирна планинска околина. Името доаѓа од специфичниот мирис на минералната вода."
+        },
+        {
+          "title_en": "Visitor Experience",
+          "title_mk": "Искуство за посетители",
+          "content_en": "Visitors usually go to Smrdliva Voda for relaxation, nature, cooler air, and a break from the city. It is a good choice for people who want a quieter trip without going too far from Gevgelija.",
+          "content_mk": "Посетителите најчесто одат на Смрдлива Вода за одмор, природа, посвеж воздух и пауза од градот. Тоа е добар избор за луѓе кои сакаат помирен излет без да се оддалечат премногу од Гевгелија."
+        },
+        {
+          "title_en": "Why It Matters",
+          "title_mk": "Зошто е значајна",
+          "content_en": "Smrdliva Voda is one of the most recognizable nature-related names connected with Gevgelija. It helps define the town not only as a warm southern destination, but also as a place with access to mountain nature.",
+          "content_mk": "Смрдлива Вода е едно од најпрепознатливите природни имиња поврзани со Гевгелија. Таа помага градот да не се доживува само како топла јужна дестинација, туку и како место со пристап до планинска природа."
+        }
+      ],
+      "tags": [
+        "smrdliva voda",
+        "kozuf",
+        "mineral water",
+        "nature"
+      ]
+    },
+    {
+      "title_en": "Vardarski Rid",
+      "title_mk": "Вардарски Рид",
+      "slug": "vardarski-rid",
+      "category": "history",
+      "short_description_en": "An archaeological site near Gevgelija connected with ancient settlement in the Vardar valley.",
+      "short_description_mk": "Археолошки локалитет во близина на Гевгелија поврзан со античко населување во долината на Вардар.",
+      "sections": [
+        {
+          "title_en": "Overview",
+          "title_mk": "Општ преглед",
+          "content_en": "Vardarski Rid is an archaeological site near Gevgelija, positioned above the Gevgelija plain and the Vardar valley. Its location was strategically important because it overlooked movement routes and the surrounding landscape.",
+          "content_mk": "Вардарски Рид е археолошки локалитет во близина на Гевгелија, поставен над гевгелиското поле и долината на Вардар. Неговата положба била стратешки важна затоа што имала преглед кон патните правци и околниот предел."
+        },
+        {
+          "title_en": "Historical Value",
+          "title_mk": "Историска вредност",
+          "content_en": "The site is important because it shows that the wider Gevgelija area was significant long before the modern town developed. Archaeological layers and remains connect the region with older settlement patterns and ancient life in the lower Vardar area.",
+          "content_mk": "Локалитетот е важен затоа што покажува дека пошироката гевгелиска област имала значење многу пред развојот на современиот град. Археолошките слоеви и остатоци го поврзуваат регионот со постари модели на населување и антички живот во долниот Вардар."
+        },
+        {
+          "title_en": "Visitor Relevance",
+          "title_mk": "Значење за посетители",
+          "content_en": "For visitors interested in history and archaeology, Vardarski Rid adds depth to the Gevgelija experience. It shows that the area is not only known for modern hospitality and nature, but also for cultural and historical heritage.",
+          "content_mk": "За посетители кои се интересираат за историја и археологија, Вардарски Рид му дава поголема длабочина на искуството во Гевгелија. Тој покажува дека областа не е позната само по современо угостителство и природа, туку и по културно-историско наследство."
+        }
+      ],
+      "tags": [
+        "vardarski rid",
+        "archaeology",
+        "history",
+        "heritage"
+      ]
+    },
+    {
+      "title_en": "Food and Restaurants in Gevgelija",
+      "title_mk": "Храна и ресторани во Гевгелија",
+      "slug": "food-restaurants-gevgelija",
+      "category": "food",
+      "short_description_en": "The food and dining experience in Gevgelija.",
+      "short_description_mk": "Искуството со храна и ресторани во Гевгелија.",
+      "sections": [
+        {
+          "title_en": "Food Culture",
+          "title_mk": "Култура на храна",
+          "content_en": "Food is an important part of the Gevgelija experience. The town offers traditional Macedonian flavors, grilled food, cafés, and modern restaurant options. For many visitors, dining is one of the main reasons to spend time in the town.",
+          "content_mk": "Храната е важен дел од искуството во Гевгелија. Градот нуди традиционални македонски вкусови, скара, кафулиња и модерни ресторани. За многу посетители, добриот оброк е една од главните причини да поминат време во градот."
+        },
+        {
+          "title_en": "What Visitors Can Expect",
+          "title_mk": "Што можат да очекуваат посетителите",
+          "content_en": "Visitors can expect a relaxed dining atmosphere, social cafés, and places suitable for casual meals, family visits, or evening outings. The food scene supports both quick stops and longer social experiences.",
+          "content_mk": "Посетителите можат да очекуваат опуштена ресторанска атмосфера, социјални кафулиња и места погодни за брз оброк, семејна посета или вечерно излегување. Гастрономската понуда одговара и за кратко застанување и за подолг престој."
+        },
+        {
+          "title_en": "How GoGevgelija Helps",
+          "title_mk": "Како помага GoGevgelija",
+          "content_en": "In GoGevgelija, users can discover food places through listings, menus, prices, promotions, and categories. This makes it easier to choose where to eat based on current information from the app.",
+          "content_mk": "Во GoGevgelija, корисниците можат да откриваат места за храна преку бизнис листинзи, менија, цени, промоции и категории. Така полесно се избира каде да се јаде според актуелните информации во апликацијата."
+        }
+      ],
+      "tags": [
+        "food",
+        "restaurants",
+        "cafes",
+        "menus"
+      ]
+    },
+    {
+      "title_en": "Nightlife and Social Life",
+      "title_mk": "Ноќен и социјален живот",
+      "slug": "nightlife-social-life-gevgelija",
+      "category": "lifestyle",
+      "short_description_en": "Evening atmosphere, cafés, and social life in Gevgelija.",
+      "short_description_mk": "Вечерна атмосфера, кафулиња и социјален живот во Гевгелија.",
+      "sections": [
+        {
+          "title_en": "Evening Atmosphere",
+          "title_mk": "Вечерна атмосфера",
+          "content_en": "Gevgelija becomes more active in the evening, especially during weekends and warmer periods. Cafés, restaurants, and social places create a lively but still relaxed atmosphere.",
+          "content_mk": "Гевгелија станува поактивна навечер, особено за време на викендите и во потоплите периоди. Кафулињата, рестораните и местата за дружење создаваат жива, но сепак опуштена атмосфера."
+        },
+        {
+          "title_en": "For Visitors",
+          "title_mk": "За посетители",
+          "content_en": "For visitors, the social scene is useful because it gives the town energy beyond daytime activities. It is a good option for people who want dinner, coffee, or a relaxed evening out.",
+          "content_mk": "За посетителите, социјалната сцена е важна затоа што му дава енергија на градот и надвор од дневните активности. Добра е за луѓе кои сакаат вечера, кафе или опуштено вечерно излегување."
+        },
+        {
+          "title_en": "Local Rhythm",
+          "title_mk": "Локален ритам",
+          "content_en": "The rhythm of Gevgelija is shaped by local habits, visitors, seasonal movement, and weekends. This makes the town feel calm at times and lively when people gather socially.",
+          "content_mk": "Ритамот на Гевгелија го обликуваат локалните навики, посетителите, сезонското движење и викендите. Затоа градот понекогаш делува мирно, а станува пожив кога луѓето се собираат за дружење."
+        }
+      ],
+      "tags": [
+        "nightlife",
+        "social life",
+        "cafes",
+        "evening"
+      ]
+    },
+    {
+      "title_en": "How to Get to Gevgelija",
+      "title_mk": "Како да стигнете до Гевгелија",
+      "slug": "how-to-get-to-gevgelija",
+      "category": "practical",
+      "short_description_en": "Basic travel and access information for Gevgelija.",
+      "short_description_mk": "Основни информации за пристап и патување до Гевгелија.",
+      "sections": [
+        {
+          "title_en": "By Road",
+          "title_mk": "Со автомобил",
+          "content_en": "Gevgelija is located on an important road route connecting North Macedonia with Greece. This makes it easy to reach by car and convenient for travelers heading south or returning north.",
+          "content_mk": "Гевгелија се наоѓа на важен патен правец кој ја поврзува Македонија со Грција. Затоа е лесно достапна со автомобил и практична за патници кои се движат кон југ или се враќаат кон север."
+        },
+        {
+          "title_en": "By Rail",
+          "title_mk": "Со воз",
+          "content_en": "Gevgelija also has railway importance because of its position on a major regional rail route. Historically, the railway played a major role in the town’s development as a transit and trade point.",
+          "content_mk": "Гевгелија има и железничко значење поради положбата на важен регионален железнички правец. Историски, железницата имала голема улога во развојот на градот како транзитна и трговска точка."
+        },
+        {
+          "title_en": "For Travelers",
+          "title_mk": "За патници",
+          "content_en": "Because of its location, Gevgelija is useful both as a final destination and as a stop during a longer journey. Visitors can use it for food, rest, short sightseeing, or access to nearby nature.",
+          "content_mk": "Поради својата положба, Гевгелија е корисна и како крајна дестинација и како застанување при подолго патување. Посетителите можат да ја искористат за храна, одмор, кратко разгледување или пристап до природа во близина."
+        }
+      ],
+      "tags": [
+        "transport",
+        "road",
+        "rail",
+        "travel"
+      ]
+    },
+    {
+      "title_en": "Gevgelija for Visitors",
+      "title_mk": "Гевгелија за посетители",
+      "slug": "gevgelija-for-visitors",
+      "category": "practical",
+      "short_description_en": "Practical orientation for first-time visitors.",
+      "short_description_mk": "Практична ориентација за посетители кои првпат доаѓаат.",
+      "sections": [
+        {
+          "title_en": "Best Type of Visit",
+          "title_mk": "Најдобар тип на посета",
+          "content_en": "Gevgelija is especially suitable for short visits, weekend stays, food-focused trips, nature breaks, and stopovers. It is easy to enjoy without needing a complicated itinerary.",
+          "content_mk": "Гевгелија е особено погодна за кратки посети, викенд престои, патувања фокусирани на храна, одмор во природа и попатни застанувања. Лесно може да се ужива без сложен план."
+        },
+        {
+          "title_en": "Suggested Simple Plan",
+          "title_mk": "Едноставен предлог-план",
+          "content_en": "A simple visit can include coffee in town, lunch or dinner at a local restaurant, a walk, and a short trip toward nature if there is enough time. For longer stays, visitors can combine the town with Kozuf or Smrdliva Voda.",
+          "content_mk": "Едноставна посета може да вклучи кафе во градот, ручек или вечера во локален ресторан, прошетка и краток излет кон природа ако има доволно време. За подолг престој, градот може да се комбинира со Кожуф или Смрдлива Вода."
+        },
+        {
+          "title_en": "How GoGevgelija Helps",
+          "title_mk": "Како помага GoGevgelija",
+          "content_en": "GoGevgelija helps visitors by organizing local businesses, events, promotions, tourism information, menus, and practical details in one place. This makes the visit easier to plan and more connected to current local information.",
+          "content_mk": "GoGevgelija им помага на посетителите со тоа што ги собира локалните бизниси, настани, промоции, туристички информации, менија и практични детали на едно место. Така посетата полесно се планира и е поврзана со актуелни локални информации."
+        }
+      ],
+      "tags": [
+        "visitors",
+        "planning",
+        "practical",
+        "gogevgelija"
+      ]
+    },
+    {
+      "title_en": "Frequently Asked Questions About Gevgelija",
+      "title_mk": "Често поставувани прашања за Гевгелија",
+      "slug": "faq-gevgelija",
+      "category": "faq",
+      "short_description_en": "Common questions and short answers about Gevgelija.",
+      "short_description_mk": "Најчести прашања и кратки одговори за Гевгелија.",
+      "sections": [
+        {
+          "title_en": "Is Gevgelija worth visiting?",
+          "title_mk": "Дали вреди да се посети Гевгелија?",
+          "content_en": "Yes. Gevgelija is worth visiting for short getaways, food, relaxation, nature nearby, and its convenient location near the Greek border.",
+          "content_mk": "Да. Гевгелија вреди да се посети за краток одмор, храна, релаксација, природа во близина и поради практичната локација до границата со Грција."
+        },
+        {
+          "title_en": "What can I do in Gevgelija?",
+          "title_mk": "Што може да се прави во Гевгелија?",
+          "content_en": "You can explore the town, visit cafés and restaurants, enjoy the evening atmosphere, check local events, and visit nearby natural places such as Kozuf Mountain and Smrdliva Voda.",
+          "content_mk": "Може да се прошетате низ градот, да посетите кафулиња и ресторани, да уживате во вечерната атмосфера, да проверите локални настани и да посетите природни места во близина како Кожуф и Смрдлива Вода."
+        },
+        {
+          "title_en": "Is Gevgelija good for a weekend?",
+          "title_mk": "Дали Гевгелија е добра за викенд?",
+          "content_en": "Yes. Gevgelija is suitable for weekend visits because it combines food, relaxation, social life, and access to nature without requiring long travel inside the region.",
+          "content_mk": "Да. Гевгелија е погодна за викенд затоа што комбинира храна, одмор, социјален живот и пристап до природа без потреба од многу долго движење низ регионот."
+        },
+        {
+          "title_en": "What is the best way to discover places in Gevgelija?",
+          "title_mk": "Кој е најдобриот начин да се откријат места во Гевгелија?",
+          "content_en": "The easiest way is to use GoGevgelija, where places, events, promotions, menus, and useful local information can be organized and discovered in one app.",
+          "content_mk": "Најлесен начин е преку GoGevgelija, каде што местата, настаните, промоциите, менијата и корисните локални информации можат да се најдат на едно место."
+        }
+      ],
+      "tags": [
+        "faq",
+        "questions",
+        "visitors",
+        "answers"
+      ]
+    }
+  ]
+}

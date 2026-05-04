@@ -2006,12 +2006,20 @@ def _assistant_execute_ai_plan(plan, message, language, request, context_entity)
                 return resp
 
     if tool == 'chat':
-        return _assistant_response(
+        from .wiki import search_wiki
+        wiki_context = search_wiki(
+            plan.get('normalized_query_en') or tool_query,
+            plan.get('normalized_query_mk') or '',
+        )
+        resp = _assistant_response(
             answer='',
             intent='chat',
             confidence=plan.get('confidence') or 'high',
             suggestions=_assistant_default_suggestions(language),
         )
+        if wiki_context:
+            resp['wiki_context'] = wiki_context
+        return resp
 
     if tool == 'clarify':
         clarification_question = (plan.get('clarification_question') or '').strip()
@@ -2094,12 +2102,14 @@ def _assistant_try_external_ai_response(message, language, context_data, history
 
     if plan.get('tool') not in ('faq', 'clarify'):
         results_summary = _build_goai_results_summary(tool_response)
+        wiki_context = tool_response.pop('wiki_context', '')
         try:
             goai_answer = provider.generate_display_message(
                 user_message=message,
                 language=language,
                 tool=plan.get('tool', ''),
                 results_summary=results_summary,
+                wiki_context=wiki_context,
                 history=history,
             )
             if goai_answer:

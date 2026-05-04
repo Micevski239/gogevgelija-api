@@ -317,6 +317,7 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
         language: str,
         tool: str,
         results_summary: str,
+        wiki_context: str = "",
         history: list[dict[str, Any]] | None = None,
     ) -> str:
         if not self.is_enabled():
@@ -358,6 +359,8 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
         user_parts = [f"User message: {user_message}"]
         if results_summary:
             user_parts.append(f"Database results:\n{results_summary}")
+        if wiki_context:
+            user_parts.append(f"Gevgelija knowledge base (use this to answer general questions about the destination):\n{wiki_context}")
         user_parts.append("Write your short, friendly response now.")
 
         messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
@@ -671,6 +674,7 @@ class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
         language: str,
         tool: str,
         results_summary: str,
+        wiki_context: str = "",
         history: list[dict[str, Any]] | None = None,
     ) -> str:
         history = history or []
@@ -709,6 +713,8 @@ class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
         user_parts = [f"User message: {user_message}"]
         if results_summary:
             user_parts.append(f"Database results:\n{results_summary}")
+        if wiki_context:
+            user_parts.append(f"Gevgelija knowledge base (use this to answer general questions about the destination):\n{wiki_context}")
         user_parts.append("Write your short, friendly response now.")
 
         messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
