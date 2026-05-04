@@ -1778,7 +1778,12 @@ def _assistant_category_by_hint(category_slug, language, request, limit=5):
 
 
 def _assistant_bilingual_search(query_en, query_mk, content_type, language, request, time_filter=None, open_now=False, price_filter=None, limit=3):
-    """Search across bilingual fields with EN + MK terms combined, apply optional filters."""
+    """Search across bilingual fields with EN + MK terms combined, apply optional filters.
+
+    Strategy: prefer title+description matches; only fall back to category-name matches when
+    nothing else hits. This prevents broad category labels (e.g. "Services") from surfacing
+    irrelevant listings for specific queries (e.g. "my car broke down").
+    """
     from django.db.models import Q
 
     terms = [t.strip() for t in [query_en, query_mk] if t and t.strip()]
@@ -1796,28 +1801,36 @@ def _assistant_bilingual_search(query_en, query_mk, content_type, language, requ
                 q |= Q(**{f"{field}__icontains": term})
         return q
 
+    CONTENT_FIELDS = ['title', 'title_en', 'title_mk', 'address', 'description', 'description_en', 'description_mk']
+    CATEGORY_FIELDS = ['category__name', 'category__name_en', 'category__name_mk']
+
+    def listing_qs(match_q):
+        return Listing.objects.filter(match_q, is_active=True).select_related('category').distinct()
+
+    def serialize_listings(qs):
+        ctx = {'request': request, 'language': language}
+        if open_now:
+            batch = list(qs[:limit * 2])
+            serialized_all = ListingSerializer(batch, many=True, context=ctx).data
+            return [l for l in serialized_all if l.get('is_open')][:limit]
+        return ListingSerializer(qs[:limit], many=True, context=ctx).data
+
     ctx = {'request': request, 'language': language}
     results = {'listings': [], 'events': [], 'promotions': [], 'blogs': []}
 
     if content_type in ('all', 'listings'):
-        qs = Listing.objects.filter(
-            or_match(['title', 'title_en', 'title_mk', 'address', 'description', 'description_en', 'description_mk',
-                      'category__name', 'category__name_en', 'category__name_mk']),
-            is_active=True,
-        ).select_related('category').distinct()
-        if open_now:
-            batch = list(qs[:limit * 2])
-            serialized_all = ListingSerializer(batch, many=True, context=ctx).data
-            results['listings'] = [l for l in serialized_all if l.get('is_open')][:limit]
-        else:
-            results['listings'] = ListingSerializer(qs[:limit], many=True, context=ctx).data
+        # Try content-only match first; fall back to including category names only if empty
+        qs = listing_qs(or_match(CONTENT_FIELDS))
+        if not qs.exists():
+            qs = listing_qs(or_match(CONTENT_FIELDS + CATEGORY_FIELDS))
+        results['listings'] = serialize_listings(qs)
 
     if content_type in ('all', 'events'):
-        qs = Event.objects.filter(
-            or_match(['title', 'title_en', 'title_mk', 'location', 'description', 'description_en', 'description_mk',
-                      'category__name', 'category__name_en', 'category__name_mk']),
-            is_active=True,
-        ).select_related('category').distinct()
+        event_content_fields = ['title', 'title_en', 'title_mk', 'location', 'description', 'description_en', 'description_mk']
+        event_category_fields = ['category__name', 'category__name_en', 'category__name_mk']
+        qs = Event.objects.filter(or_match(event_content_fields), is_active=True).select_related('category').distinct()
+        if not qs.exists():
+            qs = Event.objects.filter(or_match(event_content_fields + event_category_fields), is_active=True).select_related('category').distinct()
         start, end = _assistant_time_filter_range(time_filter)
         if start and end:
             qs = qs.filter(date_time__gte=start, date_time__lt=end)
