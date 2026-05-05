@@ -485,6 +485,226 @@
         "visitors",
         "answers"
       ]
+    },
+    {
+      "title_en": "Lake Dojran",
+      "title_mk": "Дојранско Езеро",
+      "slug": "lake-dojran",
+      "category": "nature",
+      "short_description_en": "A natural lake east of Gevgelija, known for warm water, birdlife, and summer tourism.",
+      "short_description_mk": "Природно езеро источно од Гевгелија, познато по топлата вода, птичјиот свет и летниот туризам.",
+      "sections": [
+        {
+          "title_en": "Overview",
+          "title_mk": "Општ преглед",
+          "content_en": "Lake Dojran is a natural tectonic lake located about 25 kilometers east of Gevgelija, near the border with Greece. It is one of the oldest lakes in the Balkans and is known for its warm, clear water, rich birdlife, and relaxed lakeside atmosphere. The lake draws visitors especially during summer, when it becomes one of the most popular destinations in the Gevgelija region.",
+          "content_mk": "Дојранско Езеро е природно тектонско езеро сместено околу 25 километри источно од Гевгелија, во близина на границата со Грција. Тоа е едно од најстарите езера на Балканот и е познато по топлата и бистра вода, богатиот птичји свет и опуштената атмосфера крај брегот. Езерото привлекува посетители особено во летниот период, кога станува една од најпосетуваните дестинации во гевгелискиот регион."
+        },
+        {
+          "title_en": "Summer Experience",
+          "title_mk": "Летно искуство",
+          "content_en": "During summer, visitors come to Lake Dojran for swimming, relaxing by the shore, and eating at the local fish restaurants the area is known for. The lake's shallow, warm water makes it comfortable for families and visitors of all ages. The surrounding town of Dojran has a quiet, unhurried character that adds to the overall appeal.",
+          "content_mk": "Во летниот период, посетителите доаѓаат на Дојранско Езеро за капење, одмор на брегот и јадење во рибните ресторани по кои е познат крајот. Плитката и топла вода на езерото е пријатна за семејства и посетители од сите возрасти. Градот Дојран има мирен и непрекинат карактер кој дополнително ја зголемува привлечноста на местото."
+        },
+        {
+          "title_en": "Wildlife and Nature",
+          "title_mk": "Природа и дива природа",
+          "content_en": "The lake is home to a variety of birds, including pelicans and cormorants, which are among the most recognizable features of the Dojran area. The surrounding wetlands and natural landscape make it attractive for visitors interested in birdwatching, photography, and quiet nature experiences away from the city.",
+          "content_mk": "Езерото е дом на разновиден птичји свет, вклучувајќи пеликани и корморани, кои се меѓу најпрепознатливите обележја на Дојранскиот крај. Околните мочуришта и природниот предел го прават атрактивно за посетители заинтересирани за набљудување птици, фотографија и мирни природни искуства надвор од градот."
+        },
+        {
+          "title_en": "Day Trip From Gevgelija",
+          "title_mk": "Еднодневен излет од Гевгелија",
+          "content_en": "For visitors staying in Gevgelija, Lake Dojran is an easy and rewarding day trip. The short distance makes it practical to combine a morning in town with an afternoon by the lake. It is one of the most accessible nature excursions from Gevgelija and suits visitors who want more variety beyond the urban experience.",
+          "content_mk": "За посетителите кои престојуваат во Гевгелија, Дојранско Езеро е лесен и вреден еднодневен излет. Краткото растојание овозможува практична комбинација на утро во градот со попладне крај езерото. Тоа е еден од најдостапните природни излети од Гевгелија и одговара на посетители кои сакаат поголема разновидност надвор од градското искуство."
+        }
+      ],
+      "tags": [
+        "dojran",
+        "lake",
+        "nature",
+        "swimming",
+        "summer",
+        "fish",
+        "birds"
+      ]
+    },
+    {
+      "title_en": "Negorci Thermal Spa",
+      "title_mk": "Негорски Бањи",
+      "slug": "negorci-thermal-spa",
+      "category": "wellness",
+      "short_description_en": "A natural thermal spring complex near Gevgelija, known for mineral water and year-round wellness.",
+      "short_description_mk": "Природен термален комплекс во близина на Гевгелија, познат по минералната вода и велнесот достапен цела година.",
+      "sections": [
+        {
+          "title_en": "Overview",
+          "title_mk": "Општ преглед",
+          "content_en": "The Negorci Thermal Spa is a natural thermal spring complex located near the village of Negorci, about 7 kilometers from Gevgelija. The springs produce warm mineral water with therapeutic properties, and the site has developed into a well-known wellness and relaxation destination in the southern Macedonia region.",
+          "content_mk": "Негорските Бањи се природен термален комплекс сместен во близина на селото Негорци, на околу 7 километри од Гевгелија. Изворите даваат топла минерална вода со терапевтски својства, а локацијата се развила во позната велнес и релаксациска дестинација во јужниот дел на Македонија."
+        },
+        {
+          "title_en": "What Visitors Can Expect",
+          "title_mk": "Што можат да очекуваат посетителите",
+          "content_en": "Visitors come to Negorci for thermal pools, mineral bathing, and relaxation. The warm water is available throughout the year, making the spa suitable for visits in any season. It is especially popular during cooler months, when bathing in outdoor thermal pools offers a unique and comfortable experience.",
+          "content_mk": "Посетителите доаѓаат во Негорски Бањи за термални базени, минерално капење и одмор. Топлата вода е достапна во текот на целата година, што ги прави бањите погодни за посета во секоја сезона. Особено се популарни во поладните месеци, кога капењето во термалните базени на отворено нуди уникатно и пријатно искуство."
+        },
+        {
+          "title_en": "Practical Access From Gevgelija",
+          "title_mk": "Пристап од Гевгелија",
+          "content_en": "The proximity to Gevgelija makes the Negorci spa one of the most practical wellness options in the region. It can easily be visited as a half-day or full-day trip. For visitors who want both urban exploration and relaxation, combining a stay in Gevgelija with a visit to Negorci is a natural and convenient choice.",
+          "content_mk": "Близината до Гевгелија ги прави Негорски Бањи една од најпрактичните велнес опции во регионот. Лесно можат да се посетат во рамки на половина ден или цел ден. За посетителите кои сакаат и градско истражување и релаксација, комбинирањето на престој во Гевгелија со посета на Негорци е природен и удобен избор."
+        }
+      ],
+      "tags": [
+        "negorci",
+        "thermal spa",
+        "wellness",
+        "mineral water",
+        "relaxation",
+        "banja"
+      ]
+    },
+    {
+      "title_en": "Casino in Gevgelija",
+      "title_mk": "Казино во Гевгелија",
+      "slug": "casino-gevgelija",
+      "category": "entertainment",
+      "short_description_en": "Gevgelija as a regional casino and entertainment destination, popular with visitors from North Macedonia and Greece.",
+      "short_description_mk": "Гевгелија како регионална казино и забавна дестинација, популарна кај посетители од Македонија и Грција.",
+      "sections": [
+        {
+          "title_en": "Overview",
+          "title_mk": "Општ преглед",
+          "content_en": "Gevgelija is one of the main casino destinations in the region. The town has several casinos that attract visitors from North Macedonia, Greece, and neighboring countries. The casino scene is a significant part of Gevgelija's entertainment identity and plays an important role in its tourism profile.",
+          "content_mk": "Гевгелија е една од главните казино дестинации во регионот. Градот располага со неколку казина кои привлекуваат посетители од Македонија, Грција и соседните земји. Казино сцената е значаен дел од забавниот идентитет на Гевгелија и игра важна улога во нејзиниот туристички профил."
+        },
+        {
+          "title_en": "Why Visitors Come",
+          "title_mk": "Зошто доаѓаат посетители",
+          "content_en": "Many visitors come to Gevgelija specifically for the casino experience. The combination of gambling, entertainment, dining, and the relaxed border-town atmosphere makes it an attractive destination for evening and weekend visits. Casinos are typically open late and are often connected with hotels and restaurants.",
+          "content_mk": "Многу посетители доаѓаат во Гевгелија токму поради казино искуството. Комбинацијата на забава, угостителство и опуштена атмосфера на пограничен град ја прави атрактивна дестинација за вечерни и викенд посети. Казината обично работат до доцна и честопати се поврзани со хотели и ресторани."
+        },
+        {
+          "title_en": "Part of the Gevgelija Identity",
+          "title_mk": "Дел од идентитетот на Гевгелија",
+          "content_en": "The casino scene gives Gevgelija a distinct entertainment character that sets it apart from other towns in the region. For visitors who want more than food and nature, the casinos add an evening dimension to the Gevgelija experience that many other destinations in North Macedonia do not offer.",
+          "content_mk": "Казино сцената и дава на Гевгелија препознатлив забавен карактер кој ја издвојува од другите градови во регионот. За посетителите кои сакаат повеќе од храна и природа, казината додаваат вечерна димензија на искуството во Гевгелија која многу други дестинации во Македонија не ја нудат."
+        }
+      ],
+      "tags": [
+        "casino",
+        "entertainment",
+        "nightlife",
+        "gambling",
+        "evening"
+      ]
+    },
+    {
+      "title_en": "Outlet Center Gevgelija",
+      "title_mk": "Аутлет Центар Гевгелија",
+      "slug": "outlet-center-gevgelija",
+      "category": "shopping",
+      "short_description_en": "A large outlet shopping center near the Greek border, popular with regional visitors.",
+      "short_description_mk": "Голем аутлет шопинг центар во близина на грчката граница, популарен кај регионалните посетители.",
+      "sections": [
+        {
+          "title_en": "Overview",
+          "title_mk": "Општ преглед",
+          "content_en": "The Gevgelija Outlet Center is one of the most visited shopping destinations in the region. Located near the Greek border, it attracts shoppers from North Macedonia, Greece, and nearby countries who come for international brand clothing, footwear, and accessories at reduced prices.",
+          "content_mk": "Аутлет центарот во Гевгелија е една од најпосетуваните шопинг дестинации во регионот. Сместен во близина на грчката граница, привлекува купувачи од Македонија, Грција и соседните земји кои доаѓаат за облека, обувки и додатоци од меѓународни брендови по намалени цени."
+        },
+        {
+          "title_en": "What to Expect",
+          "title_mk": "Што да се очекува",
+          "content_en": "The outlet center offers a range of international brands across clothing, footwear, and accessories. It is designed for comfortable shopping with ample parking and multiple stores. The experience is straightforward and practical, making it easy to spend a few hours browsing.",
+          "content_mk": "Аутлет центарот нуди палета на меѓународни брендови во категориите облека, обувки и додатоци. Дизајниран е за удобно шопирање со доволно паркинг простор и повеќе продавници. Искуството е едноставно и практично, па лесно може да се поминат неколку часа во разгледување."
+        },
+        {
+          "title_en": "Combined With Gevgelija",
+          "title_mk": "Во комбинација со Гевгелија",
+          "content_en": "Shopping at the outlet center is often combined with a meal or other activities in Gevgelija. For many visitors, especially those crossing from Greece, it is one of the main reasons to stop in the Gevgelija area. It makes the town a practical destination for both shopping and food in a single trip.",
+          "content_mk": "Шопингот во аутлет центарот честопати се комбинира со оброк или други активности во Гевгелија. За многу посетители, особено оние кои поминуваат од Грција, тој е една од главните причини за застанување во гевгелиската област. Ја прави Гевгелија практична дестинација за шопинг и храна во едно патување."
+        }
+      ],
+      "tags": [
+        "outlet",
+        "shopping",
+        "brands",
+        "fashion",
+        "border"
+      ]
+    },
+    {
+      "title_en": "Bogorodica Border Crossing",
+      "title_mk": "Граничен Премин Богородица",
+      "slug": "bogorodica-border-crossing",
+      "category": "practical",
+      "short_description_en": "The main border crossing between North Macedonia and Greece, located at Gevgelija.",
+      "short_description_mk": "Главниот граничен премин помеѓу Македонија и Грција, сместен кај Гевгелија.",
+      "sections": [
+        {
+          "title_en": "Overview",
+          "title_mk": "Општ преглед",
+          "content_en": "The Bogorodica border crossing is the main entry and exit point between North Macedonia and Greece near Gevgelija. It is one of the busiest border crossings in the Western Balkans, positioned on the main north-south road corridor connecting the two countries. The crossing handles both passenger vehicles and freight traffic continuously.",
+          "content_mk": "Граничниот премин Богородица е главната влезно-излезна точка помеѓу Македонија и Грција во близина на Гевгелија. Тој е еден од најпрометните гранични премини на Западниот Балкан, сместен на главниот северно-јужен патен коридор кој ги поврзува двете земји. Преминот обработува и патнички возила и товарен сообраќај без прекин."
+        },
+        {
+          "title_en": "Practical Tips for Travelers",
+          "title_mk": "Практични совети за патници",
+          "content_en": "During summer and major holidays, waiting times at the crossing can increase significantly due to high traffic volumes. Travelers are advised to check current conditions before departure. Live border traffic information is available online and through dedicated border monitoring services.",
+          "content_mk": "Во летниот период и за време на главните празници, времето на чекање на преминот може значително да се зголеми поради зголемениот сообраќај. Патниците се советуваат да ги проверат тековните услови пред поаѓање. Информации за живиот граничен сообраќај се достапни онлајн и преку наменски сервиси за следење на границата."
+        },
+        {
+          "title_en": "Gevgelija as the Last Stop",
+          "title_mk": "Гевгелија како последно застанување",
+          "content_en": "For people traveling between North Macedonia and Greece, Gevgelija is the natural stop before or after crossing the border. Many travelers use the town for a meal, a coffee, shopping, or a short rest before continuing their journey. This gives the town a steady flow of transit visitors alongside those who come specifically to stay.",
+          "content_mk": "За луѓето кои патуваат помеѓу Македонија и Грција, Гевгелија е природното место за застанување пред или по преминувањето на границата. Многу патници го користат градот за оброк, кафе, шопинг или краток одмор пред да продолжат со патувањето. Ова на градот му дава постојан прилив на транзитни посетители покрај оние кои доаѓаат специјално да останат."
+        }
+      ],
+      "tags": [
+        "border",
+        "bogorodica",
+        "crossing",
+        "greece",
+        "travel",
+        "transit"
+      ]
+    },
+    {
+      "title_en": "Wine and Vineyards",
+      "title_mk": "Вино и Лозарство",
+      "slug": "wine-vineyards-gevgelija",
+      "category": "food",
+      "short_description_en": "The wine-growing culture and vineyard landscape of the Gevgelija region.",
+      "short_description_mk": "Културата на одгледување лозје и лозарскиот предел на гевгелискиот регион.",
+      "sections": [
+        {
+          "title_en": "Overview",
+          "title_mk": "Општ преглед",
+          "content_en": "The Gevgelija area is part of one of North Macedonia's recognized wine-growing sub-regions. The warm Mediterranean-influenced climate, long sunny periods, and fertile soil create favorable conditions for viticulture. Wine is an established part of the local agricultural identity and regional character.",
+          "content_mk": "Гевгелискиот крај е дел од една од препознатливите лозарски подрегии на Македонија. Топлата медитеранска клима, долгите сончеви периоди и плодната почва создаваат поволни услови за лозарство. Виното е воспоставен дел од локалниот земјоделски идентитет и регионалниот карактер."
+        },
+        {
+          "title_en": "What the Region Produces",
+          "title_mk": "Што произведува регионот",
+          "content_en": "The vineyards around Gevgelija produce both red and white wine varieties. The warm climate suits fuller-bodied red wines well, while white varieties also benefit from the long growing season. Local wine can be found in restaurants throughout the area and is often served alongside traditional Macedonian food.",
+          "content_mk": "Лозјата околу Гевгелија произведуваат и црвени и бели сорти вино. Топлата клима добро одговара за поцврсти crвени вина, додека и белите сорти имаат корист од долгата вегетациска сезона. Локалното вино може да се најде во ресторани низ целата област и честопати се служи заедно со традиционална македонска храна."
+        },
+        {
+          "title_en": "Wine and the Visitor Experience",
+          "title_mk": "Вино и посетителското искуство",
+          "content_en": "For visitors interested in local food and drink culture, wine is a natural part of the Gevgelija experience. The combination of regional wine with local cuisine gives visitors a connection to the agricultural character of the area. It adds depth to what might otherwise be seen purely as a transit or food-stop destination.",
+          "content_mk": "За посетителите заинтересирани за локалната кулинарска и пијалачка култура, виното е природен дел од искуството во Гевгелија. Комбинацијата на регионално вино со локална кујна им дава на посетителите поврзаност со земјоделскиот карактер на областа. Тоа додава длабочина на она што инаку може да се доживее само како транзитна или гастрономска дестинација."
+        }
+      ],
+      "tags": [
+        "wine",
+        "vineyards",
+        "local food",
+        "agriculture",
+        "culture"
+      ]
     }
   ]
 }
