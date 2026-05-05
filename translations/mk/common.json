@@ -16,7 +16,8 @@
     "submit": "Поднеси",
     "confirm": "Потврди",
     "ok": "ОК",
-    "goBack": "Назад"
+    "goBack": "Назад",
+    "signUp": "Регистрирај се"
   },
   "showAll": "Види ги сите категории",
   "showLess": "Прикажи помалку",
@@ -49,7 +50,8 @@
     "optional": "опционално",
     "selectLanguage": "Избери јазик",
     "open": "Отворено",
-    "closed": "Затворено"
+    "closed": "Затворено",
+    "selectCategory": "Избери категорија"
   },
   "greetings": {
     "hello": "Здраво, {{name}}",
@@ -86,7 +88,10 @@
     "failedToLoadListing": "Неуспешно вчитување на листингот",
     "failedToUpdateListing": "Неуспешно ажурирање на листингот",
     "listingNotFound": "Листингот не е пронајден",
-    "tagsHelperText": "Внесете ги ознаките одделени со запирки"
+    "tagsHelperText": "Внесете ги ознаките одделени со запирки",
+    "failedToLoadData": "Неуспешно вчитување на податоците",
+    "noCategories": "Нема достапни категории",
+    "noCategoriesFound": "Не се пронајдени категории"
   },
   "placeholders": {
     "searchPlaceholder": "Пребарај...",
@@ -100,12 +105,23 @@
     "enterPhoneNumber": "Внесете телефонски број",
     "enterWebsite": "Внесете URL на веб страна",
     "enterFacebook": "Внесете URL на Фејсбук",
-    "enterInstagram": "Внесете URL на Инстаграм"
+    "enterInstagram": "Внесете URL на Инстаграм",
+    "selectCategory": "Избери категорија",
+    "searchCategories": "Пребарај категории..."
   },
   "validation": {
     "required": "Ова поле е задолжително",
     "invalidEmail": "Ве молиме внесете валидна е-пошта",
     "passwordMinLength": "Лозинката мора да има најмалку {{min}} знаци",
     "passwordsMatch": "Лозинките мора да се совпаѓаат"
-  }
+  },
+  "searching": "Се пребарува...",
+  "types": {
+    "listing": "Место",
+    "event": "Настан",
+    "promotion": "Промо",
+    "blog": "Статија"
+  },
+  "validUntil": "Важи до",
+  "noExpiry": "Без рок"
 }

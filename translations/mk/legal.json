@@ -1,0 +1,48 @@
+{
+  "lastUpdated": "Последно ажурирано",
+  "termsOfService": {
+    "title": "Услови за користење",
+    "introduction": {
+      "title": "Вовед"
+    },
+    "acceptance": {
+      "title": "Прифаќање на условите"
+    },
+    "description": {
+      "title": "Опис на услугата"
+    },
+    "userAccounts": {
+      "title": "Кориснички сметки"
+    },
+    "userConduct": {
+      "title": "Однесување на корисниците"
+    },
+    "content": {
+      "title": "Содржина и кориснички придонеси"
+    },
+    "intellectualProperty": {
+      "title": "Интелектуална сопственост"
+    },
+    "privacy": {
+      "title": "Приватност"
+    },
+    "disclaimers": {
+      "title": "Одрекување од одговорност"
+    },
+    "limitation": {
+      "title": "Ограничување на одговорност"
+    },
+    "termination": {
+      "title": "Прекин"
+    },
+    "changes": {
+      "title": "Промени на условите"
+    },
+    "governing": {
+      "title": "Важечко право"
+    },
+    "contact": {
+      "title": "Контакт информации"
+    }
+  }
+}

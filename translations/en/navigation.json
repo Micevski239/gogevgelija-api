@@ -6,7 +6,8 @@
     "events": "Events",
     "promotions": "Promotions",
     "blog": "Blog",
-    "profile": "Profile"
+    "profile": "Profile",
+    "gallery": "Gallery"
   },
   "headers": {
     "home": "GoGevgelija",

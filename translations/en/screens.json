@@ -6,7 +6,7 @@
     "categoriesTitle": "Categories",
     "noFeaturedItems": "No featured items available",
     "featuredListings": "Featured Places",
-    "featuredEvents": "Featured Events", 
+    "featuredEvents": "Featured Events",
     "featuredPromotions": "Promotions",
     "featuredBlogs": "About Gevgelija",
     "seeAll": "See All",
@@ -14,7 +14,9 @@
     "nearby": "Nearby",
     "youViewed": "You viewed",
     "loading": "Loading...",
-    "refreshing": "Pull to refresh"
+    "refreshing": "Pull to refresh",
+    "noSections": "No sections yet",
+    "noSectionsSubtitle": "Content will appear here once the admin publishes a section."
   },
   "profile": {
     "title": "Your Profile",
@@ -28,7 +30,13 @@
     "userLocation": "📍 Gevgelija, Macedonia",
     "logoutConfirmTitle": "Log Out",
     "logoutConfirmMessage": "Are you sure you want to log out?",
-    "collab": "Contact for collaborations"
+    "collab": "Contact for collaborations",
+    "editAvatar": "Change Avatar",
+    "helpSupportGuestMessage": "Sign up to contact support",
+    "collabGuestMessage": "Sign up to collaborate with us",
+    "guestEditProfile": "Sign up to edit your profile",
+    "guestLanguage": "Sign up to change language preferences",
+    "guestAvatar": "Sign up to customize your avatar"
   },
   "listings": {
     "title": "Listings",
@@ -47,7 +55,21 @@
     "facebookPage": "Facebook Page",
     "instagramProfile": "Instagram Profile",
     "openIn": "Open in",
-    "callNumber": "Call"
+    "callNumber": "Call",
+    "gallery": "Gallery",
+    "callError": "Unable to make a phone call",
+    "mapsError": "Unable to open maps",
+    "socialError": "Unable to open",
+    "eventLoadError": "Unable to load event details",
+    "menuCategories": "category",
+    "menuCategoriesPlural": "categories",
+    "amenities": "Amenities",
+    "events": "Events",
+    "hoursLabel": "Hours",
+    "wishlistError": {
+      "add": "Failed to add to wishlist",
+      "remove": "Failed to remove from wishlist"
+    }
   },
   "events": {
     "title": "Discover Events",
@@ -75,12 +97,36 @@
       "unforgettablePerformances": "Experience unforgettable performances",
       "foodCulture": "Food & Culture Festivals",
       "tasteFlavors": "Taste the flavors of our community"
-    }
+    },
+    "categoryLoadError": "Could not load events for this category.",
+    "wishlistUpdateFailed": "Failed to update wishlist"
   },
   "tourism": {
     "title": "Explore Gevgelija",
     "loading": "Loading tourism data...",
-    "pullToRefresh": "Pull to refresh"
+    "pullToRefresh": "Pull to refresh",
+    "seeAll": "See all",
+    "categoryButtons": {
+      "border": "Border",
+      "currency": "Currency",
+      "services": "Services",
+      "sleep": "Sleep",
+      "foodCafe": "Food &\nCafe",
+      "dentalClinics": "Dental\nClinics"
+    },
+    "validUntil": "Valid until",
+    "noExpiry": "No expiry",
+    "minRead": "min read",
+    "wishlistUpdateFailed": "Failed to update wishlist",
+    "blogCategories": {
+      "guide": "Travel Guide",
+      "food": "Food & Dining",
+      "culture": "Culture & History",
+      "events": "Events & Activities",
+      "tips": "Travel Tips",
+      "other": "Other"
+    },
+    "loadError": "Error loading tourism data. Pull to refresh."
   },
   "eventDetail": {
     "title": "Event Details",
@@ -131,7 +177,8 @@
     "noPromotions": "No promotions available",
     "loadingPromotions": "Loading deals...",
     "promoCode": "Promo Code",
-    "getDiscount": "Get Discount"
+    "getDiscount": "Get Discount",
+    "empty": "No promotions available"
   },
   "promotionDetail": {
     "title": "Promotion Details",
@@ -158,7 +205,15 @@
     "noCode": "No Code",
     "noCodeDesc": "This promotion does not require a discount code",
     "contact": "Contact",
-    "availableAt": "Available At"
+    "availableAt": "Available At",
+    "wishlistAddFailed": "Failed to add to wishlist",
+    "wishlistRemoveFailed": "Failed to remove from wishlist",
+    "copyFailed": "Failed to copy discount code",
+    "unableToOpen": "Unable to open",
+    "failedToOpen": "Failed to open",
+    "callFailed": "Unable to make phone call",
+    "mapsFailed": "Unable to open Google Maps",
+    "listingLoadFailed": "Unable to load listing details"
   },
   "blogs": {
     "title": "Blog",
@@ -223,7 +278,12 @@
     "home": "Home",
     "featured": "Featured",
     "allCategories": "Categories",
-    "trending": "Trending"
+    "trending": "Trending",
+    "noListingsTitle": "No Listings Found",
+    "noListingsInCategory": "No listings available in {{category}}",
+    "noListingsMessage": "Try selecting a different category",
+    "resultsFound": "results found",
+    "searchInstruction": "Enter at least 2 characters to search"
   },
   "assistant": {
     "title": "Assistant",
@@ -343,5 +403,117 @@
     "announcements": "Announcements",
     "learnMore": "Learn More",
     "viewDetails": "View Details"
+  },
+  "featured": {
+    "title": "Featured",
+    "empty": "No featured items",
+    "emptySubtitle": "Check back later for special offers and highlights",
+    "highlights": "Highlights",
+    "popular": "Popular",
+    "moreToExplore": "More to Explore",
+    "restaurants": "Featured Restaurants",
+    "endsIn": "Ends in",
+    "validUntil": "Valid until",
+    "untitled": "Untitled",
+    "itemTypes": {
+      "event": "Event",
+      "promotion": "Promo"
+    }
+  },
+  "helpSupport": {
+    "title": "Help & Support",
+    "description": "Need help? Have feedback? We're here to assist you. Fill out the form below and we'll get back to you as soon as possible.",
+    "contactInfoTitle": "Contact Information",
+    "nameLabel": "Name *",
+    "namePlaceholder": "Your full name",
+    "emailLabel": "Email *",
+    "emailPlaceholder": "your.email@example.com",
+    "categoryTitle": "Category",
+    "categorySubtitle": "What type of help do you need?",
+    "issueDetailsTitle": "Issue Details",
+    "subjectLabel": "Subject *",
+    "subjectPlaceholder": "Brief description of your issue",
+    "messageLabel": "Message *",
+    "messagePlaceholder": "Please describe your issue in detail...",
+    "priorityTitle": "Priority",
+    "prioritySubtitle": "How urgent is this issue?",
+    "submitButton": "Submit Request",
+    "validation": {
+      "nameRequired": "Please enter your name",
+      "emailRequired": "Please enter your email",
+      "subjectRequired": "Please enter a subject",
+      "messageRequired": "Please describe your issue"
+    },
+    "successMessage": "Your help request has been submitted. We'll get back to you soon!",
+    "errorMessage": "Failed to submit request. Please try again."
+  },
+  "collaboration": {
+    "title": "Contact for Collab",
+    "heroTitle": "Let's Collaborate!",
+    "heroDescription": "Partner with GoGevgelija to grow your business and reach more customers in our community. Fill out this form and we'll get back to you within 24 hours.",
+    "contactPersonLabel": "Contact Person *",
+    "contactPersonPlaceholder": "Your full name",
+    "emailLabel": "Email *",
+    "emailPlaceholder": "your.email@company.com",
+    "phoneLabel": "Phone",
+    "phonePlaceholder": "+389 XX XXX XXX",
+    "companyNameLabel": "Company/Organization Name *",
+    "companyNamePlaceholder": "Your company name",
+    "collaborationTypeTitle": "Collaboration Type",
+    "collaborationTypeSubtitle": "What type of partnership are you interested in?",
+    "proposalDetailsTitle": "Proposal Details (Optional)",
+    "proposalLabel": "Collaboration Proposal *",
+    "proposalPlaceholder": "Tell us about your collaboration idea, what you can offer, and what you're looking for...",
+    "submitButton": "Submit Collaboration Request",
+    "loadingTypes": "Loading collaboration types...",
+    "types": {
+      "business": "Business Partnership",
+      "event": "Event Collaboration",
+      "marketing": "Marketing Partnership",
+      "tourism": "Tourism Partnership",
+      "other": "Other Collaboration"
+    },
+    "validation": {
+      "nameRequired": "Please enter your name",
+      "emailRequired": "Please enter your email",
+      "companyRequired": "Please enter your company name",
+      "proposalRequired": "Please describe your collaboration proposal"
+    },
+    "successMessage": "Your collaboration request has been submitted! We'll review it and get back to you soon.",
+    "errorMessage": "Failed to submit request. Please try again."
+  },
+  "currency": {
+    "title": "Exchange Rates",
+    "loading": "Loading rates...",
+    "loadError": "Failed to load exchange rates",
+    "retry": "Retry",
+    "updated": "Updated: ",
+    "infoText": "Rates in Macedonian Denars (MKD). 1 unit of currency = X MKD.",
+    "tableHeaders": {
+      "currency": "Currency",
+      "rate": "Rate"
+    }
+  },
+  "maintenance": {
+    "title": "App Under Construction",
+    "subtitle": "We're working hard to bring you the best experience.",
+    "message": "Sorry for the wait! We'll be back soon.",
+    "tryAgain": "Try Again",
+    "footerSubtext": "Your guide to the city"
+  },
+  "overlay": {
+    "validUntil": "Valid until",
+    "until": "Until",
+    "noExpiry": "No expiry",
+    "noItemsFound": "No items found",
+    "wishlistAddFailed": "Failed to add to wishlist",
+    "wishlistRemoveFailed": "Failed to remove from wishlist"
+  },
+  "blog": {
+    "title": "Articles",
+    "loading": "Loading articles..",
+    "loadError": "Something went wrong",
+    "loadErrorSubtitle": "Failed to load articles",
+    "tryAgain": "Try Again"
   }
 }

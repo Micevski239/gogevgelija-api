@@ -16,7 +16,8 @@
     "submit": "Submit",
     "confirm": "Confirm",
     "ok": "OK",
-    "goBack": "Go Back"
+    "goBack": "Go Back",
+    "signUp": "Sign Up"
   },
   "showAll": "Show all categories",
   "showLess": "Show Less",
@@ -49,12 +50,13 @@
     "optional": "optional",
     "selectLanguage": "Select Language",
     "open": "Open",
-    "closed": "Closed"
+    "closed": "Closed",
+    "selectCategory": "Select Category"
   },
   "greetings": {
     "hello": "Hello, {{name}}",
     "goodMorning": "Good Morning",
-    "goodAfternoon": "Good Afternoon", 
+    "goodAfternoon": "Good Afternoon",
     "goodEvening": "Good Evening"
   },
   "messages": {
@@ -86,7 +88,10 @@
     "failedToLoadListing": "Failed to load listing",
     "failedToUpdateListing": "Failed to update listing",
     "listingNotFound": "Listing not found",
-    "tagsHelperText": "Enter tags separated by commas"
+    "tagsHelperText": "Enter tags separated by commas",
+    "failedToLoadData": "Failed to load data",
+    "noCategories": "No categories available",
+    "noCategoriesFound": "No categories found"
   },
   "placeholders": {
     "searchPlaceholder": "Search...",
@@ -100,12 +105,23 @@
     "enterPhoneNumber": "Enter phone number",
     "enterWebsite": "Enter website URL",
     "enterFacebook": "Enter Facebook URL",
-    "enterInstagram": "Enter Instagram URL"
+    "enterInstagram": "Enter Instagram URL",
+    "selectCategory": "Select a category",
+    "searchCategories": "Search categories..."
   },
   "validation": {
     "required": "This field is required",
     "invalidEmail": "Please enter a valid email address",
     "passwordMinLength": "Password must be at least {{min}} characters",
     "passwordsMatch": "Passwords must match"
-  }
+  },
+  "searching": "Searching...",
+  "types": {
+    "listing": "Place",
+    "event": "Event",
+    "promotion": "Promo",
+    "blog": "Article"
+  },
+  "validUntil": "Valid until",
+  "noExpiry": "No expiry"
 }

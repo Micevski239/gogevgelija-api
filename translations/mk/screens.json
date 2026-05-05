@@ -15,7 +15,9 @@
     "nearby": "Во близина",
     "youViewed": "Видовте",
     "loading": "Се вчитува...",
-    "refreshing": "Повлечете за освежување"
+    "refreshing": "Повлечете за освежување",
+    "noSections": "Сè уште нема секции",
+    "noSectionsSubtitle": "Содржината ќе се појави овде кога администраторот ќе објави секција."
   },
   "profile": {
     "title": "Вашиот профил",
@@ -29,7 +31,13 @@
     "userLocation": "📍 Гевгелија, Македонија",
     "logoutConfirmTitle": "Одјави се",
     "logoutConfirmMessage": "Дали сте сигурни дека сакате да се одјавите?",
-    "collab": "Барање за соработка"
+    "collab": "Барање за соработка",
+    "editAvatar": "Смени аватар",
+    "helpSupportGuestMessage": "Регистрирајте се за да контактирате поддршка",
+    "collabGuestMessage": "Регистрирајте се за да колаборирате со нас",
+    "guestEditProfile": "Регистрирајте се за да го уредите вашиот профил",
+    "guestLanguage": "Регистрирајте се за да ги промените јазичните поставки",
+    "guestAvatar": "Регистрирајте се за да го прилагодите вашиот аватар"
   },
   "listings": {
     "title": "Објави",
@@ -48,7 +56,21 @@
     "facebookPage": "Facebook страна",
     "instagramProfile": "Instagram профил",
     "openIn": "Отвори во",
-    "callNumber": "Повикај"
+    "callNumber": "Повикај",
+    "gallery": "Галерија",
+    "callError": "Не може да се изврши повик",
+    "mapsError": "Не може да се отвори картата",
+    "socialError": "Не може да се отвори",
+    "eventLoadError": "Не може да се вчитаат деталите за настанот",
+    "menuCategories": "категорија",
+    "menuCategoriesPlural": "категории",
+    "amenities": "Погодности",
+    "events": "Настани",
+    "hoursLabel": "Часови",
+    "wishlistError": {
+      "add": "Неуспешно додавање во листата на желби",
+      "remove": "Неуспешно отстранување од листата на желби"
+    }
   },
   "events": {
     "title": "Откријте настани",
@@ -76,12 +98,36 @@
       "unforgettablePerformances": "Доживејте незаборавни настапи",
       "foodCulture": "Фестивали на храна и култура",
       "tasteFlavors": "Вкусете ги вкусовите на нашата заедница"
-    }
+    },
+    "categoryLoadError": "Не може да се вчитаат настаните за оваа категорија.",
+    "wishlistUpdateFailed": "Неуспешно ажурирање на листата на желби"
   },
   "tourism": {
     "title": "Истражете ја Гевгелија",
     "loading": "Се вчитуваат туристички податоци...",
-    "pullToRefresh": "Повлечете за освежување"
+    "pullToRefresh": "Повлечете за освежување",
+    "seeAll": "Види ги сите",
+    "categoryButtons": {
+      "border": "Граница",
+      "currency": "Валути",
+      "services": "Сервиси",
+      "sleep": "Престој",
+      "foodCafe": "Храна &\nКафе",
+      "dentalClinics": "Стоматолошки\nординации"
+    },
+    "validUntil": "Важи до",
+    "noExpiry": "Без истекување",
+    "minRead": "мин читање",
+    "wishlistUpdateFailed": "Неуспешно ажурирање на листата на желби",
+    "blogCategories": {
+      "guide": "Водич за патување",
+      "food": "Храна и пијалоци",
+      "culture": "Култура и историја",
+      "events": "Настани и активности",
+      "tips": "Совети за патување",
+      "other": "Друго"
+    },
+    "loadError": "Грешка при вчитување на туристичките податоци. Повлечете за освежување."
   },
   "eventDetail": {
     "title": "Детали за настанот",
@@ -132,7 +178,8 @@
     "noPromotions": "Нема достапни промоции",
     "loadingPromotions": "Се вчитуваат понудите...",
     "promoCode": "Промо код",
-    "getDiscount": "Земи попуст"
+    "getDiscount": "Земи попуст",
+    "empty": "Нема достапни промоции"
   },
   "promotionDetail": {
     "title": "Детали за промоцијата",
@@ -159,7 +206,15 @@
     "noCode": "Нема код",
     "noCodeDesc": "Оваа промоција не бара код за попуст",
     "contact": "Контакт",
-    "availableAt": "Достапно кај"
+    "availableAt": "Достапно кај",
+    "wishlistAddFailed": "Неуспешно додавање во листата на желби",
+    "wishlistRemoveFailed": "Неуспешно отстранување од листата на желби",
+    "copyFailed": "Неуспешно копирање на кодот за попуст",
+    "unableToOpen": "Не може да се отвори",
+    "failedToOpen": "Неуспешно отворање",
+    "callFailed": "Не може да се изврши повик",
+    "mapsFailed": "Не може да се отвори Google Maps",
+    "listingLoadFailed": "Не може да се вчитаат деталите за понудата"
   },
   "blogs": {
     "title": "Блог",
@@ -224,7 +279,12 @@
     "home": "Дома",
     "featured": "Препорачано",
     "allCategories": "Категории",
-    "trending": "Популарно"
+    "trending": "Популарно",
+    "noListingsTitle": "Нема пронајдени понуди",
+    "noListingsInCategory": "Нема достапни понуди во {{category}}",
+    "noListingsMessage": "Обидете се да изберете друга категорија",
+    "resultsFound": "резултати пронајдени",
+    "searchInstruction": "Внесете најмалку 2 знаци за пребарување"
   },
   "assistant": {
     "title": "Асистент",
@@ -344,5 +404,117 @@
     "announcements": "Објави",
     "learnMore": "Дознај повеќе",
     "viewDetails": "Погледни детали"
+  },
+  "featured": {
+    "title": "Истакнати",
+    "empty": "Нема истакнати ставки",
+    "emptySubtitle": "Проверете подоцна за специјални понуди и истакнувања",
+    "highlights": "Истакнувања",
+    "popular": "Популарни",
+    "moreToExplore": "Повеќе за истражување",
+    "restaurants": "Истакнати ресторани",
+    "endsIn": "Завршува за",
+    "validUntil": "Важи до",
+    "untitled": "Без наслов",
+    "itemTypes": {
+      "event": "Настан",
+      "promotion": "Промо"
+    }
+  },
+  "helpSupport": {
+    "title": "Помош и поддршка",
+    "description": "Треба помош? Имате повратни информации? Ние сме тука за да ви помогнеме. Пополнете го формуларот подолу и ќе ви одговориме што е можно поскоро.",
+    "contactInfoTitle": "Контакт информации",
+    "nameLabel": "Име *",
+    "namePlaceholder": "Вашето полно име",
+    "emailLabel": "Е-пошта *",
+    "emailPlaceholder": "vasiot.email@example.com",
+    "categoryTitle": "Категорија",
+    "categorySubtitle": "Каков тип на помош ви треба?",
+    "issueDetailsTitle": "Детали за проблемот",
+    "subjectLabel": "Предмет *",
+    "subjectPlaceholder": "Краток опис на вашиот проблем",
+    "messageLabel": "Порака *",
+    "messagePlaceholder": "Ве молиме опишете го вашиот проблем детално...",
+    "priorityTitle": "Приоритет",
+    "prioritySubtitle": "Колку итен е овој проблем?",
+    "submitButton": "Испрати барање",
+    "validation": {
+      "nameRequired": "Ве молиме внесете го вашето име",
+      "emailRequired": "Ве молиме внесете е-пошта",
+      "subjectRequired": "Ве молиме внесете предмет",
+      "messageRequired": "Ве молиме опишете го вашиот проблем"
+    },
+    "successMessage": "Вашето барање за помош е испратено. Ќе ви одговориме наскоро!",
+    "errorMessage": "Неуспешно испраќање на барањето. Ве молиме обидете се повторно."
+  },
+  "collaboration": {
+    "title": "Контакт за соработка",
+    "heroTitle": "Ајде да соработуваме!",
+    "heroDescription": "Партнерствувај со GoGevgelija за да го растиш твојот бизнис и да допреш до повеќе корисници во нашата заедница. Пополни го овој формулар и ќе ти одговориме во рок од 24 часа.",
+    "contactPersonLabel": "Контакт лице *",
+    "contactPersonPlaceholder": "Вашето полно име",
+    "emailLabel": "Е-пошта *",
+    "emailPlaceholder": "vasiot.email@kompanija.com",
+    "phoneLabel": "Телефон",
+    "phonePlaceholder": "+389 XX XXX XXX",
+    "companyNameLabel": "Име на компанија/организација *",
+    "companyNamePlaceholder": "Име на вашата компанија",
+    "collaborationTypeTitle": "Тип на колаборација",
+    "collaborationTypeSubtitle": "За каков тип партнерство сте заинтересирани?",
+    "proposalDetailsTitle": "Детали за предлогот (Опционално)",
+    "proposalLabel": "Предлог за колаборација *",
+    "proposalPlaceholder": "Раскажете ни за вашата идеја за колаборација, што можете да понудите, и што барате...",
+    "submitButton": "Испрати барање за колаборација",
+    "loadingTypes": "Се вчитуваат типови на колаборација...",
+    "types": {
+      "business": "Деловно партнерство",
+      "event": "Колаборација за настани",
+      "marketing": "Маркетинг партнерство",
+      "tourism": "Туристичко партнерство",
+      "other": "Друга колаборација"
+    },
+    "validation": {
+      "nameRequired": "Ве молиме внесете го вашето име",
+      "emailRequired": "Ве молиме внесете е-пошта",
+      "companyRequired": "Ве молиме внесете го името на компанијата",
+      "proposalRequired": "Ве молиме опишете го вашиот предлог за колаборација"
+    },
+    "successMessage": "Вашето барање за колаборација е испратено! Ќе го разгледаме и ќе ви одговориме наскоро.",
+    "errorMessage": "Неуспешно испраќање на барањето. Ве молиме обидете се повторно."
+  },
+  "currency": {
+    "title": "Курсна листа",
+    "loading": "Вчитување...",
+    "loadError": "Неуспешно вчитување на курсевите",
+    "retry": "Повтори",
+    "updated": "Ажурирано: ",
+    "infoText": "Курсеви во Македонски денари (MKD). 1 единица од валутата = X MKD.",
+    "tableHeaders": {
+      "currency": "Валута",
+      "rate": "Курс"
+    }
+  },
+  "maintenance": {
+    "title": "Апликацијата е во изградба",
+    "subtitle": "Работиме напорно за да ви обезбедиме најдобро искуство.",
+    "message": "Жал ни е за чекањето! Наскоро ќе се вратиме.",
+    "tryAgain": "Обиди се повторно",
+    "footerSubtext": "Вашиот водич низ градот"
+  },
+  "overlay": {
+    "validUntil": "Важи до",
+    "until": "До",
+    "noExpiry": "Без истекување",
+    "noItemsFound": "Нема пронајдени ставки",
+    "wishlistAddFailed": "Неуспешно додавање во листата на желби",
+    "wishlistRemoveFailed": "Неуспешно отстранување од листата на желби"
+  },
+  "blog": {
+    "title": "Написи",
+    "loading": "Се вчитуваат написите...",
+    "loadError": "Нешто тргна наопаку",
+    "loadErrorSubtitle": "Неуспешно вчитување на написите",
+    "tryAgain": "Обидете се повторно"
   }
 }

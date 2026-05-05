@@ -925,7 +925,7 @@ class TranslationResourceView(APIView):
     """Expose translation resources so the mobile app can load them dynamically."""
     permission_classes = [permissions.AllowAny]
 
-    _ALLOWED_NAMESPACES = {"common", "screens", "navigation"}
+    _ALLOWED_NAMESPACES = {"common", "screens", "navigation", "legal"}
 
     def get(self, request, language_code: str, namespace: str):
         available_languages = {code for code, _ in settings.LANGUAGES}
@@ -3599,5 +3599,4 @@ class ListingGalleryView(APIView):
             })
 
         return Response(photos)
-
 

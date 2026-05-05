@@ -1,0 +1,48 @@
+{
+  "lastUpdated": "Last updated",
+  "termsOfService": {
+    "title": "Terms of Service",
+    "introduction": {
+      "title": "Introduction"
+    },
+    "acceptance": {
+      "title": "Acceptance of Terms"
+    },
+    "description": {
+      "title": "Service Description"
+    },
+    "userAccounts": {
+      "title": "User Accounts"
+    },
+    "userConduct": {
+      "title": "User Conduct"
+    },
+    "content": {
+      "title": "Content and User Contributions"
+    },
+    "intellectualProperty": {
+      "title": "Intellectual Property"
+    },
+    "privacy": {
+      "title": "Privacy"
+    },
+    "disclaimers": {
+      "title": "Disclaimers"
+    },
+    "limitation": {
+      "title": "Limitation of Liability"
+    },
+    "termination": {
+      "title": "Termination"
+    },
+    "changes": {
+      "title": "Changes to Terms"
+    },
+    "governing": {
+      "title": "Governing Law"
+    },
+    "contact": {
+      "title": "Contact Information"
+    }
+  }
+}
