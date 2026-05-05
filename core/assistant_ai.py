@@ -42,386 +42,13 @@ class BaseAssistantAIProvider:
         raise NotImplementedError
 
 
-class GroqAssistantAIProvider(BaseAssistantAIProvider):
-    provider_name = "groq"
-    api_url = "https://api.groq.com/openai/v1/chat/completions"
-
-    def __init__(self) -> None:
-        self.api_key = (os.getenv("GROQ_API_KEY") or "").strip()
-        self.model = (os.getenv("ASSISTANT_GROQ_MODEL") or "").strip()
-        self.timeout_seconds = float(os.getenv("ASSISTANT_GROQ_TIMEOUT_SECONDS", "10"))
-
-    def is_enabled(self) -> bool:
-        return bool(self.api_key)
-
-    def _chat_completion(self, *, messages: list[dict[str, str]], schema_name: str, schema: dict[str, Any]) -> dict[str, Any]:
-        if not self.is_enabled():
-            raise AssistantAIError("Groq provider is not configured")
-
-        response = requests.post(
-            self.api_url,
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": self.model,
-                "temperature": 0.1,
-                "messages": messages,
-                "response_format": {"type": "json_object"},
-            },
-            timeout=self.timeout_seconds,
-        )
-
-        if response.status_code >= 400:
-            logger.warning("Groq assistant call failed: status=%s body=%s", response.status_code, response.text[:800])
-            raise AssistantAIError(f"Groq assistant call failed with status {response.status_code}")
-
-        try:
-            payload = response.json()
-            content = payload["choices"][0]["message"]["content"]
-            return json.loads(content)
-        except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
-            raise AssistantAIError("Groq assistant response was not valid structured JSON") from exc
-
-    def plan_query(
-        self,
-        *,
-        message: str,
-        language: str,
-        context: dict[str, Any] | None = None,
-        history: list[dict[str, Any]] | None = None,
-        catalog: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        context = context or {}
-        history = history or []
-        catalog = catalog or {}
-        history_slice = history[-6:]
-
-        category_slugs = catalog.get("category_slugs") or []
-        entity_catalog = catalog.get("entities") or []
-
-        catalog_block = ""
-        if category_slugs:
-            catalog_block += "\nAvailable category_hint values (closed list, pick one or null):\n"
-            catalog_block += ", ".join(category_slugs) + "\n"
-        if entity_catalog:
-            catalog_block += (
-                "\nKnown entities (use for resolved_entity_id when the user names one; "
-                "match loosely across Latin/Cyrillic/English):\n"
-            )
-            catalog_block += "\n".join(
-                f"- {item['type']}#{item['id']}: {item['title']}"
-                + (f" / {item['title_mk']}" if item.get('title_mk') else "")
-                for item in entity_catalog[:60]
-            ) + "\n"
-
-        system_prompt = (
-            "You orchestrate the GoGevgelija in-app assistant. "
-            "Your ONLY job is to understand the user and return structured fields. "
-            "You never write user-facing answers — the backend does.\n\n"
-            "Language handling:\n"
-            "- Users may write Macedonian in Cyrillic (каде, музика), Latin-transliterated (kade, muzika), or English.\n"
-            "- Latin-transliterated Macedonian examples: kade=where, da=to, jadam=eat, slusam=listen, vecherva=tonight, nastani=events.\n"
-            "- When ambiguous between mk-latin and English, prefer mk-latin for tourism queries.\n"
-            "- ALWAYS produce BOTH normalized_query_en and normalized_query_mk (Cyrillic) so the "
-            "backend can search bilingual DB fields. Translate and transliterate as needed.\n\n"
-            "Query extraction:\n"
-            "- Users ask full questions, not keywords. Extract the core subject only.\n"
-            "- Strip filler words (kade, where, najdi, find, мислам, please, ima, дали, some).\n"
-            "- Example: 'Kade da slusam muzika vecheras?' -> normalized_query_en='live music tonight', "
-            "normalized_query_mk='музика вечер', category_hint='nightlife' (or closest slug), "
-            "entity_type_hint='event', time_filter='tonight'.\n\n"
-            "Tool selection:\n"
-            "- context: user refers to the entity already open on their screen (hours, phone, price, directions).\n"
-            "- faq: app help (app language setting, wishlist, support, collaboration, currency, border cameras, guest/account).\n"
-            "- category: 'show me restaurants', 'kade da jadam' — category discovery.\n"
-            "- feed: generic overview of events / promotions / blogs without a specific entity in mind.\n"
-            "- search: named entities, specific places, or any broad lookup not matching category/feed.\n"
-            "- wiki: general Gevgelija destination knowledge — history, geography, nature (Kozuf, Smrdliva Voda, "
-            "Lake Dojran), wellness (Negorci spa), entertainment (casino), shopping (outlet center), "
-            "border crossing (Bogorodica), wine, climate, things to do, visitor tips. "
-            "Use wiki when the user asks ABOUT Gevgelija as a destination, not about app content.\n"
-            "- chat: greetings only (hey, hi, hello, здраво, alo, hej), identity questions (who are you, "
-            "what can you do, кој си ти, што можеш), OR anything clearly out of scope "
-            "(weather, sports, politics, non-Gevgelija topics).\n"
-            "- clarify: ONLY if the message is truly ambiguous and you cannot make a reasonable guess.\n"
-            "- Set content_type to 'all' when the user does not specify a content kind; otherwise pick the closest matching type.\n"
-            "- Set clarification_question to null for every tool other than 'clarify'.\n\n"
-            "Follow-up resolution:\n"
-            "- If the user says 'it', 'that', 'ова', 'тоа', 'тие' and history contains a resolved entity, "
-            "set followup_of_entity_id to its id.\n"
-            "- Re-use the same tool as the prior turn if the follow-up is about the same entity.\n\n"
-            "Filters:\n"
-            "- time_filter: tonight|today|this_week|weekend|null — set whenever user mentions time.\n"
-            "- price_filter: cheap|mid|premium|null — cheap means free entry or budget; premium means paid/upscale.\n"
-            "- open_now_requested: true if user asks 'open now', 'otvoreno sega', 'raboti li', etc.\n\n"
-            + catalog_block
-            + "\nYou MUST respond with a JSON object containing EXACTLY these fields:\n"
-            '{"tool": "...", "intent": "...", "confidence": "high|medium|low", '
-            '"tool_query": "...", "wiki_query": "...or null (only set when tool=wiki — the specific topic to look up)", '
-            '"content_type": "all|listings|events|promotions|blogs", '
-            '"detected_language": "en|mk-cyrillic|mk-latin|unknown", '
-            '"normalized_query_en": "...", "normalized_query_mk": "...", '
-            '"category_hint": "...or null", "entity_type_hint": "listing|event|promotion|blog|null", '
-            '"resolved_entity_id": null, "resolved_entity_type": null, '
-            '"time_filter": "tonight|today|this_week|weekend|null", '
-            '"price_filter": "cheap|mid|premium|null", '
-            '"open_now_requested": false, "followup_of_entity_id": null, '
-            '"clarification_question": "...or null"}\n'
-        )
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {
-                "role": "user",
-                "content": json.dumps(
-                    {
-                        "message": message,
-                        "language": language,
-                        "context": context,
-                        "history": history_slice,
-                    },
-                    ensure_ascii=False,
-                ),
-            },
-        ]
-
-        schema = {
-            "type": "object",
-            "properties": {
-                "tool": {
-                    "type": "string",
-                    "enum": ["context", "faq", "category", "feed", "search", "wiki", "chat", "clarify"],
-                },
-                "intent": {"type": "string"},
-                "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
-                "tool_query": {"type": "string"},
-                "wiki_query": {"type": ["string", "null"]},
-                "content_type": {
-                    "type": "string",
-                    "enum": ["all", "listings", "events", "promotions", "blogs"],
-                },
-                "detected_language": {
-                    "type": "string",
-                    "enum": ["en", "mk-cyrillic", "mk-latin", "unknown"],
-                },
-                "normalized_query_en": {"type": "string"},
-                "normalized_query_mk": {"type": "string"},
-                "category_hint": {"type": ["string", "null"]},
-                "entity_type_hint": {
-                    "type": ["string", "null"],
-                    "enum": ["listing", "event", "promotion", "blog", None],
-                },
-                "resolved_entity_id": {"type": ["integer", "null"]},
-                "resolved_entity_type": {
-                    "type": ["string", "null"],
-                    "enum": ["listing", "event", "promotion", "blog", None],
-                },
-                "time_filter": {
-                    "type": ["string", "null"],
-                    "enum": ["tonight", "today", "this_week", "weekend", None],
-                },
-                "price_filter": {
-                    "type": ["string", "null"],
-                    "enum": ["cheap", "mid", "premium", None],
-                },
-                "open_now_requested": {"type": "boolean"},
-                "followup_of_entity_id": {"type": ["integer", "null"]},
-                "clarification_question": {"type": ["string", "null"]},
-            },
-            "required": [
-                "tool",
-                "intent",
-                "confidence",
-                "tool_query",
-                "wiki_query",
-                "content_type",
-                "detected_language",
-                "normalized_query_en",
-                "normalized_query_mk",
-                "category_hint",
-                "entity_type_hint",
-                "resolved_entity_id",
-                "resolved_entity_type",
-                "time_filter",
-                "price_filter",
-                "open_now_requested",
-                "followup_of_entity_id",
-                "clarification_question",
-            ],
-            "additionalProperties": False,
-        }
-
-        return self._chat_completion(messages=messages, schema_name="assistant_plan", schema=schema)
-
-    def generate_greeting(
-        self,
-        *,
-        language: str,
-        events: list[dict],
-        promotions: list[dict],
-    ) -> str | None:
-        events_block = ""
-        if events:
-            events_block = "Upcoming events:\n" + "\n".join(
-                f"- {e['title']}: {e['date_time']}"
-                + (f" (entry: {e['entry_price']})" if e.get("entry_price") and e["entry_price"] != "Free" else " (free entry)")
-                for e in events
-            )
-        promos_block = ""
-        if promotions:
-            promos_block = "Active promotions:\n" + "\n".join(
-                f"- {p['title']}"
-                + (f" (valid until {p['valid_until']})" if p.get("valid_until") else "")
-                for p in promotions
-            )
-
-        context_block = "\n\n".join(filter(None, [events_block, promos_block]))
-        if not context_block:
-            return None
-
-        lang_instruction = (
-            "Respond in Macedonian using Cyrillic script." if language == "mk"
-            else "Respond in English."
-        )
-
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a friendly local concierge for GoGevgelija, a tourism app for Gevgelija, North Macedonia. "
-                    "Write a warm, natural 1-2 sentence greeting for a tourist just opening the app. "
-                    "Mention 1-2 specific things from the provided data. "
-                    "Be conversational — like a local friend, not a corporate announcement. "
-                    "No generic phrases like 'Welcome to the app'. "
-                    "Return JSON with a single key: {\"greeting\": \"...\"}. "
-                    f"{lang_instruction}"
-                ),
-            },
-            {
-                "role": "user",
-                "content": f"Write a greeting based on this:\n\n{context_block}",
-            },
-        ]
-
-        result = self._chat_completion(
-            messages=messages,
-            schema_name="greeting",
-            schema={
-                "type": "object",
-                "properties": {"greeting": {"type": "string"}},
-                "required": ["greeting"],
-                "additionalProperties": False,
-            },
-        )
-        return result.get("greeting") or None
-
-    def generate_display_message(
-        self,
-        *,
-        user_message: str,
-        language: str,
-        tool: str,
-        results_summary: str,
-        wiki_context: str = "",
-        history: list[dict[str, Any]] | None = None,
-    ) -> str:
-        if not self.is_enabled():
-            raise AssistantAIError("Groq provider is not configured")
-
-        history = history or []
-        history_slice = history[-4:]
-
-        system_prompt = (
-            "You are GoAI, Your GoGevgelija Guide — the friendly AI assistant inside the GoGevgelija "
-            "tourism discovery app for Gevgelija, North Macedonia.\n\n"
-            "About Gevgelija:\n"
-            "- City in southern North Macedonia, on the Greek border (Bogorodica crossing)\n"
-            "- Known for: warm Mediterranean climate, hospitality, food culture, casino entertainment\n"
-            "- Nature: Kozuf Mountain (outdoor activities, fresh air, day trips), "
-            "Smrdliva Voda (mineral water spring on Kozuf), "
-            "Lake Dojran (~25 km east — swimming, fish restaurants, pelicans, summer tourism)\n"
-            "- Wellness: Negorci Thermal Spa (~7 km from town — thermal mineral pools, open year-round)\n"
-            "- Shopping: Outlet Center Gevgelija (international brands, popular with cross-border visitors)\n"
-            "- Heritage: Vardarski Rid archaeological site above the Vardar valley\n"
-            "- Wine: part of a recognized Macedonian wine-growing sub-region; local wine in restaurants\n"
-            "- Food scene: traditional Macedonian cuisine, grill, modern restaurants, social cafes\n"
-            "- Evening rhythm: casinos, lively cafes and restaurants, especially on weekends\n\n"
-            "About the app:\n"
-            "- GoGevgelija lists: restaurants, cafes, hotels, nightlife, services (Listings), "
-            "upcoming events, active promotions/deals, travel blogs\n"
-            "- ABSOLUTE RULE: never invent business names, venue names, prices, or hours. "
-            "Only name places that appear in the Database results section below.\n\n"
-            "Response rules:\n"
-            "- Be friendly, warm, and SHORT: 1-3 sentences maximum\n"
-            "- Match the user's language exactly: Macedonian message → Macedonian Cyrillic reply; English → English\n"
-            "- CRITICAL — relevance check: before mentioning any DB result, ask yourself: does this result "
-            "actually answer what the user asked? A beauty salon is NOT relevant to 'my car broke down'. "
-            "A restaurant is NOT relevant to 'where can I fix my phone'. "
-            "If the results don't match the user's actual need, ignore them and say we don't have that in the app.\n"
-            "- If DB results ARE genuinely relevant: mention 1-2 place names naturally, say the cards below show full details\n"
-            "- If knowledge base context is provided but NO DB results: answer with 1-3 sentences of factual "
-            "destination information from the knowledge base. Do NOT mention the app, the database, or suggest "
-            "searching. Do NOT name any specific businesses or venues. Just share the general destination knowledge naturally.\n"
-            "- If no DB results AND no knowledge base info: honestly say we don't have that in the app right now, "
-            "then offer to help with something GoGevgelija does cover (places to eat, hotels, events, deals)\n"
-            "- Greetings (hey/hi/здраво): say hi back, introduce yourself as GoAI, offer to help find places/events/deals\n"
-            "- Identity (who are you / кој си): explain you are GoAI, the GoGevgelija assistant; "
-            "you help tourists find restaurants, hotels, events, promotions, and local guides in Gevgelija\n"
-            "- Out-of-scope (weather, sports, politics, non-Gevgelija): politely say you only know Gevgelija "
-            "and offer to help with tourism instead\n"
-            "- Never use bullet points or markdown — plain conversational text only\n"
-        )
-
-        user_parts = [f"User message: {user_message}"]
-        if results_summary:
-            user_parts.append(f"Database results:\n{results_summary}")
-        if wiki_context:
-            user_parts.append(f"Gevgelija knowledge base (use this to answer general questions about the destination):\n{wiki_context}")
-        user_parts.append("Write your short, friendly response now.")
-
-        messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
-        for h in history_slice:
-            role = h.get("role") or "user"
-            content = h.get("content") or h.get("text") or ""
-            if role in ("user", "assistant") and content:
-                messages.append({"role": role, "content": str(content)})
-        messages.append({"role": "user", "content": "\n\n".join(user_parts)})
-
-        response = requests.post(
-            self.api_url,
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": self.model,
-                "temperature": 0.5,
-                "messages": messages,
-                "max_tokens": 140,
-            },
-            timeout=self.timeout_seconds,
-        )
-
-        if response.status_code >= 400:
-            logger.warning("GoAI display message call failed: status=%s body=%s", response.status_code, response.text[:400])
-            raise AssistantAIError(f"GoAI display message call failed with status {response.status_code}")
-
-        try:
-            payload = response.json()
-            return payload["choices"][0]["message"]["content"].strip()
-        except (KeyError, IndexError, TypeError) as exc:
-            raise AssistantAIError("GoAI display message response was not valid") from exc
-
-
 class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
     provider_name = "openai"
     api_url = "https://api.openai.com/v1/chat/completions"
 
     def __init__(self) -> None:
         self.api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
-        self.model = (os.getenv("ASSISTANT_OPENAI_MODEL") or "").strip()
+        self.model = (os.getenv("ASSISTANT_OPENAI_MODEL") or "gpt-5.4-mini").strip()
         self.timeout_seconds = float(os.getenv("ASSISTANT_OPENAI_TIMEOUT_SECONDS", "20"))
 
     def is_enabled(self) -> bool:
@@ -450,15 +77,18 @@ class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
         if json_output:
             body["response_format"] = _strict_json_schema(schema_name, schema)
 
-        response = requests.post(
-            self.api_url,
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            },
-            json=body,
-            timeout=self.timeout_seconds,
-        )
+        try:
+            response = requests.post(
+                self.api_url,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=body,
+                timeout=self.timeout_seconds,
+            )
+        except requests.RequestException as exc:
+            raise AssistantAIError(f"OpenAI request failed: {exc}") from exc
 
         if response.status_code >= 400:
             logger.warning("OpenAI assistant call failed: status=%s body=%s", response.status_code, response.text[:800])
@@ -706,41 +336,49 @@ class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
 
         system_prompt = (
             "You are GoAI, Your GoGevgelija Guide — the friendly AI assistant inside the GoGevgelija "
-            "tourism discovery app for Gevgelija, North Macedonia.\n\n"
-            "About Gevgelija:\n"
-            "- City in southern North Macedonia, on the Greek border (Bogorodica crossing)\n"
+            "tourism discovery app for Гевгелија, North Macedonia.\n\n"
+            "About Гевгелија:\n"
+            "- City in southern North Macedonia, on the Greek border (Bogorodica / Богородица crossing)\n"
             "- Known for: warm Mediterranean climate, hospitality, food culture, casino entertainment\n"
-            "- Nature: Kozuf Mountain (outdoor activities, fresh air, day trips), "
-            "Smrdliva Voda (mineral water spring on Kozuf), "
-            "Lake Dojran (~25 km east — swimming, fish restaurants, pelicans, summer tourism)\n"
-            "- Wellness: Negorci Thermal Spa (~7 km from town — thermal mineral pools, open year-round)\n"
-            "- Shopping: Outlet Center Gevgelija (international brands, popular with cross-border visitors)\n"
-            "- Heritage: Vardarski Rid archaeological site above the Vardar valley\n"
+            "- Nature: Козуф Mountain (outdoor activities, fresh air, day trips), "
+            "Смрдлива Вода (mineral water spring on Козуф), "
+            "Lake Дојранско Езеро (~25 km east — swimming, fish restaurants, pelicans, summer tourism)\n"
+            "- Wellness: Негорци Thermal Spa (~7 km from town — thermal mineral pools, open year-round)\n"
+            "- Shopping: Outlet Center Гевгелија (international brands, popular with cross-border visitors)\n"
+            "- Heritage: Вардарски Рид archaeological site above the Vardar valley\n"
             "- Wine: part of a recognized Macedonian wine-growing sub-region; local wine in restaurants\n"
             "- Food scene: traditional Macedonian cuisine, grill, modern restaurants, social cafes\n"
-            "- Evening rhythm: casinos, lively cafes and restaurants, especially on weekends\n\n"
+            "- Evening rhythm: казина, lively cafes and restaurants, especially on weekends\n\n"
             "About the app:\n"
             "- GoGevgelija lists: restaurants, cafes, hotels, nightlife, services (Listings), "
             "upcoming events, active promotions/deals, travel blogs\n"
             "- ABSOLUTE RULE: never invent business names, venue names, prices, or hours. "
             "Only name places that appear in the Database results section below.\n\n"
+            "Language rules:\n"
+            "- Match the user's language exactly: Macedonian message → Macedonian Cyrillic reply; English → English\n"
+            "- When replying in Macedonian: write ALL place names in Cyrillic — "
+            "Гевгелија (not Gevgelija), Македонија (not Macedonia), Грција (not Greece), "
+            "Козуф (not Kozuf), Негорци (not Negorci), Богородица (not Bogorodica)\n"
+            "- Use correct Macedonian grammar — the plural of казино is казина (not казиноа)\n\n"
             "Response rules:\n"
             "- Be friendly, warm, and SHORT: 1-3 sentences maximum\n"
-            "- Match the user's language exactly: Macedonian message → Macedonian Cyrillic reply; English → English\n"
+            "- Self-introduction ('Јас сум GoAI' / 'I am GoAI'): ONLY for greetings and identity questions. "
+            "Never introduce yourself when answering a content or destination question.\n"
             "- CRITICAL — relevance check: before mentioning any DB result, ask yourself: does this result "
             "actually answer what the user asked? A beauty salon is NOT relevant to 'my car broke down'. "
             "A restaurant is NOT relevant to 'where can I fix my phone'. "
             "If the results don't match the user's actual need, ignore them and say we don't have that in the app.\n"
             "- If DB results ARE genuinely relevant: mention 1-2 place names naturally, say the cards below show full details\n"
-            "- If knowledge base context is provided but NO DB results: answer with 1-3 sentences of factual "
-            "destination information from the knowledge base. Do NOT mention the app, the database, or suggest "
-            "searching. Do NOT name any specific businesses or venues. Just share the general destination knowledge naturally.\n"
+            "- ABSOLUTE RULE — wiki/knowledge answers: if the 'Gevgelija knowledge base' section is provided "
+            "and there are NO Database results → answer ONLY from the knowledge base in 1-3 sentences. "
+            "Do NOT mention the app. Do NOT say 'check the app'. Do NOT suggest searching. "
+            "Do NOT name specific businesses. Do NOT introduce yourself. Just answer the question directly.\n"
             "- If no DB results AND no knowledge base info: honestly say we don't have that in the app right now, "
             "then offer to help with something GoGevgelija does cover (places to eat, hotels, events, deals)\n"
             "- Greetings (hey/hi/здраво): say hi back, introduce yourself as GoAI, offer to help find places/events/deals\n"
             "- Identity (who are you / кој си): explain you are GoAI, the GoGevgelija assistant; "
-            "you help tourists find restaurants, hotels, events, promotions, and local guides in Gevgelija\n"
-            "- Out-of-scope (weather, sports, politics, non-Gevgelija): politely say you only know Gevgelija "
+            "you help tourists find restaurants, hotels, events, promotions, and local guides in Гевгелија\n"
+            "- Out-of-scope (weather, sports, politics, non-Gevgelija): politely say you only know Гевгелија "
             "and offer to help with tourism instead\n"
             "- Never use bullet points or markdown — plain conversational text only\n"
         )
@@ -778,10 +416,6 @@ def get_assistant_ai_provider() -> BaseAssistantAIProvider | None:
 
     if provider == "openai":
         candidate = OpenAIAssistantAIProvider()
-        return candidate if candidate.is_enabled() else None
-
-    if provider == "groq":
-        candidate = GroqAssistantAIProvider()
         return candidate if candidate.is_enabled() else None
 
     logger.warning("Unsupported assistant external AI provider '%s'; external AI disabled", provider)
