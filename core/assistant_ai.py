@@ -73,7 +73,7 @@ class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
             "messages": messages,
         }
         if max_tokens:
-            body["max_tokens"] = max_tokens
+            body["max_completion_tokens"] = max_tokens
         if json_output:
             body["response_format"] = _strict_json_schema(schema_name, schema)
 
