@@ -138,9 +138,13 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
             "- category: 'show me restaurants', 'kade da jadam' — category discovery.\n"
             "- feed: generic overview of events / promotions / blogs without a specific entity in mind.\n"
             "- search: named entities, specific places, or any broad lookup not matching category/feed.\n"
-            "- chat: greetings (hey, hi, hello, здраво, alo, hej), identity questions (who are you, what can you do, "
-            "кој си ти, што можеш), general Gevgelija knowledge questions (history, geography, border, spa, lake), "
-            "OR anything clearly out of scope (weather, sports, politics, non-Gevgelija topics).\n"
+            "- wiki: general Gevgelija destination knowledge — history, geography, nature (Kozuf, Smrdliva Voda, "
+            "Lake Dojran), wellness (Negorci spa), entertainment (casino), shopping (outlet center), "
+            "border crossing (Bogorodica), wine, climate, things to do, visitor tips. "
+            "Use wiki when the user asks ABOUT Gevgelija as a destination, not about app content.\n"
+            "- chat: greetings only (hey, hi, hello, здраво, alo, hej), identity questions (who are you, "
+            "what can you do, кој си ти, што можеш), OR anything clearly out of scope "
+            "(weather, sports, politics, non-Gevgelija topics).\n"
             "- clarify: ONLY if the message is truly ambiguous and you cannot make a reasonable guess.\n"
             "- Set content_type to 'all' when the user does not specify a content kind; otherwise pick the closest matching type.\n"
             "- Set clarification_question to null for every tool other than 'clarify'.\n\n"
@@ -155,7 +159,8 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
             + catalog_block
             + "\nYou MUST respond with a JSON object containing EXACTLY these fields:\n"
             '{"tool": "...", "intent": "...", "confidence": "high|medium|low", '
-            '"tool_query": "...", "content_type": "all|listings|events|promotions|blogs", '
+            '"tool_query": "...", "wiki_query": "...or null (only set when tool=wiki — the specific topic to look up)", '
+            '"content_type": "all|listings|events|promotions|blogs", '
             '"detected_language": "en|mk-cyrillic|mk-latin|unknown", '
             '"normalized_query_en": "...", "normalized_query_mk": "...", '
             '"category_hint": "...or null", "entity_type_hint": "listing|event|promotion|blog|null", '
@@ -187,11 +192,12 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
             "properties": {
                 "tool": {
                     "type": "string",
-                    "enum": ["context", "faq", "category", "feed", "search", "chat", "clarify"],
+                    "enum": ["context", "faq", "category", "feed", "search", "wiki", "chat", "clarify"],
                 },
                 "intent": {"type": "string"},
                 "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
                 "tool_query": {"type": "string"},
+                "wiki_query": {"type": ["string", "null"]},
                 "content_type": {
                     "type": "string",
                     "enum": ["all", "listings", "events", "promotions", "blogs"],
@@ -229,6 +235,7 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
                 "intent",
                 "confidence",
                 "tool_query",
+                "wiki_query",
                 "content_type",
                 "detected_language",
                 "normalized_query_en",
@@ -516,9 +523,13 @@ class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
             "- category: 'show me restaurants', 'kade da jadam' — category discovery.\n"
             "- feed: generic overview of events / promotions / blogs without a specific entity in mind.\n"
             "- search: named entities, specific places, or any broad lookup not matching category/feed.\n"
-            "- chat: greetings (hey, hi, hello, здраво, alo, hej), identity questions (who are you, what can you do, "
-            "кој си ти, што можеш), general Gevgelija knowledge questions (history, geography, border, spa, lake), "
-            "OR anything clearly out of scope (weather, sports, politics, non-Gevgelija topics).\n"
+            "- wiki: general Gevgelija destination knowledge — history, geography, nature (Kozuf, Smrdliva Voda, "
+            "Lake Dojran), wellness (Negorci spa), entertainment (casino), shopping (outlet center), "
+            "border crossing (Bogorodica), wine, climate, things to do, visitor tips. "
+            "Use wiki when the user asks ABOUT Gevgelija as a destination, not about app content.\n"
+            "- chat: greetings only (hey, hi, hello, здраво, alo, hej), identity questions (who are you, "
+            "what can you do, кој си ти, што можеш), OR anything clearly out of scope "
+            "(weather, sports, politics, non-Gevgelija topics).\n"
             "- clarify: ONLY if the message is truly ambiguous and you cannot make a reasonable guess.\n"
             "- Set content_type to 'all' when the user does not specify a content kind; otherwise pick the closest matching type.\n"
             "- Set clarification_question to null for every tool other than 'clarify'.\n\n"
@@ -538,11 +549,12 @@ class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
             "properties": {
                 "tool": {
                     "type": "string",
-                    "enum": ["context", "faq", "category", "feed", "search", "chat", "clarify"],
+                    "enum": ["context", "faq", "category", "feed", "search", "wiki", "chat", "clarify"],
                 },
                 "intent": {"type": "string"},
                 "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
                 "tool_query": {"type": "string"},
+                "wiki_query": {"type": ["string", "null"]},
                 "content_type": {
                     "type": "string",
                     "enum": ["all", "listings", "events", "promotions", "blogs"],
@@ -580,6 +592,7 @@ class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
                 "intent",
                 "confidence",
                 "tool_query",
+                "wiki_query",
                 "content_type",
                 "detected_language",
                 "normalized_query_en",

@@ -796,12 +796,18 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "email", "password", "profile"]
 
+    def validate_email(self, value):
+        normalized = value.strip().lower()
+        if User.objects.filter(email__iexact=normalized).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return normalized
+
     def create(self, validated_data):
         password = validated_data.get("password")
 
         user = User.objects.create_user(
             username=validated_data["username"],
-            email=validated_data.get("email",""),
+            email=validated_data.get("email", "").strip().lower(),
         )
 
         # Set password only if provided (for legacy password-based auth)
@@ -1527,4 +1533,3 @@ class GalleryPhotoSerializer(serializers.ModelSerializer):
         if lang == 'mk' and obj.caption_mk:
             return obj.caption_mk
         return obj.caption or ''
-

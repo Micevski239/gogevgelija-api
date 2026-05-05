@@ -21,6 +21,7 @@ from core.views import (
     TranslationResourceView,
     health,
     app_config,
+    currency_rates,
     Register,
     Me,
     LanguageView,
@@ -52,6 +53,7 @@ router.register(r"collaboration-contact", CollaborationContactViewSet, basename=
 urlpatterns = [
     path('api/', include(router.urls)),
     path("api/app/config/", app_config, name="app_config"),
+    path("api/currency-rates/", currency_rates, name="currency_rates"),
     path("api/tourism/", TourismScreenView.as_view(), name="tourism"),
     path("api/events-screen/", EventsScreenView.as_view(), name="events-screen"),
     path("api/billboard/", BillboardScreenView.as_view(), name="billboard"),
@@ -72,11 +74,8 @@ urlpatterns = [
     path("api/search/", global_search, name="global_search"),
     path("api/gallery/", GalleryView.as_view(), name="gallery"),
     path("api/listings/<int:listing_id>/gallery/", ListingGalleryView.as_view(), name="listing-gallery"),
+    path("api/health/", health, name="health"),
 ]
-
-# Conditionally include health check
-if settings.HEALTH_CHECK_ENABLED:
-    urlpatterns.append(path("api/health/", health))
 
 # Conditionally include admin
 if settings.ADMIN_ENABLED:

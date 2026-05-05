@@ -1,13 +1,16 @@
 import json
 import logging
-import random
 import re
+import secrets
+import string
 from pathlib import Path
 from datetime import timedelta
 
+import requests
 from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.throttling import AnonRateThrottle
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework.response import Response
@@ -15,9 +18,15 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import authenticate
 from django.db import models
+from django.db import transaction
 from django.conf import settings
+from django.core.cache import cache
+from django.core.mail import send_mail
+from django.core.validators import validate_email
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare, salted_hmac
+from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -31,6 +40,30 @@ from .pagination import StandardResultsSetPagination
 
 assistant_query_logger = logging.getLogger("assistant_queries")
 core_logger = logging.getLogger("core")
+
+
+def _normalize_email(email: str | None) -> str:
+    return (email or "").strip().lower()
+
+
+def _mask_email(email: str) -> str:
+    local, _, domain = email.partition("@")
+    if not local or not domain:
+        return "***"
+    visible_local = local[:1]
+    return f"{visible_local}***@{domain}"
+
+
+def _hash_verification_code(email: str, code: str) -> str:
+    return salted_hmac("verification-code", f"{email}:{code}").hexdigest()
+
+
+class VerificationCodeSendThrottle(AnonRateThrottle):
+    scope = "verification_code_send"
+
+
+class VerificationCodeVerifyThrottle(AnonRateThrottle):
+    scope = "verification_code_verify"
 
 
 class IsSuperUser(permissions.BasePermission):
@@ -465,12 +498,56 @@ def app_config(_request):
         ]
     })
 
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def currency_rates(_request):
+    cache_key = "currency-rates-latest"
+    cached_payload = cache.get(cache_key)
+    if cached_payload:
+        return Response(cached_payload)
+
+    try:
+        response = requests.get(
+            settings.CURRENCY_RATES_URL,
+            timeout=settings.CURRENCY_RATES_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        data = response.json()
+    except requests.RequestException:
+        core_logger.exception("Failed to fetch currency rates from upstream provider")
+        return Response(
+            {"error": "Unable to fetch currency rates right now"},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    if data.get("result") != "success":
+        return Response(
+            {"error": "Currency provider returned an invalid response"},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    tracked_codes = ("EUR", "USD", "GBP", "CHF", "TRY", "RSD", "BGN", "ALL", "CAD", "AUD", "JPY", "SEK")
+    rates: dict[str, float] = {}
+    for code in tracked_codes:
+        rate = data.get("rates", {}).get(code)
+        if rate:
+            rates[code] = 1 / rate
+
+    payload = {
+        "rates": rates,
+        "lastUpdated": data.get("time_last_update_utc") or timezone.now().isoformat(),
+    }
+    cache.set(cache_key, payload, 60 * 30)
+    return Response(payload)
+
 class SendVerificationCode(APIView):
     """Send a verification code to the user's email"""
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [VerificationCodeSendThrottle]
 
     def post(self, request):
-        email = request.data.get('email')
+        email = _normalize_email(request.data.get('email'))
         name = request.data.get('name')  # Optional, for registration
 
         if not email:
@@ -479,29 +556,24 @@ class SendVerificationCode(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response(
+                {"error": "A valid email address is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # Generate a 6-digit code
-        code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        code = ''.join(secrets.choice(string.digits) for _ in range(6))
 
         # Set expiration (15 minutes from now)
         expires_at = timezone.now() + timedelta(minutes=15)
+        code_hash = _hash_verification_code(email, code)
+        masked_email = _mask_email(email)
 
-        # Store the verification code
-        VerificationCode.objects.create(
-            email=email,
-            code=code,
-            expires_at=expires_at
-        )
-
-        # Send email asynchronously in a background thread to avoid blocking the HTTP response
-        import threading
-        from django.core.mail import send_mail
-
-        def send_verification_email():
-            """Send email in background thread"""
-            subject = "Your GoGevgelija Verification Code"
-
-            # Plain text message
-            message = f"""
+        subject = "Your GoGevgelija Verification Code"
+        message = f"""
 Hello{f' {name}' if name else ''},
 
 Your verification code is: {code}
@@ -512,26 +584,32 @@ If you didn't request this code, please ignore this email.
 
 Best regards,
 The GoGevgelija Team
-            """.strip()
+        """.strip()
 
-            try:
+        try:
+            with transaction.atomic():
+                VerificationCode.objects.filter(email=email, is_used=False).update(is_used=True)
+                VerificationCode.objects.create(
+                    email=email,
+                    code=code_hash,
+                    expires_at=expires_at,
+                )
                 send_mail(
                     subject=subject,
                     message=message,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[email],
-                    fail_silently=True,
+                    fail_silently=False,
                 )
-                print(f"✅ Verification code email sent to {email}: {code}")
-            except Exception as e:
-                print(f"⚠️ Failed to send email to {email}: {str(e)}")
-                # Email failed but code is still in database
+        except Exception:
+            core_logger.exception("Failed to send verification code email for %s", masked_email)
+            return Response(
+                {"error": "Unable to send verification code right now"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
-        # Start background thread for email sending
-        email_thread = threading.Thread(target=send_verification_email, daemon=True)
-        email_thread.start()
+        core_logger.info("Verification code email sent to %s", masked_email)
 
-        # Return response immediately without waiting for email
         return Response({
             "message": "Verification code sent to your email",
             "email": email,
@@ -543,11 +621,12 @@ The GoGevgelija Team
 class VerifyCode(APIView):
     """Verify the code and either log in or register the user"""
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [VerificationCodeVerifyThrottle]
 
     def post(self, request):
-        email = request.data.get('email')
-        code = request.data.get('code')
-        name = request.data.get('name')  # For registration
+        email = _normalize_email(request.data.get('email'))
+        code = (request.data.get('code') or '').strip()
+        name = (request.data.get('name') or '').strip()  # For registration
 
         if not email or not code:
             return Response(
@@ -555,14 +634,19 @@ class VerifyCode(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Find the most recent unused code for this email
         try:
-            verification = VerificationCode.objects.filter(
-                email=email,
-                code=code,
-                is_used=False
-            ).latest('created_at')
-        except VerificationCode.DoesNotExist:
+            validate_email(email)
+        except ValidationError:
+            return Response(
+                {"error": "A valid email address is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        verification = VerificationCode.objects.filter(
+            email=email,
+            is_used=False,
+        ).order_by('-created_at').first()
+        if not verification:
             return Response(
                 {"error": "Invalid verification code"},
                 status=status.HTTP_400_BAD_REQUEST
@@ -575,19 +659,26 @@ class VerifyCode(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        if not constant_time_compare(verification.code, _hash_verification_code(email, code)):
+            return Response(
+                {"error": "Invalid verification code"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Mark code as used
         verification.is_used = True
         verification.save()
 
-        # Check if user exists
-        try:
-            user = User.objects.get(email=email)
-        except User.MultipleObjectsReturned:
-            # Handle duplicate users - get the first one (oldest account)
-            user = User.objects.filter(email=email).order_by('date_joined').first()
-            if __debug__:
-                print(f"WARNING: Multiple users found for email {email}. Using oldest account (ID: {user.id})")
-        except User.DoesNotExist:
+        matching_users = User.objects.filter(email__iexact=email).order_by('date_joined')
+        if matching_users.count() > 1:
+            core_logger.warning("Duplicate user emails detected for %s", _mask_email(email))
+            return Response(
+                {"error": "This email is linked to multiple accounts. Please contact support."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        user = matching_users.first()
+        if user is None:
             # Register new user
             if not name:
                 return Response(
@@ -1975,6 +2066,61 @@ def _build_goai_results_summary(tool_response) -> str:
     return "\n".join(lines)
 
 
+def _plan_from_parser(parsed: dict, message: str) -> dict:
+    """Convert a parser understanding dict to a plan dict compatible with _assistant_execute_ai_plan."""
+    time_filter = None
+    if parsed.get('filters', {}).get('today'):
+        time_filter = 'today'
+    return {
+        'tool': parsed.get('tool') or 'search',
+        'tool_query': parsed.get('search_query') or message,
+        'wiki_query': parsed.get('wiki_query') or '',
+        'confidence': parsed.get('confidence') or 'medium',
+        'intent': parsed.get('intent') or 'unknown',
+        'content_type': parsed.get('content_type') or 'all',
+        'normalized_query_en': parsed.get('search_query') or message,
+        'normalized_query_mk': '',
+        'category_hint': parsed.get('category_key'),
+        'entity_type_hint': parsed.get('entity_type'),
+        'time_filter': time_filter,
+        'price_filter': None,
+        'open_now_requested': bool(parsed.get('filters', {}).get('open_now')),
+        'followup_of_entity_id': None,
+        'clarification_question': None,
+    }
+
+
+def _assistant_try_parser_first_response(message, language, history, request, context_entity, parsed_dict):
+    """Execute a DB or wiki tool using the parser result, then call generate_display_message for quality.
+    Saves one LLM call (plan_query) compared to the full pipeline."""
+    from .assistant_ai import get_assistant_ai_provider, AssistantAIError
+
+    plan = _plan_from_parser(parsed_dict, message)
+    tool_response = _assistant_execute_ai_plan(plan, message, language, request, context_entity)
+    if not tool_response:
+        return None
+
+    provider = get_assistant_ai_provider()
+    if provider and plan.get('tool') not in ('faq', 'clarify'):
+        results_summary = _build_goai_results_summary(tool_response)
+        wiki_context = tool_response.pop('wiki_context', '')
+        try:
+            goai_answer = provider.generate_display_message(
+                user_message=message,
+                language=language,
+                tool=plan.get('tool', ''),
+                results_summary=results_summary,
+                wiki_context=wiki_context,
+                history=history,
+            )
+            if goai_answer:
+                tool_response['answer'] = goai_answer
+        except AssistantAIError as exc:
+            core_logger.warning("GoAI display message generation failed (parser-first): %s", exc)
+
+    return tool_response
+
+
 def _assistant_execute_ai_plan(plan, message, language, request, context_entity):
     plan = plan or {}
     tool = plan.get('tool')
@@ -2005,21 +2151,30 @@ def _assistant_execute_ai_plan(plan, message, language, request, context_entity)
             if resp:
                 return resp
 
-    if tool == 'chat':
+    if tool == 'wiki':
         from .wiki import search_wiki
+        wiki_query = (plan.get('wiki_query') or '').strip()
         wiki_context = search_wiki(
-            plan.get('normalized_query_en') or tool_query,
+            wiki_query or plan.get('normalized_query_en') or tool_query,
             plan.get('normalized_query_mk') or '',
         )
         resp = _assistant_response(
             answer='',
-            intent='chat',
+            intent='wiki',
             confidence=plan.get('confidence') or 'high',
             suggestions=_assistant_default_suggestions(language),
         )
         if wiki_context:
             resp['wiki_context'] = wiki_context
         return resp
+
+    if tool == 'chat':
+        return _assistant_response(
+            answer='',
+            intent='chat',
+            confidence=plan.get('confidence') or 'high',
+            suggestions=_assistant_default_suggestions(language),
+        )
 
     if tool == 'clarify':
         clarification_question = (plan.get('clarification_question') or '').strip()
@@ -3163,6 +3318,38 @@ class AssistantQueryView(APIView):
         language = get_preferred_language(request)
         context_entity = _assistant_load_context_entity(context_data, language, request)
 
+        # Step 1: Always run the parser first — it's free and fast.
+        parser = get_assistant_query_parser()
+        parsed = parser.parse(message, language=language, context=context_data, history=history)
+        understanding = parsed.as_dict()
+        core_logger.info("assistant.metric parser_tool=%s parser_confidence=%s", parsed.tool, parsed.confidence)
+
+        # Step 2: Greetings/identity — no LLM needed at all.
+        if parsed.tool == 'chat':
+            core_logger.info("assistant.metric route=chat_no_llm")
+            chat_resp = _assistant_response(
+                answer='',
+                intent='chat',
+                confidence='high',
+                suggestions=_assistant_default_suggestions(language),
+            )
+            response_payload = _assistant_finalize_response(chat_resp, language, context_entity, understanding)
+            _assistant_log_query(request, message, language, context_data, history, understanding, response_payload)
+            return Response(response_payload)
+
+        # Step 3: High/medium confidence DB or wiki query — skip plan_query, use 1 LLM call max.
+        if parsed.confidence in ('high', 'medium') and parsed.tool in ('faq', 'category', 'feed', 'context', 'search', 'wiki'):
+            core_logger.info("assistant.metric route=parser_first tool=%s", parsed.tool)
+            parser_response = _assistant_try_parser_first_response(
+                message, language, history, request, context_entity, understanding,
+            )
+            if parser_response:
+                response_payload = _assistant_finalize_response(parser_response, language, context_entity, understanding)
+                _assistant_log_query(request, message, language, context_data, history, understanding, response_payload)
+                return Response(response_payload)
+
+        # Step 4: Low confidence or unknown — full LLM pipeline (plan_query + execute + display_message).
+        core_logger.info("assistant.metric route=full_llm_pipeline")
         external_response = _assistant_try_external_ai_response(
             message,
             language,
@@ -3172,14 +3359,13 @@ class AssistantQueryView(APIView):
             context_entity,
         )
         if external_response:
-            understanding = external_response.get('understanding') or {}
+            understanding = external_response.get('understanding') or understanding
             response_payload = _assistant_finalize_response(external_response, language, context_entity, understanding)
             _assistant_log_query(request, message, language, context_data, history, understanding, response_payload)
             return Response(response_payload)
 
-        core_logger.info("assistant.metric fallback=deterministic_parser")
-        parser = get_assistant_query_parser()
-        understanding = parser.parse(message, language=language, context=context_data, history=history).as_dict()
+        # Step 5: LLM unavailable or failed — pure parser fallback, 0 LLM calls.
+        core_logger.info("assistant.metric route=parser_fallback_only")
         normalized_message = _assistant_augmented_message(
             _normalize_assistant_message(message),
             understanding,
@@ -3599,4 +3785,3 @@ class ListingGalleryView(APIView):
             })
 
         return Response(photos)
-

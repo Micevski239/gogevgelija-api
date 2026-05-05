@@ -241,6 +241,91 @@ CONTEXT_SIGNAL_RULES = [
 ]
 
 
+GREETING_KEYWORDS = [
+    'hi', 'hello', 'hey', 'hej', 'ej', 'alo', 'здраво', 'еј', 'хај', 'хело',
+]
+
+IDENTITY_KEYWORDS = [
+    'who are you', 'what are you', 'what can you do', 'introduce yourself',
+    'кој си', 'кој си ти', 'што можеш', 'за тебе', 'кажи за себе',
+]
+
+WIKI_RULES = [
+    {
+        'slug': 'lake-dojran',
+        'keywords': ['dojran', 'lake dojran', 'дојран', 'дојранско', 'дојранско езеро', 'езеро дојран'],
+        'wiki_query': 'lake dojran',
+        'high_confidence': True,
+    },
+    {
+        'slug': 'negorci-thermal-spa',
+        'keywords': ['negorci', 'негорци', 'негорски', 'banja', 'banje', 'бања', 'бање', 'термална', 'thermal spa', 'mineral bath'],
+        'wiki_query': 'negorci thermal spa',
+        'high_confidence': True,
+    },
+    {
+        'slug': 'casino-gevgelija',
+        'keywords': ['casino', 'казино', 'gambling', 'коцкање'],
+        'wiki_query': 'casino gevgelija',
+        'high_confidence': True,
+    },
+    {
+        'slug': 'outlet-center-gevgelija',
+        'keywords': ['outlet center', 'outlet mall', 'аутлет центар', 'аутлет'],
+        'wiki_query': 'outlet center gevgelija',
+        'high_confidence': True,
+    },
+    {
+        'slug': 'bogorodica-border-crossing',
+        'keywords': ['bogorodica', 'богородица', 'border crossing', 'granichen premin', 'граничен премин'],
+        'wiki_query': 'bogorodica border crossing',
+        'high_confidence': True,
+    },
+    {
+        'slug': 'wine-vineyards-gevgelija',
+        'keywords': ['wine', 'vineyard', 'winery', 'вино', 'лозје', 'лозарство', 'винарија'],
+        'wiki_query': 'wine vineyards gevgelija',
+        'high_confidence': True,
+    },
+    {
+        'slug': 'kozuf-mountain',
+        'keywords': ['kozuf', 'кожуф'],
+        'wiki_query': 'kozuf mountain',
+        'high_confidence': True,
+    },
+    {
+        'slug': 'smrdliva-voda',
+        'keywords': ['smrdliva', 'smrdliva voda', 'смрдлива', 'смрдлива вода'],
+        'wiki_query': 'smrdliva voda',
+        'high_confidence': True,
+    },
+    {
+        'slug': 'vardarski-rid',
+        'keywords': ['vardarski', 'vardarski rid', 'вардарски', 'вардарски рид', 'archaeological site', 'archeology', 'archaeology'],
+        'wiki_query': 'vardarski rid',
+        'high_confidence': True,
+    },
+    {
+        'slug': 'history-gevgelija',
+        'keywords': ['history of gevgelija', 'historical gevgelija', 'историја на гевгелија', 'историја гевгелија'],
+        'wiki_query': 'history gevgelija',
+        'high_confidence': False,
+    },
+    {
+        'slug': 'things-to-do-gevgelija',
+        'keywords': ['things to do', 'what to do in gevgelija', 'активности гевгелија', 'attractions gevgelija'],
+        'wiki_query': 'things to do gevgelija',
+        'high_confidence': False,
+    },
+    {
+        'slug': 'tourism-gevgelija',
+        'keywords': ['about gevgelija', 'visit gevgelija', 'за гевгелија', 'гевгелија туризам'],
+        'wiki_query': 'tourism gevgelija',
+        'high_confidence': False,
+    },
+]
+
+
 SOFT_FILTER_RULES = [
     {
         'filter_key': 'budget',
@@ -265,6 +350,8 @@ class AssistantQueryUnderstanding:
     provider: str
     confidence: str = 'low'
     intent: str = 'unknown'
+    tool: str = 'search'
+    wiki_query: str = ''
     entity_type: str | None = None
     content_type: str = 'all'
     faq_intent: str | None = None
@@ -302,76 +389,98 @@ class HeuristicAssistantQueryParser(BaseAssistantQueryParser):
         understanding = AssistantQueryUnderstanding(provider=self.provider_name, search_query=message.strip())
         confidence_score = 0
 
-        for rule in FAQ_RULES:
+        # Greetings and identity — handle before anything else
+        greeting_hit = any(kw in normalized_message for kw in GREETING_KEYWORDS)
+        identity_hit = any(kw in normalized_message for kw in IDENTITY_KEYWORDS)
+        if (greeting_hit or identity_hit) and len(tokens) <= 6:
+            understanding.intent = 'greeting'
+            understanding.tool = 'chat'
+            understanding.confidence = 'high'
+            return understanding
+
+        # Wiki destination knowledge — check before listing/feed so specific topics win
+        for rule in WIKI_RULES:
             matched, matched_terms, exact = _keyword_match(normalized_message, tokens, rule['keywords'])
             if not matched:
                 continue
-            understanding.intent = 'app_help'
-            understanding.faq_intent = rule['intent']
-            understanding.canonical_terms.extend(rule['canonical_terms'])
+            understanding.intent = 'wiki'
+            understanding.tool = 'wiki'
+            understanding.wiki_query = rule['wiki_query']
             understanding.matched_terms.extend(matched_terms)
-            confidence_score = max(confidence_score, 4 if exact else 3)
+            confidence_score = max(confidence_score, 4 if rule['high_confidence'] and exact else 3)
             break
 
-        if understanding.intent == 'unknown':
-            for rule in LISTING_CATEGORY_RULES:
+        if understanding.intent != 'wiki':
+            for rule in FAQ_RULES:
                 matched, matched_terms, exact = _keyword_match(normalized_message, tokens, rule['keywords'])
                 if not matched:
                     continue
-                understanding.intent = rule['intent']
-                understanding.entity_type = rule['entity_type']
-                understanding.category_key = rule['category_key']
-                understanding.category_terms.extend(rule['category_terms'])
+                understanding.intent = 'app_help'
+                understanding.faq_intent = rule['intent']
                 understanding.canonical_terms.extend(rule['canonical_terms'])
                 understanding.matched_terms.extend(matched_terms)
-                understanding.search_query = rule['search_query']
                 confidence_score = max(confidence_score, 4 if exact else 3)
                 break
 
-        if understanding.intent == 'unknown':
-            for rule in FEED_RULES:
+            if understanding.intent == 'unknown':
+                for rule in LISTING_CATEGORY_RULES:
+                    matched, matched_terms, exact = _keyword_match(normalized_message, tokens, rule['keywords'])
+                    if not matched:
+                        continue
+                    understanding.intent = rule['intent']
+                    understanding.entity_type = rule['entity_type']
+                    understanding.category_key = rule['category_key']
+                    understanding.category_terms.extend(rule['category_terms'])
+                    understanding.canonical_terms.extend(rule['canonical_terms'])
+                    understanding.matched_terms.extend(matched_terms)
+                    understanding.search_query = rule['search_query']
+                    confidence_score = max(confidence_score, 4 if exact else 3)
+                    break
+
+            if understanding.intent == 'unknown':
+                for rule in FEED_RULES:
+                    matched, matched_terms, exact = _keyword_match(normalized_message, tokens, rule['keywords'])
+                    if not matched:
+                        continue
+                    understanding.intent = rule['intent']
+                    understanding.entity_type = rule['entity_type']
+                    understanding.content_type = rule['content_type']
+                    understanding.canonical_terms.extend(rule['canonical_terms'])
+                    understanding.matched_terms.extend(matched_terms)
+                    understanding.search_query = rule['search_query']
+                    confidence_score = max(confidence_score, 4 if exact else 3)
+                    break
+
+            for rule in CONTEXT_SIGNAL_RULES:
                 matched, matched_terms, exact = _keyword_match(normalized_message, tokens, rule['keywords'])
                 if not matched:
                     continue
-                understanding.intent = rule['intent']
-                understanding.entity_type = rule['entity_type']
-                understanding.content_type = rule['content_type']
                 understanding.canonical_terms.extend(rule['canonical_terms'])
                 understanding.matched_terms.extend(matched_terms)
-                understanding.search_query = rule['search_query']
-                confidence_score = max(confidence_score, 4 if exact else 3)
-                break
+                if rule.get('filter_key'):
+                    understanding.filters[rule['filter_key']] = rule.get('filter_value', True)
+                confidence_score = max(confidence_score, 3 if exact else 2)
 
-        for rule in CONTEXT_SIGNAL_RULES:
-            matched, matched_terms, exact = _keyword_match(normalized_message, tokens, rule['keywords'])
-            if not matched:
-                continue
-            understanding.canonical_terms.extend(rule['canonical_terms'])
-            understanding.matched_terms.extend(matched_terms)
-            if rule.get('filter_key'):
-                understanding.filters[rule['filter_key']] = rule.get('filter_value', True)
-            confidence_score = max(confidence_score, 3 if exact else 2)
+            for rule in SOFT_FILTER_RULES:
+                matched, matched_terms, exact = _keyword_match(normalized_message, tokens, rule['keywords'])
+                if not matched:
+                    continue
+                understanding.filters[rule['filter_key']] = True
+                if rule.get('unsupported'):
+                    understanding.unsupported_filters.append(rule['filter_key'])
+                understanding.matched_terms.extend(matched_terms)
+                confidence_score = max(confidence_score, 2 if exact else 1)
 
-        for rule in SOFT_FILTER_RULES:
-            matched, matched_terms, exact = _keyword_match(normalized_message, tokens, rule['keywords'])
-            if not matched:
-                continue
-            understanding.filters[rule['filter_key']] = True
-            if rule.get('unsupported'):
-                understanding.unsupported_filters.append(rule['filter_key'])
-            understanding.matched_terms.extend(matched_terms)
-            confidence_score = max(confidence_score, 2 if exact else 1)
+            if context and context.get('entity_type'):
+                if any(token in tokens for token in ['this', 'it', 'them', 'that', 'ова', 'овој', 'оваа', 'тоа', 'тие']):
+                    understanding.entity_type = context['entity_type']
+                    understanding.intent = 'contextual_followup' if understanding.intent == 'unknown' else understanding.intent
+                    confidence_score = max(confidence_score, 3)
 
-        if context and context.get('entity_type'):
-            if any(token in tokens for token in ['this', 'it', 'them', 'that', 'ова', 'овој', 'оваа', 'тоа', 'тие']):
-                understanding.entity_type = context['entity_type']
-                understanding.intent = 'contextual_followup' if understanding.intent == 'unknown' else understanding.intent
-                confidence_score = max(confidence_score, 3)
-
-        if history and understanding.intent == 'unknown':
-            if any(token in tokens for token in ['first', 'second', 'last', 'прво', 'второ', 'последно']):
-                understanding.intent = 'followup_reference'
-                confidence_score = max(confidence_score, 2)
+            if history and understanding.intent == 'unknown':
+                if any(token in tokens for token in ['first', 'second', 'last', 'прво', 'второ', 'последно']):
+                    understanding.intent = 'followup_reference'
+                    confidence_score = max(confidence_score, 2)
 
         if not understanding.search_query.strip():
             core_tokens = [token for token in tokens if token not in STOPWORDS]
@@ -386,6 +495,20 @@ class HeuristicAssistantQueryParser(BaseAssistantQueryParser):
             understanding.confidence = 'medium'
         else:
             understanding.confidence = 'low'
+
+        # Map intent to tool
+        if understanding.tool == 'search':  # not already set by wiki/chat
+            intent_to_tool = {
+                'app_help': 'faq',
+                'listing_search': 'category',
+                'event_search': 'feed',
+                'promotion_search': 'feed',
+                'blog_search': 'feed',
+                'contextual_followup': 'context',
+                'followup_reference': 'search',
+                'unknown': 'search',
+            }
+            understanding.tool = intent_to_tool.get(understanding.intent, 'search')
 
         return understanding
 

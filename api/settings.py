@@ -8,6 +8,13 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+
+def _required_env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise ValueError(f"{name} environment variable must be set")
+    return value
+
 # -------------------- Security --------------------
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or (
     "dev-only-do-not-use-in-prod" if os.getenv("DJANGO_DEBUG", "0") == "1"
@@ -17,6 +24,9 @@ DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "https://admin.gogevgelija.com").split(",")
+
+if not DEBUG and ALLOWED_HOSTS == ["localhost", "127.0.0.1"]:
+    raise ValueError("ALLOWED_HOSTS must be configured explicitly in production")
 
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
@@ -37,7 +47,8 @@ X_FRAME_OPTIONS = "DENY"
 INSTALLED_APPS = [
     "django.contrib.admin","django.contrib.auth","django.contrib.contenttypes",
     "django.contrib.sessions","django.contrib.messages","django.contrib.staticfiles",
-    "rest_framework","corsheaders","imagekit","modeltranslation","core.apps.CoreConfig",
+    "rest_framework","corsheaders","imagekit","modeltranslation",
+    "rest_framework_simplejwt.token_blacklist","core.apps.CoreConfig",
 ]
 USE_SPACES = os.getenv("USE_SPACES", "1") == "1"
 if USE_SPACES:
@@ -97,6 +108,8 @@ REST_FRAMEWORK = {
         "user": "10000/hour",  # Increased from 1000/hour
         "assistant_anon": "60/hour",
         "assistant_user": "600/hour",
+        "verification_code_send": "5/hour",
+        "verification_code_verify": "20/hour",
     },
 }
 SIMPLE_JWT = {
@@ -113,11 +126,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "core" / "static"]
 
 if USE_SPACES:
-    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
-    AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME")
-    AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL")
+    AWS_ACCESS_KEY_ID = _required_env("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = _required_env("AWS_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = _required_env("AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_REGION_NAME = _required_env("AWS_S3_REGION_NAME")
+    AWS_S3_ENDPOINT_URL = _required_env("AWS_S3_ENDPOINT_URL")
 
     AWS_S3_CUSTOM_DOMAIN = os.getenv(
         "AWS_S3_CUSTOM_DOMAIN",
@@ -189,55 +202,60 @@ LOGGING = {
         "simple": {"format": "{levelname} {message}", "style": "{"},
     },
     "handlers": {
-        "file": {
-            "level": "ERROR",
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": os.path.join(BASE_DIR, "logs", "django_errors.log"),
-            "maxBytes": 10 * 1024 * 1024,
-            "backupCount": 5,
-            "formatter": "verbose",
-        },
         "console": {
             "level": "INFO" if DEBUG else "WARNING",
             "class": "logging.StreamHandler",
             "formatter": "simple" if DEBUG else "verbose",
         },
-        "security": {
-            "level": "INFO",
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": os.path.join(BASE_DIR, "logs", "security.log"),
-            "maxBytes": 10 * 1024 * 1024,
-            "backupCount": 5,
-            "formatter": "verbose",
-        },
-        "assistant_queries": {
-            "level": "INFO",
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": os.path.join(BASE_DIR, "logs", "assistant_queries.log"),
-            "maxBytes": 10 * 1024 * 1024,
-            "backupCount": 10,
-            "formatter": "verbose",
-        },
     },
     "loggers": {
-        "django": {"handlers": ["console", "file"] if not DEBUG else ["console"], "level": "INFO", "propagate": False},
-        "django.security": {"handlers": ["console", "security"] if not DEBUG else ["console"], "level": "INFO", "propagate": False},
-        "core": {"handlers": ["console", "file"] if not DEBUG else ["console"], "level": "DEBUG" if DEBUG else "INFO", "propagate": False},
-        "assistant_queries": {
-            "handlers": ["console", "assistant_queries"] if DEBUG else ["assistant_queries"],
-            "level": "INFO",
-            "propagate": False,
-        },
+        "django": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "django.security": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "core": {"handlers": ["console"], "level": "DEBUG" if DEBUG else "INFO", "propagate": False},
+        "assistant_queries": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
     "root": {"handlers": ["console"], "level": "WARNING"},
 }
-os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
+
+LOG_TO_FILES = os.getenv("LOG_TO_FILES", "0") == "1"
+if LOG_TO_FILES:
+    os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
+    LOGGING["handlers"]["file"] = {
+        "level": "ERROR",
+        "class": "logging.handlers.RotatingFileHandler",
+        "filename": os.path.join(BASE_DIR, "logs", "django_errors.log"),
+        "maxBytes": 10 * 1024 * 1024,
+        "backupCount": 5,
+        "formatter": "verbose",
+    }
+    LOGGING["handlers"]["security"] = {
+        "level": "INFO",
+        "class": "logging.handlers.RotatingFileHandler",
+        "filename": os.path.join(BASE_DIR, "logs", "security.log"),
+        "maxBytes": 10 * 1024 * 1024,
+        "backupCount": 5,
+        "formatter": "verbose",
+    }
+    LOGGING["handlers"]["assistant_queries"] = {
+        "level": "INFO",
+        "class": "logging.handlers.RotatingFileHandler",
+        "filename": os.path.join(BASE_DIR, "logs", "assistant_queries.log"),
+        "maxBytes": 10 * 1024 * 1024,
+        "backupCount": 10,
+        "formatter": "verbose",
+    }
+    LOGGING["loggers"]["django"]["handlers"].append("file")
+    LOGGING["loggers"]["django.security"]["handlers"].append("security")
+    LOGGING["loggers"]["core"]["handlers"].append("file")
+    LOGGING["loggers"]["assistant_queries"]["handlers"].append("assistant_queries")
 
 # -------------------- Assistant --------------------
 ASSISTANT_QUERY_LOGGING_ENABLED = os.getenv("ASSISTANT_QUERY_LOGGING_ENABLED", "1") == "1"
 
 # -------------------- Health --------------------
 HEALTH_CHECK_ENABLED = os.getenv("HEALTH_CHECK_ENABLED", "1") == "1"
+CURRENCY_RATES_URL = os.getenv("CURRENCY_RATES_URL", "https://open.er-api.com/v6/latest/MKD")
+CURRENCY_RATES_TIMEOUT_SECONDS = float(os.getenv("CURRENCY_RATES_TIMEOUT_SECONDS", "5"))
 
 # -------------------- Email --------------------
 # Use Resend API backend (no SMTP needed)

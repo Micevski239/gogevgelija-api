@@ -27,8 +27,8 @@ class GuestUser(models.Model):
 
 class VerificationCode(models.Model):
     """Model to store email verification codes for passwordless authentication"""
-    email = models.EmailField(help_text="Email address for verification")
-    code = models.CharField(max_length=6, help_text="6-digit verification code")
+    email = models.EmailField(db_index=True, help_text="Email address for verification")
+    code = models.CharField(max_length=128, help_text="Hashed verification code")
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(help_text="When the code expires")
     is_used = models.BooleanField(default=False, help_text="Whether the code has been used")
