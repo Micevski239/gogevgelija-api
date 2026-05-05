@@ -15,8 +15,4 @@ class Migration(migrations.Migration):
             name='open_time',
             field=models.CharField(blank=True, help_text="e.g., 'Open until 23:00' or 'Mon-Fri 9:00-18:00'", max_length=100, null=True),
         ),
-        migrations.RunSQL(
-            sql="ALTER TABLE core_listing ALTER COLUMN open_time DROP NOT NULL;",
-            reverse_sql="ALTER TABLE core_listing ALTER COLUMN open_time SET NOT NULL;",
-        ),
     ]

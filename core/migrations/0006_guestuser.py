@@ -24,4 +24,18 @@ class Migration(migrations.Migration):
                 'ordering': ['-last_active'],
             },
         ),
+        migrations.CreateModel(
+            name='VerificationCode',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('email', models.EmailField(help_text='Email address for verification', max_length=254)),
+                ('code', models.CharField(help_text='6-digit verification code', max_length=6)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('expires_at', models.DateTimeField(help_text='When the code expires')),
+                ('is_used', models.BooleanField(default=False, help_text='Whether the code has been used')),
+            ],
+            options={
+                'ordering': ['-created_at'],
+            },
+        ),
     ]

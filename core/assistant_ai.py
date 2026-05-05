@@ -48,7 +48,7 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
 
     def __init__(self) -> None:
         self.api_key = (os.getenv("GROQ_API_KEY") or "").strip()
-        self.model = (os.getenv("ASSISTANT_GROQ_MODEL") or "llama-3.3-70b-versatile").strip()
+        self.model = (os.getenv("ASSISTANT_GROQ_MODEL") or "").strip()
         self.timeout_seconds = float(os.getenv("ASSISTANT_GROQ_TIMEOUT_SECONDS", "10"))
 
     def is_enabled(self) -> bool:
@@ -361,10 +361,10 @@ class GroqAssistantAIProvider(BaseAssistantAIProvider):
             "A restaurant is NOT relevant to 'where can I fix my phone'. "
             "If the results don't match the user's actual need, ignore them and say we don't have that in the app.\n"
             "- If DB results ARE genuinely relevant: mention 1-2 place names naturally, say the cards below show full details\n"
-            "- If no DB results: answer from the knowledge base with general facts only — NEVER invent or name "
-            "specific businesses, venues, or prices that are not in the Database results. "
-            "If the user might want to find specific places, suggest they search in the app.\n"
-            "- If no results AND no knowledge base info: honestly say we don't have that in the app right now, "
+            "- If knowledge base context is provided but NO DB results: answer with 1-3 sentences of factual "
+            "destination information from the knowledge base. Do NOT mention the app, the database, or suggest "
+            "searching. Do NOT name any specific businesses or venues. Just share the general destination knowledge naturally.\n"
+            "- If no DB results AND no knowledge base info: honestly say we don't have that in the app right now, "
             "then offer to help with something GoGevgelija does cover (places to eat, hotels, events, deals)\n"
             "- Greetings (hey/hi/здраво): say hi back, introduce yourself as GoAI, offer to help find places/events/deals\n"
             "- Identity (who are you / кој си): explain you are GoAI, the GoGevgelija assistant; "
@@ -421,7 +421,7 @@ class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
 
     def __init__(self) -> None:
         self.api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
-        self.model = (os.getenv("ASSISTANT_OPENAI_MODEL") or "gpt-4o-mini").strip()
+        self.model = (os.getenv("ASSISTANT_OPENAI_MODEL") or "").strip()
         self.timeout_seconds = float(os.getenv("ASSISTANT_OPENAI_TIMEOUT_SECONDS", "20"))
 
     def is_enabled(self) -> bool:
@@ -732,10 +732,10 @@ class OpenAIAssistantAIProvider(BaseAssistantAIProvider):
             "A restaurant is NOT relevant to 'where can I fix my phone'. "
             "If the results don't match the user's actual need, ignore them and say we don't have that in the app.\n"
             "- If DB results ARE genuinely relevant: mention 1-2 place names naturally, say the cards below show full details\n"
-            "- If no DB results: answer from the knowledge base with general facts only — NEVER invent or name "
-            "specific businesses, venues, or prices that are not in the Database results. "
-            "If the user might want to find specific places, suggest they search in the app.\n"
-            "- If no results AND no knowledge base info: honestly say we don't have that in the app right now, "
+            "- If knowledge base context is provided but NO DB results: answer with 1-3 sentences of factual "
+            "destination information from the knowledge base. Do NOT mention the app, the database, or suggest "
+            "searching. Do NOT name any specific businesses or venues. Just share the general destination knowledge naturally.\n"
+            "- If no DB results AND no knowledge base info: honestly say we don't have that in the app right now, "
             "then offer to help with something GoGevgelija does cover (places to eat, hotels, events, deals)\n"
             "- Greetings (hey/hi/здраво): say hi back, introduce yourself as GoAI, offer to help find places/events/deals\n"
             "- Identity (who are you / кој си): explain you are GoAI, the GoGevgelija assistant; "
