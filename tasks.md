@@ -60,3 +60,14 @@ Run shuffle again and compare — numbers should be different.
 1. Replace profile icon with settings icon in header
 2. Use the navbar (AppHeader) in gallery screen
 3. Make better UI/UX in gallery (portrait cells, gradient captions, card shadows, better empty state)
+
+### Check if listings are active
+
+```bash
+python3 manage.py shell -c "
+from core.models import Listing
+for lid in [42, 33]:
+    l = Listing.objects.get(id=lid)
+    print(f'ID {lid} - {l.title} - is_active: {l.is_active}')
+"
+```

@@ -1,6 +1,7 @@
 import random
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.core.cache import cache
 from core.models import HomeSection, HomeSectionItem
 
 
@@ -47,6 +48,8 @@ class Command(BaseCommand):
                     item.order = new_order
                 all_items.extend(items)
             HomeSectionItem.objects.bulk_update(all_items, ['order'])
+
+        cache.clear()
 
         self.stdout.write(self.style.SUCCESS(
             f'Shuffled {len(sections)} sections and {len(all_items)} items.'
