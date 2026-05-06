@@ -3504,7 +3504,7 @@ class TourismScreenView(APIView):
         ).prefetch_related(
             "items",
             "items__content_type"
-        ).order_by("order", "-created_at")
+        ).order_by("tourism_order", "-created_at")
 
         # Build context for serializers
         context = {

@@ -1155,7 +1155,7 @@ class HomeSectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HomeSection
-        fields = ["id", "label", "card_type", "items", "order"]
+        fields = ["id", "label", "card_type", "items", "order", "tourism_order"]
 
     def get_label(self, obj):
         """Return label in the current language"""
