@@ -420,11 +420,11 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'description': 'Configure the button that opens the price list. Set a label (e.g. "Memberships", "Services") and choose an icon. Leave label blank to use the default "Menu / Мени".',
         }),
         ('English Content', {
-            'fields': ('title', 'description', 'address', 'open_time', 'tags', 'amenities_title', 'amenities', 'working_hours', 'show_open_status', 'manual_open_status', 'menu'),
+            'fields': ('title', 'description', 'address', 'tags', 'amenities_title', 'amenities', 'working_hours', 'show_open_status', 'manual_open_status', 'menu'),
             'classes': ('lang-tab', 'lang-en'),
         }),
         ('Macedonian Content', {
-            'fields': ('title_mk', 'description_mk', 'address_mk', 'open_time_mk', 'tags_mk', 'amenities_title_mk', 'amenities_mk', 'working_hours_mk', 'menu_mk'),
+            'fields': ('title_mk', 'description_mk', 'address_mk', 'tags_mk', 'amenities_title_mk', 'amenities_mk', 'working_hours_mk', 'menu_mk'),
             'classes': ('lang-tab', 'lang-mk'),
         }),
         ('Timestamps', {

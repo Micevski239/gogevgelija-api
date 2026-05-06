@@ -7,7 +7,7 @@ class CategoryTranslationOptions(TranslationOptions):
 
 @register(Listing)
 class ListingTranslationOptions(TranslationOptions):
-    fields = ('title', 'description', 'address', 'open_time')
+    fields = ('title', 'description', 'address')
 
 @register(Event)
 class EventTranslationOptions(TranslationOptions):

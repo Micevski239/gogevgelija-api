@@ -2389,20 +2389,7 @@ def _assistant_listing_hours_answer(listing, language):
             "This place is marked as open right now." if listing.get('is_open') else "This place is marked as closed right now.",
             "Ова место е означено како отворено во моментов." if listing.get('is_open') else "Ова место е означено како затворено во моментов.",
         )
-        if listing.get('open_time'):
-            return _localized_text(
-                language,
-                f"{status_text} Listed hours: {listing['open_time']}",
-                f"{status_text} Наведено работно време: {listing['open_time']}",
-            )
         return status_text
-
-    if listing.get('open_time'):
-        return _localized_text(
-            language,
-            f"The listed hours are {listing['open_time']}.",
-            f"Наведеното работно време е {listing['open_time']}.",
-        )
 
     working_hours = listing.get('working_hours') or {}
     if isinstance(working_hours, dict):
@@ -2851,8 +2838,6 @@ def _assistant_listing_answer(listing, language):
         parts.append(_localized_text(language, f"is a {category_name}", f"е {category_name.lower()}"))
     if listing.get('address'):
         parts.append(_localized_text(language, f"at {listing['address']}", f"на {listing['address']}"))
-    if listing.get('open_time'):
-        parts.append(_localized_text(language, f"Hours: {listing['open_time']}", f"Работно време: {listing['open_time']}"))
     if listing.get('phone_number'):
         parts.append(_localized_text(language, f"Phone: {listing['phone_number']}", f"Телефон: {listing['phone_number']}"))
     return ". ".join(part for part in parts if part) + "."

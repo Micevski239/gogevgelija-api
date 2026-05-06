@@ -212,7 +212,6 @@ class ListingSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
-    open_time = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
     amenities_title = serializers.SerializerMethodField()
     amenities = serializers.SerializerMethodField()
@@ -235,7 +234,7 @@ class ListingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Listing
         fields = [
-            "id", "title", "description", "address", "open_time",
+            "id", "title", "description", "address",
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "phone_number",
             "facebook_url", "instagram_url", "website_url", "google_maps_url",
@@ -255,14 +254,6 @@ class ListingSerializer(serializers.ModelSerializer):
     def get_address(self, obj):
         language = self.context.get('language', 'en')
         return getattr(obj, f'address_{language}', obj.address_en or obj.address)
-    
-    def get_open_time(self, obj):
-        language = self.context.get('language', 'en')
-        translated_value = getattr(obj, f'open_time_{language}', None)
-        if translated_value:
-            return translated_value
-        fallback = getattr(obj, 'open_time_en', None) or obj.open_time
-        return fallback or ''
     
     def get_tags(self, obj):
         language = self.context.get('language', 'en')
@@ -946,7 +937,7 @@ class EditListingSerializer(serializers.ModelSerializer):
             "facebook_url", "instagram_url", "website_url",
             # Bilingual fields
             "title_en", "title_mk", "description_en", "description_mk",
-            "address_en", "address_mk", "open_time_en", "open_time_mk",
+            "address_en", "address_mk",
             "working_hours_mk", "tags_mk", "amenities_mk",
             "menu_label", "menu_label_mk", "menu_icon", "menu", "menu_mk"
         ]
@@ -974,8 +965,6 @@ class EditListingSerializer(serializers.ModelSerializer):
         data['description_mk'] = getattr(instance, 'description_mk', None) or ''
         data['address_en'] = getattr(instance, 'address_en', None) or ''
         data['address_mk'] = getattr(instance, 'address_mk', None) or ''
-        data['open_time_en'] = getattr(instance, 'open_time_en', None) or ''
-        data['open_time_mk'] = getattr(instance, 'open_time_mk', None) or ''
         data['working_hours_mk'] = getattr(instance, 'working_hours_mk', None) or {}
         data['tags_mk'] = getattr(instance, 'tags_mk', None) or []
         data['amenities_mk'] = getattr(instance, 'amenities_mk', None) or []
@@ -1000,9 +989,6 @@ class EditListingSerializer(serializers.ModelSerializer):
             if attr in {"tags", "tags_mk", "amenities", "amenities_mk", "menu", "menu_mk"}:
                 if value in (None, ""):
                     value = []
-            if attr in {"open_time", "open_time_en", "open_time_mk"}:
-                if value is None:
-                    value = ''
             setattr(instance, attr, value)
         for field_name, value in image_fields.items():
             if value is serializers.empty:
