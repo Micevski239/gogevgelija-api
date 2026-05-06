@@ -9,6 +9,7 @@
 ## Useful Commands
 
 ### List all listing IDs in Home sections
+
 ```bash
 cd /srv/app/gogevgelija-api && python3 manage.py shell -c "
 from core.models import HomeSectionItem, HomeSection, Listing
@@ -21,6 +22,29 @@ for section in sections:
     ids = list(items.values_list('object_id', flat=True))
     print(f'{section.label}: {ids}')
 "
+```
+
+### Test shuffle_sections command
+
+```bash
+# Run the shuffle
+python3 manage.py shuffle_sections
+
+# Verify orders changed
+python3 manage.py shell -c "
+from core.models import HomeSection, HomeSectionItem
+for s in HomeSection.objects.filter(display_on__contains='home').order_by('order'):
+    items = HomeSectionItem.objects.filter(section=s).values_list('order', 'object_id')
+    print(f'{s.order} {s.label}: {list(items)}')
+"
+```
+
+Run shuffle again and compare — numbers should be different.
+
+### Crontab — shuffle sections every 6 hours
+
+```
+0 */6 * * * /srv/app/gogevgelija-api/venv/bin/python /srv/app/gogevgelija-api/manage.py shuffle_sections >> /var/log/shuffle_sections.log 2>&1
 ```
 
 ## Done
