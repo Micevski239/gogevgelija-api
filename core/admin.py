@@ -461,11 +461,6 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
         selected_ids = set(listing.sections.values_list('id', flat=True))
 
-        HomeSectionItem.objects.filter(
-            content_type=listing_ct,
-            object_id=listing.id,
-        ).exclude(section_id__in=selected_ids).delete()
-
         existing_ids = set(
             HomeSectionItem.objects.filter(
                 content_type=listing_ct,
@@ -568,12 +563,6 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
         event_ct = ContentType.objects.get_for_model(event)
 
         selected_ids = set(event.sections.values_list('id', flat=True))
-
-        # Remove HomeSectionItem entries for deselected sections
-        HomeSectionItem.objects.filter(
-            content_type=event_ct,
-            object_id=event.id,
-        ).exclude(section_id__in=selected_ids).delete()
 
         # Create HomeSectionItem entries for newly selected sections
         existing_ids = set(
@@ -764,11 +753,6 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
         promo_ct = ContentType.objects.get_for_model(promo)
 
         selected_ids = set(promo.sections.values_list('id', flat=True))
-
-        HomeSectionItem.objects.filter(
-            content_type=promo_ct,
-            object_id=promo.id,
-        ).exclude(section_id__in=selected_ids).delete()
 
         existing_ids = set(
             HomeSectionItem.objects.filter(
