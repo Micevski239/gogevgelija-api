@@ -299,7 +299,7 @@ class FileUploadValidationTests(TestCase):
         img = self._make_image()
         img.content_type = 'image/jpeg'
         response = self.client.patch(self.url, {'image': img}, format='multipart')
-        self.assertIn(response.status_code, [200, 400])
+        self.assertEqual(response.status_code, 200)
 
 
 class SearchLimitCapTests(TestCase):

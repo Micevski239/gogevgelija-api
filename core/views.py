@@ -271,17 +271,10 @@ class EventViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(featured_events, many=True)
         return Response(serializer.data)
     
-    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def join(self, request, pk=None):
         """Join an event - requires authenticated user (not guest)"""
         event = self.get_object()
-
-        # Block guest users and unauthenticated users
-        if not request.user.is_authenticated:
-            return Response({
-                'error': 'You must be logged in to join events',
-                'requires_auth': True
-            }, status=status.HTTP_401_UNAUTHORIZED)
 
         # Check if user already joined
         existing_join = EventJoin.objects.filter(event=event, user=request.user).first()
@@ -304,17 +297,10 @@ class EventViewSet(viewsets.ReadOnlyModelViewSet):
             'event': serializer.data
         }, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def unjoin(self, request, pk=None):
         """Unjoin an event (leave the event) - requires authenticated user"""
         event = self.get_object()
-
-        # Block guest users and unauthenticated users
-        if not request.user.is_authenticated:
-            return Response({
-                'error': 'You must be logged in to unjoin events',
-                'requires_auth': True
-            }, status=status.HTTP_401_UNAUTHORIZED)
 
         # Check if user has joined
         existing_join = EventJoin.objects.filter(event=event, user=request.user).first()
