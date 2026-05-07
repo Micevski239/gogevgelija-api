@@ -34,6 +34,7 @@ from core.views import (
     AssistantQueryView,
     GalleryView,
     ListingGalleryView,
+    AccountDataExportView,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -61,6 +62,7 @@ urlpatterns = [
     path("api/auth/guest/", GuestLoginView.as_view(), name="guest_login"),
     path("api/auth/me/", Me.as_view()),
     path("api/auth/profile/", Me.as_view()),
+    path("api/auth/me/export/", AccountDataExportView.as_view(), name="account_data_export"),
     path("api/auth/language/", LanguageView.as_view()),
     path("api/assistant/query/", AssistantQueryView.as_view(), name="assistant_query"),
     path("api/i18n/<str:language_code>/<str:namespace>/", TranslationResourceView.as_view(), name="i18n_resource"),

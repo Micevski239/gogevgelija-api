@@ -836,6 +836,40 @@ class Me(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class AccountDataExportView(APIView):
+    """GDPR right to data portability — returns all personal data held for the authenticated user."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        try:
+            profile = user.profile
+            profile_data = {"language_preference": profile.language_preference, "avatar": profile.avatar}
+        except Exception:
+            profile_data = {}
+
+        wishlist_items = []
+        for item in user.wishlist_items.select_related('content_type').all():
+            wishlist_items.append({
+                "content_type": item.content_type.model,
+                "object_id": item.object_id,
+                "saved_at": item.created_at.isoformat(),
+            })
+
+        return Response({
+            "account": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "date_joined": user.date_joined.isoformat(),
+                "profile": profile_data,
+            },
+            "wishlist": wishlist_items,
+        })
+
+
 class LanguageView(APIView):
     """View for handling user and guest language preferences"""
     permission_classes = [permissions.AllowAny]
