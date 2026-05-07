@@ -7,7 +7,7 @@ from datetime import timedelta
 from unittest.mock import MagicMock
 from PIL import Image
 from core.assistant_parser import HeuristicAssistantQueryParser
-from core.models import Category, Event, Listing, Promotion, Blog
+from core.models import Category, Event, Listing, Promotion, Blog, VerificationCode
 
 
 class AssistantV2Tests(TestCase):
@@ -369,6 +369,100 @@ class AuthEmailFlowTests(TestCase):
             '/api/auth/verify-code/',
             {'email': 'user@test.com'},
             content_type='application/json',
+            secure=True,
+        )
+        self.assertEqual(response.status_code, 400)
+
+
+class AuthIntegrationFlowTests(TestCase):
+    """Full passwordless auth flow: verify-code → JWT → authenticated request."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.email = 'integration@test.com'
+        self.raw_code = '123456'
+        from core.views import _hash_verification_code
+        self.code_hash = _hash_verification_code(self.email, self.raw_code)
+
+    def _create_verification_code(self, expired=False):
+        delta = timedelta(minutes=-5) if expired else timedelta(minutes=10)
+        return VerificationCode.objects.create(
+            email=self.email,
+            code=self.code_hash,
+            expires_at=timezone.now() + delta,
+        )
+
+    def test_verify_code_issues_jwt_for_existing_user(self):
+        User.objects.create_user(username='integuser', email=self.email)
+        self._create_verification_code()
+        response = self.client.post(
+            '/api/auth/verify-code/',
+            {'email': self.email, 'code': self.raw_code},
+            format='json',
+            secure=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('access', data)
+        self.assertIn('refresh', data)
+
+    def test_verify_code_registers_new_user(self):
+        self._create_verification_code()
+        response = self.client.post(
+            '/api/auth/verify-code/',
+            {'email': self.email, 'code': self.raw_code, 'name': 'New User'},
+            format='json',
+            secure=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(User.objects.filter(email=self.email).exists())
+
+    def test_jwt_token_authenticates_me_endpoint(self):
+        User.objects.create_user(username='integuser2', email=self.email)
+        self._create_verification_code()
+        token_response = self.client.post(
+            '/api/auth/verify-code/',
+            {'email': self.email, 'code': self.raw_code},
+            format='json',
+            secure=True,
+        )
+        access = token_response.json()['access']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+        me_response = self.client.get('/api/auth/me/', secure=True)
+        self.assertEqual(me_response.status_code, 200)
+        self.assertEqual(me_response.json()['email'], self.email)
+
+    def test_expired_code_rejected(self):
+        User.objects.create_user(username='integuser3', email=self.email)
+        self._create_verification_code(expired=True)
+        response = self.client.post(
+            '/api/auth/verify-code/',
+            {'email': self.email, 'code': self.raw_code},
+            format='json',
+            secure=True,
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_used_code_rejected(self):
+        User.objects.create_user(username='integuser4', email=self.email)
+        vc = self._create_verification_code()
+        vc.is_used = True
+        vc.save()
+        response = self.client.post(
+            '/api/auth/verify-code/',
+            {'email': self.email, 'code': self.raw_code},
+            format='json',
+            secure=True,
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_wrong_code_rejected(self):
+        User.objects.create_user(username='integuser5', email=self.email)
+        self._create_verification_code()
+        response = self.client.post(
+            '/api/auth/verify-code/',
+            {'email': self.email, 'code': '000000'},
+            format='json',
             secure=True,
         )
         self.assertEqual(response.status_code, 400)

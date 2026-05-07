@@ -1,3 +1,4 @@
+import os
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -73,8 +74,9 @@ urlpatterns = [
     path("api/health/", health, name="health"),
 ]
 
-# Conditionally include admin
+# Conditionally include admin — non-guessable path reduces scan exposure
 if settings.ADMIN_ENABLED:
+    _admin_path = os.environ.get('DJANGO_ADMIN_PATH', 'admin') + '/'
     urlpatterns.extend([
-        path('admin/', admin.site.urls),
+        path(_admin_path, admin.site.urls),
     ])

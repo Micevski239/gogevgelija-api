@@ -1392,6 +1392,13 @@ def _assistant_augmented_message(normalized_message, understanding):
     return " ".join(part for part in [normalized_message, " ".join(canonical_terms)] if part).strip()
 
 
+def _sanitize_action_url(url):
+    """Allow only https:// URLs to prevent open redirects and XSS via javascript: / data: schemes."""
+    if url and isinstance(url, str) and url.startswith('https://'):
+        return url
+    return None
+
+
 def _assistant_action(action_type, label, screen=None, params=None, url=None):
     payload = {
         'type': action_type,
@@ -1401,8 +1408,9 @@ def _assistant_action(action_type, label, screen=None, params=None, url=None):
         payload['screen'] = screen
     if params:
         payload['params'] = params
-    if url:
-        payload['url'] = url
+    safe_url = _sanitize_action_url(url)
+    if safe_url:
+        payload['url'] = safe_url
     return payload
 
 
