@@ -31,8 +31,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, BillboardItem, FeaturedItem, GalleryPhoto
-from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, BillboardItemSerializer, FeaturedItemSerializer, AssistantQuerySerializer, GalleryPhotoSerializer
+from .models import Category, Listing, Event, Promotion, Blog, EventJoin, Wishlist, UserProfile, UserPermission, HelpSupport, CollaborationContact, GuestUser, VerificationCode, HomeSection, HomeSectionItem, TourismCarousel, TourismCategoryButton, GalleryPhoto
+from .serializers import CategorySerializer, ListingSerializer, EventSerializer, PromotionSerializer, BlogSerializer, UserSerializer, WishlistSerializer, WishlistCreateSerializer, UserProfileSerializer, UserPermissionSerializer, CreateUserPermissionSerializer, EditListingSerializer, HelpSupportSerializer, HelpSupportCreateSerializer, CollaborationContactSerializer, CollaborationContactCreateSerializer, GuestUserSerializer, HomeSectionSerializer, TourismCarouselSerializer, TourismCategoryButtonSerializer, AssistantQuerySerializer, GalleryPhotoSerializer
 from .assistant_ai import AssistantAIError, get_assistant_ai_provider
 from .assistant_parser import get_assistant_query_parser
 from .utils import get_preferred_language
@@ -3507,136 +3507,6 @@ class EventsScreenView(APIView):
                 sections,
                 many=True,
                 context=context,
-            ).data,
-        }
-
-        return Response(data)
-
-
-# ============================================================================
-# BILLBOARD SCREEN VIEW - Magazine-style promotional content
-# ============================================================================
-
-class BillboardScreenView(APIView):
-    """
-    Returns all active billboard items grouped by section.
-    Used for the central FAB "Billboard" screen in the mobile app.
-
-    Sections:
-    - hero: Full-width featured banners
-    - limited: Time-sensitive promotions with countdown
-    - spotlight: Featured listings/events
-    - upcoming: Coming soon events
-    - general: General announcements
-    """
-    permission_classes = [permissions.AllowAny]
-
-    @method_decorator(cache_page(60 * 2))  # Cache for 2 minutes
-    def get(self, request):
-        language = get_preferred_language(request)
-        now = timezone.now()
-
-        # Get all visible billboard items
-        items = BillboardItem.objects.filter(
-            is_active=True
-        ).filter(
-            # Either no start date or start date has passed
-            models.Q(starts_at__isnull=True) | models.Q(starts_at__lte=now)
-        ).filter(
-            # Either no expiry or not expired yet
-            models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=now)
-        ).select_related('content_type').order_by('section', 'order', '-created_at')
-
-        context = {
-            'request': request,
-            'language': language
-        }
-
-        # Group items by section
-        sections = {
-            'hero': [],
-            'limited': [],
-            'spotlight': [],
-            'upcoming': [],
-            'general': [],
-        }
-
-        for item in items:
-            section_key = item.section
-            if section_key in sections:
-                sections[section_key].append(item)
-
-        # Serialize each section
-        data = {
-            section: BillboardItemSerializer(items_list, many=True, context=context).data
-            for section, items_list in sections.items()
-        }
-
-        return Response(data)
-
-
-# ============================================================================
-# FEATURED ITEMS VIEW - Magazine-style billboard with listings, events, promotions
-# ============================================================================
-
-class FeaturedListingsView(APIView):
-    """
-    Returns featured items (listings, events, promotions) grouped by card size
-    for the magazine-style billboard.
-
-    Card sizes:
-    - hero: Full-width hero cards
-    - large: 2-column large cards
-    - medium: 3-column medium cards
-    - small: Horizontal scroll strip
-    """
-    permission_classes = [permissions.AllowAny]
-
-    @method_decorator(cache_page(60 * 2))  # Cache for 2 minutes
-    def get(self, request):
-        from django.utils import timezone
-        now = timezone.now()
-
-        # Get all active featured items that haven't expired
-        items = FeaturedItem.objects.filter(
-            is_active=True,
-        ).filter(
-            models.Q(valid_until__isnull=True) | models.Q(valid_until__gt=now)
-        ).select_related('content_type').order_by('card_size', 'order')
-
-        # Filter out items whose content is inactive
-        active_items = []
-        for item in items:
-            content = item.content_object
-            if content and getattr(content, 'is_active', True):
-                active_items.append(item)
-
-        context = {
-            'request': request,
-            'language': get_preferred_language(request)
-        }
-
-        # Group items by card size
-        data = {
-            'hero': FeaturedItemSerializer(
-                [i for i in active_items if i.card_size == 'hero'],
-                many=True,
-                context=context
-            ).data,
-            'large': FeaturedItemSerializer(
-                [i for i in active_items if i.card_size == 'large'],
-                many=True,
-                context=context
-            ).data,
-            'medium': FeaturedItemSerializer(
-                [i for i in active_items if i.card_size == 'medium'],
-                many=True,
-                context=context
-            ).data,
-            'small': FeaturedItemSerializer(
-                [i for i in active_items if i.card_size == 'small'],
-                many=True,
-                context=context
             ).data,
         }
 
