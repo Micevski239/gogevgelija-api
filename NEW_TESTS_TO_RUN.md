@@ -14,11 +14,11 @@ python manage.py test \
 
 ## What each class tests
 
-| Class | What it verifies |
-|-------|-----------------|
-| `SearchLimitCapTests` | `?limit=99999`, `?limit=abc`, `?limit=0` all return non-500 |
-| `SupportEndpointPermissionTests` | Anonymous POST to `/api/help-support/` and `/api/collaboration-contact/` returns 401/403 |
-| `AuthEmailFlowTests` | `/api/auth/send-code/` rejects missing/invalid email (400); `/api/auth/verify-code/` rejects missing code (400) |
+| Class                            | What it verifies                                                                                                |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `SearchLimitCapTests`            | `?limit=99999`, `?limit=abc`, `?limit=0` all return non-500                                                     |
+| `SupportEndpointPermissionTests` | Anonymous POST to `/api/help-support/` and `/api/collaboration-contact/` returns 401/403                        |
+| `AuthEmailFlowTests`             | `/api/auth/send-code/` rejects missing/invalid email (400); `/api/auth/verify-code/` rejects missing code (400) |
 
 ## Full test suite (run all at once)
 

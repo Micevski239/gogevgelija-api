@@ -1,5 +1,5 @@
 import io
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -302,6 +302,7 @@ class FileUploadValidationTests(TestCase):
         self.assertIn(response.status_code, [200, 400])
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class SearchLimitCapTests(TestCase):
     """Confirm global_search limit parameter is capped at 50."""
 
@@ -319,6 +320,7 @@ class SearchLimitCapTests(TestCase):
         self.assertNotEqual(response.status_code, 500)
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class SupportEndpointPermissionTests(TestCase):
     """Help-support and collaboration-contact require auth for writes."""
 
@@ -344,6 +346,7 @@ class SupportEndpointPermissionTests(TestCase):
         self.assertIn(response.status_code, [401, 403])
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class AuthEmailFlowTests(TestCase):
     """Send-code / verify-code endpoint contracts."""
 
