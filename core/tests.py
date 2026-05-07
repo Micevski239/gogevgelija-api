@@ -9,10 +9,7 @@ from PIL import Image
 from core.assistant_parser import HeuristicAssistantQueryParser
 from core.models import Category, Event, Listing, Promotion, Blog, VerificationCode
 
-_NO_THROTTLE = {
-    'DEFAULT_THROTTLE_CLASSES': [],
-    'DEFAULT_THROTTLE_RATES': {},
-}
+_DUMMY_CACHE = {'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}}
 
 
 class AssistantV2Tests(TestCase):
@@ -352,7 +349,7 @@ class SupportEndpointPermissionTests(TestCase):
         self.assertIn(response.status_code, [401, 403])
 
 
-@override_settings(REST_FRAMEWORK=_NO_THROTTLE)
+@override_settings(CACHES=_DUMMY_CACHE)
 class AuthEmailFlowTests(TestCase):
     """Send-code / verify-code endpoint contracts."""
 
@@ -384,7 +381,7 @@ class AuthEmailFlowTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
 
-@override_settings(REST_FRAMEWORK=_NO_THROTTLE)
+@override_settings(CACHES=_DUMMY_CACHE)
 class AuthIntegrationFlowTests(TestCase):
     """Full passwordless auth flow: verify-code → JWT → authenticated request."""
 
