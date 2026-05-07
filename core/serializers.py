@@ -92,10 +92,11 @@ class SimplifiedListingSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     image_thumbnail = serializers.SerializerMethodField()
+    image_medium = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
-        fields = ["id", "title", "address", "category", "image", "image_thumbnail", "phone_number"]
+        fields = ["id", "title", "address", "category", "image", "image_thumbnail", "image_medium", "phone_number"]
 
     def get_title(self, obj):
         language = self.context.get('language', 'en')
@@ -115,6 +116,11 @@ class SimplifiedListingSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return _get_optimized_image_url(obj, 'image_thumbnail', request)
 
+    def get_image_medium(self, obj):
+        """Return optimized medium URL (600x400px WebP)"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_medium', request)
+
 
 class SimplifiedEventSerializer(serializers.ModelSerializer):
     """Simplified event serializer without nested relationships to avoid circular references."""
@@ -123,10 +129,11 @@ class SimplifiedEventSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     image_thumbnail = serializers.SerializerMethodField()
+    image_medium = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
-        fields = ["id", "title", "date_time", "location", "category", "image", "image_thumbnail", "entry_price"]
+        fields = ["id", "title", "date_time", "location", "category", "image", "image_thumbnail", "image_medium", "entry_price"]
 
     def get_title(self, obj):
         language = self.context.get('language', 'en')
@@ -145,6 +152,11 @@ class SimplifiedEventSerializer(serializers.ModelSerializer):
         """Return optimized thumbnail URL (54x54px)"""
         request = self.context.get('request')
         return _get_optimized_image_url(obj, 'image_thumbnail', request)
+
+    def get_image_medium(self, obj):
+        """Return optimized medium URL (600x400px WebP)"""
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_medium', request)
 
 
 class ListingSerializer(serializers.ModelSerializer):
@@ -175,7 +187,7 @@ class ListingSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "description", "address",
             "category", "tags", "amenities_title", "amenities", "working_hours", "show_open_status", "is_open",
-            "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "phone_number",
+            "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "blurhash", "phone_number",
             "facebook_url", "instagram_url", "website_url", "google_maps_url",
             "featured", "trending", "is_active", "promotions", "events",
             "menu_label", "menu_label_mk", "menu_icon", "menu", "menu_mk",
@@ -381,7 +393,7 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = [
             "id", "title", "description", "date_time", "location",
-            "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "cover_image", "entry_price", "category", "age_limit", "expectations",
+            "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "cover_image", "blurhash", "entry_price", "category", "age_limit", "expectations",
             "join_count", "has_joined", "featured", "is_active", "show_join_button",
             "phone_number", "facebook_url", "instagram_url", "website_url", "google_maps_url",
             "listings", "created_at", "updated_at"
@@ -493,7 +505,7 @@ class PromotionSerializer(serializers.ModelSerializer):
         model = Promotion
         fields = [
             "id", "title", "description", "has_discount_code", "discount_code", "tags",
-            "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "valid_until", "featured", "is_active", "website", "phone_number", "facebook_url",
+            "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "blurhash", "valid_until", "featured", "is_active", "website", "phone_number", "facebook_url",
             "instagram_url", "address", "google_maps_url", "listings", "created_at", "updated_at"
         ]
 
@@ -616,7 +628,7 @@ class BlogSerializer(serializers.ModelSerializer):
         model = Blog
         fields = [
             "id", "title", "subtitle", "content", "author", "category",
-            "tags", "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "cover_image", "read_time_minutes", "featured",
+            "tags", "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "cover_image", "blurhash", "read_time_minutes", "featured",
             "published", "is_active", "cta_button_title", "cta_button_subtitle", "cta_button_url", "sections", "created_at", "updated_at"
         ]
     

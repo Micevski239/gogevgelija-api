@@ -3422,6 +3422,7 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
         if isinstance(response.data, dict) and 'results' in response.data:
             response.data['results'] = [s for s in response.data['results'] if s.get('items')]
             response.data['count'] = len(response.data['results'])
+        response['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
         return response
 
 
@@ -3500,7 +3501,9 @@ class TourismScreenView(APIView):
         # Filter out carousel items with no content
         data['carousel'] = [item for item in data['carousel'] if item['data'] is not None]
 
-        return Response(data)
+        response = Response(data)
+        response['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
+        return response
 
 
 # ============================================================================
@@ -3542,7 +3545,9 @@ class EventsScreenView(APIView):
             ).data,
         }
 
-        return Response(data)
+        response = Response(data)
+        response['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
+        return response
 
 
 class GalleryView(APIView):

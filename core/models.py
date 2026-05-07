@@ -7,6 +7,21 @@ from imagekit.processors import ResizeToFill, ResizeToFit
 import uuid
 import os
 
+
+def _generate_blurhash(image_field):
+    """Generate a blurhash string from an ImageField. Returns None on any failure."""
+    try:
+        import blurhash
+        from PIL import Image as PILImage
+        image_field.seek(0)
+        with PILImage.open(image_field) as img:
+            img.thumbnail((64, 64))
+            if img.mode not in ('RGB', 'RGBA'):
+                img = img.convert('RGB')
+            return blurhash.encode(img, x_components=4, y_components=3)
+    except Exception:
+        return None
+
 class GuestUser(models.Model):
     """Model for guest users who browse without registering"""
     guest_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, help_text="Unique identifier for guest user")
@@ -357,6 +372,7 @@ class Listing(models.Model):
     sections = models.ManyToManyField('HomeSection', blank=True, related_name='direct_listings', help_text="Sections this listing should appear in")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    blurhash = models.CharField(max_length=100, blank=True, null=True, help_text="Blurhash placeholder string for image (auto-generated)")
 
     class Meta:
         ordering = ['-created_at']
@@ -370,6 +386,11 @@ class Listing(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        if self.image and not self.blurhash:
+            self.blurhash = _generate_blurhash(self.image)
+        super().save(*args, **kwargs)
 
 
 class Event(models.Model):
@@ -456,6 +477,7 @@ class Event(models.Model):
     sections = models.ManyToManyField('HomeSection', blank=True, related_name='direct_events', help_text="Sections this event should appear in")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    blurhash = models.CharField(max_length=100, blank=True, null=True, help_text="Blurhash placeholder string for image (auto-generated)")
 
     class Meta:
         ordering = ['-created_at']
@@ -468,6 +490,11 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.date_time}"
+
+    def save(self, *args, **kwargs):
+        if self.image and not self.blurhash:
+            self.blurhash = _generate_blurhash(self.image)
+        super().save(*args, **kwargs)
 
 
 class Promotion(models.Model):
@@ -548,6 +575,7 @@ class Promotion(models.Model):
     sections = models.ManyToManyField('HomeSection', blank=True, related_name='direct_promotions', help_text="Sections this promotion should appear in")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    blurhash = models.CharField(max_length=100, blank=True, null=True, help_text="Blurhash placeholder string for image (auto-generated)")
 
     class Meta:
         ordering = ['-created_at']
@@ -560,6 +588,11 @@ class Promotion(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.discount_code}"
+
+    def save(self, *args, **kwargs):
+        if self.image and not self.blurhash:
+            self.blurhash = _generate_blurhash(self.image)
+        super().save(*args, **kwargs)
 
 
 class Blog(models.Model):
@@ -662,7 +695,8 @@ class Blog(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+    blurhash = models.CharField(max_length=100, blank=True, null=True, help_text="Blurhash placeholder string for image (auto-generated)")
+
     class Meta:
         ordering = ['-created_at']
         # PERFORMANCE FIX: Add database indexes for frequently queried fields
@@ -674,6 +708,11 @@ class Blog(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        if self.image and not self.blurhash:
+            self.blurhash = _generate_blurhash(self.image)
+        super().save(*args, **kwargs)
 
 
 class BlogSection(models.Model):
