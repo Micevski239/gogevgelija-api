@@ -183,13 +183,13 @@ class PublicContentWritePermissionTests(TestCase):
 
     def _assert_read_only(self, base_url, detail_url):
         # GETs must succeed
-        self.assertIn(self.client.get(base_url).status_code, [200, 301, 302])
-        self.assertIn(self.client.get(detail_url).status_code, [200, 301, 302])
+        self.assertIn(self.client.get(base_url, secure=True).status_code, [200, 301, 302])
+        self.assertIn(self.client.get(detail_url, secure=True).status_code, [200, 301, 302])
         # Writes must be blocked
-        self.assertEqual(self.client.post(base_url, {}, content_type='application/json').status_code, 405)
-        self.assertEqual(self.client.put(detail_url, {}, content_type='application/json').status_code, 405)
-        self.assertEqual(self.client.patch(detail_url, {}, content_type='application/json').status_code, 405)
-        self.assertEqual(self.client.delete(detail_url).status_code, 405)
+        self.assertEqual(self.client.post(base_url, {}, content_type='application/json', secure=True).status_code, 405)
+        self.assertEqual(self.client.put(detail_url, {}, content_type='application/json', secure=True).status_code, 405)
+        self.assertEqual(self.client.patch(detail_url, {}, content_type='application/json', secure=True).status_code, 405)
+        self.assertEqual(self.client.delete(detail_url, secure=True).status_code, 405)
 
     def test_categories_are_read_only(self):
         self._assert_read_only('/api/categories/', f'/api/categories/{self.category.pk}/')
@@ -218,11 +218,12 @@ class LegacyRegisterEndpointTests(TestCase):
             '/api/auth/register/',
             {'username': 'x', 'email': 'x@x.com', 'password': 'pass'},
             content_type='application/json',
+            secure=True,
         )
         self.assertEqual(response.status_code, 410)
 
     def test_register_response_contains_redirect_hint(self):
-        response = self.client.post('/api/auth/register/', {}, content_type='application/json')
+        response = self.client.post('/api/auth/register/', {}, content_type='application/json', secure=True)
         self.assertIn('send-code', response.json().get('error', ''))
 
 
@@ -238,11 +239,12 @@ class AssistantInputValidationTests(TestCase):
             self.url,
             {'message': 'x' * 301},
             content_type='application/json',
+            secure=True,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_empty_message_rejected(self):
-        response = self.client.post(self.url, {'message': ''}, content_type='application/json')
+        response = self.client.post(self.url, {'message': ''}, content_type='application/json', secure=True)
         self.assertEqual(response.status_code, 400)
 
     def test_history_too_many_items_rejected(self):
@@ -251,6 +253,7 @@ class AssistantInputValidationTests(TestCase):
             self.url,
             {'message': 'hello', 'history': history},
             content_type='application/json',
+            secure=True,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -259,6 +262,7 @@ class AssistantInputValidationTests(TestCase):
             self.url,
             {'message': 'What restaurants are open?'},
             content_type='application/json',
+            secure=True,
         )
         self.assertIn(response.status_code, [200, 429])
 
@@ -292,12 +296,12 @@ class FileUploadValidationTests(TestCase):
     def test_oversized_image_rejected(self):
         oversized = io.BytesIO(b'\xff\xd8\xff' + b'\x00' * (11 * 1024 * 1024))
         oversized.name = 'big.jpg'
-        response = self.client.patch(self.url, {'image': oversized}, format='multipart')
+        response = self.client.patch(self.url, {'image': oversized}, format='multipart', secure=True)
         self.assertEqual(response.status_code, 400)
 
     def test_valid_image_accepted(self):
         img = self._make_image()
-        response = self.client.patch(self.url, {'image': img}, format='multipart')
+        response = self.client.patch(self.url, {'image': img}, format='multipart', secure=True)
         self.assertEqual(response.status_code, 200)
 
 
