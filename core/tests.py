@@ -1,5 +1,6 @@
 import io
 from django.test import TestCase, Client
+from rest_framework.test import APIClient
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -274,8 +275,8 @@ class FileUploadValidationTests(TestCase):
         )
         from core.models import UserPermission
         UserPermission.objects.create(user=self.user, listing=self.listing, can_edit=True)
-        self.client = Client()
-        self.client.force_login(self.user)
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
         self.url = f'/api/listings/{self.listing.pk}/edit/'
 
     def _make_image(self, size_bytes=None, fmt='JPEG'):
@@ -291,13 +292,11 @@ class FileUploadValidationTests(TestCase):
     def test_oversized_image_rejected(self):
         oversized = io.BytesIO(b'\xff\xd8\xff' + b'\x00' * (11 * 1024 * 1024))
         oversized.name = 'big.jpg'
-        oversized.content_type = 'image/jpeg'
         response = self.client.patch(self.url, {'image': oversized}, format='multipart')
         self.assertEqual(response.status_code, 400)
 
     def test_valid_image_accepted(self):
         img = self._make_image()
-        img.content_type = 'image/jpeg'
         response = self.client.patch(self.url, {'image': img}, format='multipart')
         self.assertEqual(response.status_code, 200)
 
