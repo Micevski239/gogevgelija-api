@@ -1524,6 +1524,9 @@ def _assistant_current_context_payload(context_entity):
     )
 
 
+_ASSISTANT_ANSWER_MAX_CHARS = 2000
+
+
 def _assistant_finalize_response(payload, language, context_entity=None, understanding=None):
     payload.setdefault('results', [])
     payload.setdefault('actions', [])
@@ -1531,6 +1534,10 @@ def _assistant_finalize_response(payload, language, context_entity=None, underst
     payload.setdefault('resolved_context', _assistant_current_context_payload(context_entity))
     if understanding is not None:
         payload.setdefault('understanding', understanding)
+    # Cap answer length to prevent runaway LLM responses reaching the client
+    answer = payload.get('answer')
+    if isinstance(answer, str) and len(answer) > _ASSISTANT_ANSWER_MAX_CHARS:
+        payload['answer'] = answer[:_ASSISTANT_ANSWER_MAX_CHARS]
     return payload
 
 

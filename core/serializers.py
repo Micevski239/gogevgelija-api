@@ -1054,12 +1054,21 @@ class AssistantQuerySerializer(serializers.Serializer):
         'your instructions are',
     ]
 
-    def validate_message(self, value):
+    def _check_injection(self, value):
         lowered = value.lower()
         for pattern in self._INJECTION_PATTERNS:
             if pattern in lowered:
                 raise serializers.ValidationError('Message contains disallowed content.')
+
+    def validate_message(self, value):
+        self._check_injection(value)
         return value
+
+    def validate_history(self, items):
+        for item in items:
+            if item.get('role') == 'user':
+                self._check_injection(item.get('text', ''))
+        return items
 
 
 
