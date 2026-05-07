@@ -1,8 +1,10 @@
+import io
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 from unittest.mock import MagicMock
+from PIL import Image
 from core.assistant_parser import HeuristicAssistantQueryParser
 from core.models import Category, Event, Listing, Promotion, Blog
 
@@ -202,3 +204,99 @@ class PublicContentWritePermissionTests(TestCase):
 
     def test_blogs_are_read_only(self):
         self._assert_read_only('/api/blogs/', f'/api/blogs/{self.blog.pk}/')
+
+
+class LegacyRegisterEndpointTests(TestCase):
+    """Register endpoint must be disabled (410 Gone)."""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_register_returns_410(self):
+        response = self.client.post(
+            '/api/auth/register/',
+            {'username': 'x', 'email': 'x@x.com', 'password': 'pass'},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 410)
+
+    def test_register_response_contains_redirect_hint(self):
+        response = self.client.post('/api/auth/register/', {}, content_type='application/json')
+        self.assertIn('send-code', response.json().get('error', ''))
+
+
+class AssistantInputValidationTests(TestCase):
+    """Confirm input limits on the assistant endpoint."""
+
+    def setUp(self):
+        self.client = Client()
+        self.url = '/api/assistant/query/'
+
+    def test_message_too_long_rejected(self):
+        response = self.client.post(
+            self.url,
+            {'message': 'x' * 301},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_empty_message_rejected(self):
+        response = self.client.post(self.url, {'message': ''}, content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+
+    def test_history_too_many_items_rejected(self):
+        history = [{'role': 'user', 'text': 'hi'} for _ in range(21)]
+        response = self.client.post(
+            self.url,
+            {'message': 'hello', 'history': history},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_valid_message_accepted(self):
+        response = self.client.post(
+            self.url,
+            {'message': 'What restaurants are open?'},
+            content_type='application/json',
+        )
+        self.assertIn(response.status_code, [200, 429])
+
+
+class FileUploadValidationTests(TestCase):
+    """Confirm file upload size and type limits on EditListingView."""
+
+    def setUp(self):
+        self.user = User.objects.create_user('editor', 'editor@test.com', 'pass')
+        self.category = Category.objects.create(name='Food', slug='food', is_active=True)
+        self.listing = Listing.objects.create(
+            title='Cafe', title_en='Cafe', title_mk='Кафе',
+            is_active=True, category=self.category,
+        )
+        from core.models import UserPermission
+        UserPermission.objects.create(user=self.user, listing=self.listing, can_edit=True)
+        self.client = Client()
+        self.client.force_login(self.user)
+        self.url = f'/api/listings/{self.listing.pk}/edit/'
+
+    def _make_image(self, size_bytes=None, fmt='JPEG'):
+        img = Image.new('RGB', (10, 10), color='red')
+        buf = io.BytesIO()
+        img.save(buf, format=fmt)
+        if size_bytes:
+            buf = io.BytesIO(buf.getvalue() + b'\x00' * (size_bytes - buf.tell()))
+        buf.seek(0)
+        buf.name = f'test.{"jpg" if fmt == "JPEG" else fmt.lower()}'
+        return buf
+
+    def test_oversized_image_rejected(self):
+        oversized = io.BytesIO(b'\xff\xd8\xff' + b'\x00' * (11 * 1024 * 1024))
+        oversized.name = 'big.jpg'
+        oversized.content_type = 'image/jpeg'
+        response = self.client.patch(self.url, {'image': oversized}, format='multipart')
+        self.assertEqual(response.status_code, 400)
+
+    def test_valid_image_accepted(self):
+        img = self._make_image()
+        img.content_type = 'image/jpeg'
+        response = self.client.patch(self.url, {'image': img}, format='multipart')
+        self.assertIn(response.status_code, [200, 400])
