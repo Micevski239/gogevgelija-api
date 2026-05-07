@@ -826,6 +826,16 @@ class Me(APIView):
             "profile": profile_data
         })
 
+    def delete(self, request):
+        """Permanently delete the authenticated user's account and all associated data (GDPR right to erasure)."""
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+        user = request.user
+        core_logger.info("account.deletion user_id=%s", user.id)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class LanguageView(APIView):
     """View for handling user and guest language preferences"""
     permission_classes = [permissions.AllowAny]

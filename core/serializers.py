@@ -1037,6 +1037,30 @@ class AssistantQuerySerializer(serializers.Serializer):
     context = AssistantContextSerializer(required=False)
     history = AssistantHistoryItemSerializer(many=True, required=False, max_length=20)
 
+    _INJECTION_PATTERNS = [
+        'ignore previous instructions',
+        'ignore all instructions',
+        'disregard previous',
+        'forget your instructions',
+        'you are now',
+        'act as if',
+        'pretend you are',
+        'jailbreak',
+        'dan mode',
+        'do anything now',
+        'override your',
+        'new persona',
+        'system prompt',
+        'your instructions are',
+    ]
+
+    def validate_message(self, value):
+        lowered = value.lower()
+        for pattern in self._INJECTION_PATTERNS:
+            if pattern in lowered:
+                raise serializers.ValidationError('Message contains disallowed content.')
+        return value
+
 
 
 # ============================================================================
