@@ -1142,6 +1142,10 @@ class TourismCategoryButton(models.Model):
         return f"{self.label} ({self.button_size}) -> {self.category.name}"
 
 
+def billboard_image_upload_to(instance, filename):
+    return _image_upload_path("billboard", filename)
+
+
 def gallery_image_upload_to(instance, filename):
     return _image_upload_path("gallery", filename)
 
