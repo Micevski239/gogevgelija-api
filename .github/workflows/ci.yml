@@ -14,6 +14,7 @@ jobs:
       DJANGO_SECRET_KEY: "ci-only-not-used-in-prod"
       DATABASE_URL: ""
       REDIS_URL: ""
+      USE_SPACES: "0"
 
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"
           cache: "pip"
 
       - name: Install dependencies
