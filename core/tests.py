@@ -1,5 +1,5 @@
 import io
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from rest_framework.test import APIClient
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -8,6 +8,11 @@ from unittest.mock import MagicMock
 from PIL import Image
 from core.assistant_parser import HeuristicAssistantQueryParser
 from core.models import Category, Event, Listing, Promotion, Blog, VerificationCode
+
+_NO_THROTTLE = {
+    'DEFAULT_THROTTLE_CLASSES': [],
+    'DEFAULT_THROTTLE_RATES': {},
+}
 
 
 class AssistantV2Tests(TestCase):
@@ -347,6 +352,7 @@ class SupportEndpointPermissionTests(TestCase):
         self.assertIn(response.status_code, [401, 403])
 
 
+@override_settings(REST_FRAMEWORK=_NO_THROTTLE)
 class AuthEmailFlowTests(TestCase):
     """Send-code / verify-code endpoint contracts."""
 
@@ -378,6 +384,7 @@ class AuthEmailFlowTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
 
+@override_settings(REST_FRAMEWORK=_NO_THROTTLE)
 class AuthIntegrationFlowTests(TestCase):
     """Full passwordless auth flow: verify-code → JWT → authenticated request."""
 

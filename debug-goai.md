@@ -3,7 +3,7 @@
 ## 1. SSH into the droplet
 
 ```bash
-ssh root@167.71.37.168
+ssh <production-user>@<production-host>
 ```
 
 ## 2. Navigate to the API and activate venv
@@ -22,7 +22,7 @@ grep -E "ASSISTANT|OPENAI" .env
 Expected:
 ```
 ASSISTANT_EXTERNAL_AI_PROVIDER=openai
-OPENAI_API_KEY=sk-...
+OPENAI_API_KEY=<set in production secret manager>
 ASSISTANT_OPENAI_MODEL=gpt-5.4-mini
 ```
 

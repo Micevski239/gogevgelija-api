@@ -18,7 +18,7 @@ def _required_env(name: str) -> str:
 # -------------------- Security --------------------
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or (
     "dev-only-do-not-use-in-prod" if os.getenv("DJANGO_DEBUG", "0") == "1"
-    else (_ for _ in ()).throw(ValueError("DJANGO_SECRET_KEY enviroment variable must be set in production"))
+    else (_ for _ in ()).throw(ValueError("DJANGO_SECRET_KEY environment variable must be set in production"))
 )
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 
@@ -169,6 +169,8 @@ else:
 
 # -------------------- CORS --------------------
 CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "0") == "1"
+if not DEBUG and CORS_ALLOW_ALL_ORIGINS:
+    raise ValueError("CORS_ALLOW_ALL_ORIGINS must be disabled in production")
 if not CORS_ALLOW_ALL_ORIGINS:
     _cors = os.getenv("CORS_ALLOWED_ORIGINS", "")
     CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(",") if o.strip()]
