@@ -27,16 +27,27 @@ class Command(BaseCommand):
         with transaction.atomic():
             sections = list(HomeSection.objects.filter(is_active=True, display_on__contains='home'))
 
-            # Split by card type, shuffle each group, then interleave
-            small = [s for s in sections if s.card_type == 'small']
-            big = [s for s in sections if s.card_type != 'small']
+            pinned = [s for s in sections if s.is_pinned]
+            unpinned = [s for s in sections if not s.is_pinned]
+
+            # Collect order positions already occupied by pinned sections
+            reserved = {s.order for s in pinned}
+
+            # Split unpinned by card type, shuffle each group, then interleave
+            small = [s for s in unpinned if s.card_type == 'small']
+            big = [s for s in unpinned if s.card_type != 'small']
             random.shuffle(small)
             random.shuffle(big)
-            ordered = self._interleave(small, big)
+            ordered_unpinned = self._interleave(small, big)
 
-            for new_order, section in enumerate(ordered):
-                section.order = new_order
-            HomeSection.objects.bulk_update(sections, ['order'])
+            # Assign order values to unpinned sections, skipping reserved positions
+            slot = 0
+            for section in ordered_unpinned:
+                while slot in reserved:
+                    slot += 1
+                section.order = slot
+                slot += 1
+            HomeSection.objects.bulk_update(unpinned, ['order'])
 
             # Shuffle items within each section
             all_items = []

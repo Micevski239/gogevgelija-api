@@ -1085,6 +1085,11 @@ class HomeSection(models.Model):
         help_text="Show this section on the HomeScreen"
     )
 
+    is_pinned = models.BooleanField(
+        default=False,
+        help_text="Pin this section at its current order position — excluded from automatic shuffle"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
