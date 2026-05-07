@@ -88,6 +88,10 @@ def _image_upload_path(prefix: str, filename: str) -> str:
 
 
 
+def category_image_upload_to(instance, filename):
+    return _image_upload_path("categories", filename)
+
+
 def tourism_button_bg_upload_to(instance, filename):
     """Generate a unique path for tourism category button background images."""
     return _image_upload_path("tourism_buttons", filename)
