@@ -39,8 +39,6 @@ class CategorySerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     name_en = serializers.CharField(required=False, allow_blank=True)
     name_mk = serializers.CharField(required=False, allow_blank=True)
-    image = serializers.SerializerMethodField()
-    parent_id = serializers.IntegerField(source='parent.id', read_only=True, allow_null=True)
     item_count = serializers.SerializerMethodField()
     applies_to = serializers.ListField(
         child=serializers.CharField(),
@@ -51,13 +49,11 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = [
-            "id", "name", "name_en", "name_mk", "slug", "icon", "image", "color",
-            "parent_id", "level", "order",
-            "is_active", "show_in_search", "show_in_navigation", "trending", "featured",
-            "applies_to", "description", "description_en", "description_mk",
-            "item_count", "created_at", "updated_at"
+            "id", "name", "name_en", "name_mk", "slug", "icon",
+            "order", "is_active", "trending", "featured",
+            "applies_to", "item_count", "created_at", "updated_at"
         ]
-        read_only_fields = ["id", "level", "slug", "created_at", "updated_at"]
+        read_only_fields = ["id", "slug", "created_at", "updated_at"]
 
     def get_name(self, obj):
         """Return name in the requested language"""
@@ -67,18 +63,6 @@ class CategorySerializer(serializers.ModelSerializer):
         elif language == 'en' and obj.name_en:
             return obj.name_en
         return obj.name_en or obj.name_mk or obj.name
-
-    def get_image(self, obj):
-        """Return the absolute URL for the category image."""
-        if not obj.image:
-            return None
-        request = self.context.get('request')
-        try:
-            url = obj.image.url
-            return request.build_absolute_uri(url) if request else url
-        except ValueError:
-            # File exists in DB but not in storage
-            return None
 
     def get_item_count(self, obj):
         """
@@ -100,51 +84,6 @@ class CategorySerializer(serializers.ModelSerializer):
         return ret
 
 
-class CategoryTreeSerializer(serializers.ModelSerializer):
-    """Hierarchical category serializer with nested children"""
-    name = serializers.SerializerMethodField()
-    name_en = serializers.CharField(required=False, allow_blank=True)
-    name_mk = serializers.CharField(required=False, allow_blank=True)
-    image = serializers.SerializerMethodField()
-    children = serializers.SerializerMethodField()
-    parent_id = serializers.IntegerField(source='parent.id', read_only=True, allow_null=True)
-    item_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Category
-        fields = [
-            "id", "name", "name_en", "name_mk", "slug", "icon", "image", "color",
-            "parent_id", "level", "order",
-            "is_active", "show_in_search", "show_in_navigation", "trending", "featured",
-            "applies_to", "children", "item_count",
-            "created_at", "updated_at"
-        ]
-
-    def get_name(self, obj):
-        language = self.context.get('language', 'en')
-        if language == 'mk' and obj.name_mk:
-            return obj.name_mk
-        elif language == 'en' and obj.name_en:
-            return obj.name_en
-        return obj.name_en or obj.name_mk or obj.name
-
-    def get_image(self, obj):
-        if not obj.image:
-            return None
-        request = self.context.get('request')
-        try:
-            url = obj.image.url
-            return request.build_absolute_uri(url) if request else url
-        except ValueError:
-            return None
-
-    def get_children(self, obj):
-        """Recursively serialize children"""
-        children = obj.children.filter(is_active=True).order_by('order', 'name')
-        return CategoryTreeSerializer(children, many=True, context=self.context).data
-
-    def get_item_count(self, obj):
-        return obj.item_count
 
 class SimplifiedListingSerializer(serializers.ModelSerializer):
     """Simplified listing serializer without nested relationships to avoid circular references."""

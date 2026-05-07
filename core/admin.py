@@ -293,11 +293,11 @@ class MultilingualAdminMixin:
 
 @admin.register(Category, site=admin_site)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'parent', 'level', 'order', 'icon', 'applies_to', 'is_active', 'trending', 'featured', 'item_count_display')
-    list_filter = ('is_active', 'trending', 'featured', 'applies_to', 'level', 'parent', 'show_in_search', 'show_in_navigation')
+    list_display = ('__str__', 'order', 'icon', 'applies_to', 'is_active', 'trending', 'featured', 'item_count_display')
+    list_filter = ('is_active', 'trending', 'featured', 'applies_to')
     search_fields = ('name', 'name_en', 'name_mk', 'slug', 'icon')
     list_editable = ('order', 'is_active', 'trending', 'featured')
-    ordering = ('level', 'order', 'name')
+    ordering = ('order', 'name')
 
     # Note: modeltranslation will auto-generate name_en field, so we can prepopulate from it
     # But we need to be careful since it might not exist yet during initial setup
@@ -305,34 +305,21 @@ class CategoryAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name_en', 'name_mk', 'name', 'icon', 'image', 'color', 'slug'),
+            'fields': ('name_en', 'name_mk', 'name', 'icon', 'slug'),
             'classes': ('wide',),
             'description': 'Name fields: English (en), Macedonian (mk), and fallback name.',
         }),
-        ('Description', {
-            'fields': ('description_en', 'description_mk', 'description'),
+        ('Order', {
+            'fields': ('order',),
             'classes': ('wide',),
-            'description': 'Description fields: English (en), Macedonian (mk), and fallback description.',
-        }),
-        ('Hierarchy', {
-            'fields': ('parent', 'level', 'order'),
-            'classes': ('wide',),
-            'description': 'Parent category and display order. Level is auto-calculated.',
         }),
         ('Visibility Settings', {
-            'fields': (
-                'is_active',
-                'show_in_search',
-                'show_in_navigation',
-                'trending',
-                'featured',
-            ),
+            'fields': ('is_active', 'trending', 'featured'),
             'classes': ('wide',),
         }),
         ('Scope', {
-            'fields': ('applies_to', 'show_in_events'),
+            'fields': ('applies_to',),
             'classes': ('wide',),
-            'description': 'Determines where this category can be used. "show_in_events" is kept for backward compatibility.',
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -340,7 +327,7 @@ class CategoryAdmin(admin.ModelAdmin):
         }),
     )
 
-    readonly_fields = ('level', 'created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at')
 
     def item_count_display(self, obj):
         """Display the item count"""
@@ -350,7 +337,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         """Optimize queries with select_related"""
-        return super().get_queryset(request).select_related('parent')
+        return super().get_queryset(request)
 
     actions = ['make_active', 'make_inactive', 'make_featured', 'remove_featured']
 

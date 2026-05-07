@@ -87,10 +87,6 @@ def _image_upload_path(prefix: str, filename: str) -> str:
     return f"{prefix}/{uuid.uuid4().hex}{ext}"
 
 
-def category_image_upload_to(instance, filename):
-    """Generate a unique path for category images."""
-    return _image_upload_path("categories", filename)
-
 
 def tourism_button_bg_upload_to(instance, filename):
     """Generate a unique path for tourism category button background images."""
@@ -108,30 +104,11 @@ class Category(models.Model):
     name = models.CharField(max_length=100, help_text="Category name (will be translated by modeltranslation)")
     slug = models.SlugField(max_length=120, blank=True, null=True, help_text="URL-friendly identifier (auto-generated from name if empty)")
     icon = models.CharField(max_length=50, help_text="Ionicon name (e.g., 'restaurant-outline')")
-    image = models.ImageField(
-        upload_to=category_image_upload_to,
-        blank=True,
-        null=True,
-        help_text="Optional category image stored in the media bucket"
-    )
-    color = models.CharField(max_length=7, blank=True, help_text="Brand color for category in hex format (e.g., '#FF5722')")
 
-    # Hierarchy
-    parent = models.ForeignKey(
-        'self',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='children',
-        help_text="Parent category (leave empty for root categories)"
-    )
-    level = models.PositiveIntegerField(default=0, help_text="Hierarchy level (0=root, 1=subcategory, etc.)")
-    order = models.PositiveIntegerField(default=0, help_text="Display order within parent category")
+    order = models.PositiveIntegerField(default=0, help_text="Display order")
 
     # Visibility & Behavior
     is_active = models.BooleanField(default=True, help_text="Whether category is active and visible")
-    show_in_search = models.BooleanField(default=True, help_text="Show in search screen")
-    show_in_navigation = models.BooleanField(default=True, help_text="Show in navigation menus")
     trending = models.BooleanField(default=False, help_text="Mark as trending category (can be combined with featured)")
     featured = models.BooleanField(default=False, help_text="Mark as featured category")
 
@@ -143,32 +120,23 @@ class Category(models.Model):
         help_text="Whether this category applies to listings, events, or both"
     )
 
-    # Legacy field (for backward compatibility)
-    show_in_events = models.BooleanField(default=True, help_text="[Legacy] Whether this category should be available for events")
-
-    # Metadata
-    description = models.TextField(blank=True, help_text="Category description (will be translated by modeltranslation)")
-
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = "Categories"
-        ordering = ['level', 'order', 'name']
+        ordering = ['order', 'name']
         indexes = [
-            models.Index(fields=['parent', 'is_active']),
-            models.Index(fields=['level', 'order']),
+            models.Index(fields=['is_active', 'order']),
         ]
 
     def __str__(self):
         return self.name_en or self.name_mk or self.name
 
     def save(self, *args, **kwargs):
-        # Auto-generate slug from name if not provided
         if not self.slug:
             from django.utils.text import slugify
-            # Try to use English name first (modeltranslation will have created name_en)
             base_name = getattr(self, 'name_en', None) or getattr(self, 'name_mk', None) or self.name
             base_slug = slugify(base_name)
             slug = base_slug
@@ -177,83 +145,14 @@ class Category(models.Model):
                 slug = f"{base_slug}-{counter}"
                 counter += 1
             self.slug = slug
-
-        # Auto-calculate level based on parent
-        if self.parent:
-            self.level = self.parent.level + 1
-        else:
-            self.level = 0
-
         super().save(*args, **kwargs)
 
     def get_item_count(self):
-        """
-        Calculate the number of items (listings + events) in this category and all subcategories.
-        PERFORMANCE FIX: Changed from @property to method to avoid automatic calculation on every access.
-        Call this explicitly when needed.
-        """
-        from django.db.models import Q, Count
-
-        # Get all descendant category IDs (including self) - optimized with single query
-        descendant_ids = self.get_descendants_optimized(include_self=True)
-
-        # Count listings and events in a single query using aggregation
-        from django.db.models import Count, Q
-        counts = {
-            'listings': Listing.objects.filter(
-                category_id__in=descendant_ids,
-                is_active=True
-            ).count(),
-            'events': Event.objects.filter(
-                category_id__in=descendant_ids,
-                is_active=True
-            ).count()
-        }
-
-        return counts['listings'] + counts['events']
-
-    def get_descendants_optimized(self, include_self=False):
-        """
-        Get all descendant category IDs - OPTIMIZED VERSION using iterative approach
-        to avoid recursive database queries.
-        """
-        descendants = [self.id] if include_self else []
-        queue = [self.id]
-
-        # Fetch all categories in one query
-        all_children = {cat.parent_id: [] for cat in Category.objects.all()}
-        for cat in Category.objects.all():
-            if cat.parent_id:
-                all_children.setdefault(cat.parent_id, []).append(cat.id)
-
-        # Iterative traversal instead of recursive
-        while queue:
-            current_id = queue.pop(0)
-            children_ids = all_children.get(current_id, [])
-            descendants.extend(children_ids)
-            queue.extend(children_ids)
-
-        return descendants
-
-    def get_descendants(self, include_self=False):
-        """
-        DEPRECATED: Use get_descendants_optimized() instead.
-        Kept for backward compatibility but causes N+1 queries.
-        """
-        descendants = [self.id] if include_self else []
-        children = Category.objects.filter(parent=self)
-        for child in children:
-            descendants.extend(child.get_descendants(include_self=True))
-        return descendants
-
-    def get_ancestors(self):
-        """Get all ancestor categories from root to parent"""
-        ancestors = []
-        current = self.parent
-        while current:
-            ancestors.insert(0, current)
-            current = current.parent
-        return ancestors
+        counts = (
+            Listing.objects.filter(category_id=self.id, is_active=True).count() +
+            Event.objects.filter(category_id=self.id, is_active=True).count()
+        )
+        return counts
 
 
 def listing_image_upload_to(instance, filename):
