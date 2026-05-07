@@ -94,7 +94,7 @@ db_url = _raw_db_url or "sqlite:///" + str(BASE_DIR / "db.sqlite3")
 ssl_require = not DEBUG and "sqlite" not in db_url.lower()
 DATABASES = {"default": dj_database_url.parse(db_url, conn_max_age=600, ssl_require=ssl_require, conn_health_checks=True)}
 if not DEBUG and "postgres" in db_url.lower():
-    DATABASES["default"]["OPTIONS"] = {"sslmode": "require", "sslcert": None, "sslkey": None, "sslrootcert": None}
+    DATABASES["default"]["OPTIONS"] = {"sslmode": "require"}
 
 # -------------------- DRF / JWT --------------------
 REST_FRAMEWORK = {

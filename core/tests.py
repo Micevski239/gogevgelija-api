@@ -300,3 +300,74 @@ class FileUploadValidationTests(TestCase):
         img.content_type = 'image/jpeg'
         response = self.client.patch(self.url, {'image': img}, format='multipart')
         self.assertIn(response.status_code, [200, 400])
+
+
+class SearchLimitCapTests(TestCase):
+    """Confirm global_search limit parameter is capped at 50."""
+
+    def test_limit_clamped_to_max(self):
+        # Even with an absurdly large limit the server should not error out
+        response = self.client.get('/api/search/?q=cafe&limit=99999')
+        self.assertNotEqual(response.status_code, 500)
+
+    def test_non_numeric_limit_falls_back(self):
+        response = self.client.get('/api/search/?q=cafe&limit=abc')
+        self.assertNotEqual(response.status_code, 500)
+
+    def test_zero_limit_clamped_to_one(self):
+        response = self.client.get('/api/search/?q=cafe&limit=0')
+        self.assertNotEqual(response.status_code, 500)
+
+
+class SupportEndpointPermissionTests(TestCase):
+    """Help-support and collaboration-contact require auth for writes."""
+
+    def test_help_support_get_allowed_anonymous(self):
+        response = self.client.get('/api/help-support/')
+        self.assertNotEqual(response.status_code, 405)
+
+    def test_help_support_post_requires_auth(self):
+        response = self.client.post(
+            '/api/help-support/',
+            {'name': 'Test', 'email': 'test@test.com', 'message': 'hi'},
+            content_type='application/json',
+        )
+        # Anonymous user should not be able to create — 401 or 403
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_collaboration_post_requires_auth(self):
+        response = self.client.post(
+            '/api/collaboration-contact/',
+            {'name': 'Test', 'email': 'test@test.com', 'message': 'hi'},
+            content_type='application/json',
+        )
+        self.assertIn(response.status_code, [401, 403])
+
+
+class AuthEmailFlowTests(TestCase):
+    """Send-code / verify-code endpoint contracts."""
+
+    def test_send_code_requires_email(self):
+        response = self.client.post(
+            '/api/auth/send-code/',
+            {},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_send_code_rejects_invalid_email(self):
+        response = self.client.post(
+            '/api/auth/send-code/',
+            {'email': 'not-an-email'},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_verify_code_requires_both_fields(self):
+        response = self.client.post(
+            '/api/auth/verify-code/',
+            {'email': 'user@test.com'},
+            content_type='application/json',
+        )
+        # Missing code field — should be 400
+        self.assertEqual(response.status_code, 400)

@@ -3329,7 +3329,10 @@ def global_search(request):
     """
     query = request.query_params.get('q', '').strip()
     content_type = request.query_params.get('type', 'all')
-    limit = int(request.query_params.get('limit', 20))
+    try:
+        limit = max(1, min(int(request.query_params.get('limit', 20)), 50))
+    except (ValueError, TypeError):
+        limit = 20
     language = get_preferred_language(request)
     return Response(_serialize_search_results(query, content_type, limit, language, request))
 
