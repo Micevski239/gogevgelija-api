@@ -1,5 +1,5 @@
 import io
-from django.test import TestCase, Client, override_settings
+from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -302,30 +302,27 @@ class FileUploadValidationTests(TestCase):
         self.assertIn(response.status_code, [200, 400])
 
 
-@override_settings(SECURE_SSL_REDIRECT=False)
 class SearchLimitCapTests(TestCase):
     """Confirm global_search limit parameter is capped at 50."""
 
     def test_limit_clamped_to_max(self):
-        # Even with an absurdly large limit the server should not error out
-        response = self.client.get('/api/search/?q=cafe&limit=99999')
+        response = self.client.get('/api/search/?q=cafe&limit=99999', secure=True)
         self.assertNotEqual(response.status_code, 500)
 
     def test_non_numeric_limit_falls_back(self):
-        response = self.client.get('/api/search/?q=cafe&limit=abc')
+        response = self.client.get('/api/search/?q=cafe&limit=abc', secure=True)
         self.assertNotEqual(response.status_code, 500)
 
     def test_zero_limit_clamped_to_one(self):
-        response = self.client.get('/api/search/?q=cafe&limit=0')
+        response = self.client.get('/api/search/?q=cafe&limit=0', secure=True)
         self.assertNotEqual(response.status_code, 500)
 
 
-@override_settings(SECURE_SSL_REDIRECT=False)
 class SupportEndpointPermissionTests(TestCase):
     """Help-support and collaboration-contact require auth for writes."""
 
     def test_help_support_get_allowed_anonymous(self):
-        response = self.client.get('/api/help-support/')
+        response = self.client.get('/api/help-support/', secure=True)
         self.assertNotEqual(response.status_code, 405)
 
     def test_help_support_post_requires_auth(self):
@@ -333,8 +330,8 @@ class SupportEndpointPermissionTests(TestCase):
             '/api/help-support/',
             {'name': 'Test', 'email': 'test@test.com', 'message': 'hi'},
             content_type='application/json',
+            secure=True,
         )
-        # Anonymous user should not be able to create — 401 or 403
         self.assertIn(response.status_code, [401, 403])
 
     def test_collaboration_post_requires_auth(self):
@@ -342,11 +339,11 @@ class SupportEndpointPermissionTests(TestCase):
             '/api/collaboration-contact/',
             {'name': 'Test', 'email': 'test@test.com', 'message': 'hi'},
             content_type='application/json',
+            secure=True,
         )
         self.assertIn(response.status_code, [401, 403])
 
 
-@override_settings(SECURE_SSL_REDIRECT=False)
 class AuthEmailFlowTests(TestCase):
     """Send-code / verify-code endpoint contracts."""
 
@@ -355,6 +352,7 @@ class AuthEmailFlowTests(TestCase):
             '/api/auth/send-code/',
             {},
             content_type='application/json',
+            secure=True,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -363,6 +361,7 @@ class AuthEmailFlowTests(TestCase):
             '/api/auth/send-code/',
             {'email': 'not-an-email'},
             content_type='application/json',
+            secure=True,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -371,6 +370,6 @@ class AuthEmailFlowTests(TestCase):
             '/api/auth/verify-code/',
             {'email': 'user@test.com'},
             content_type='application/json',
+            secure=True,
         )
-        # Missing code field — should be 400
         self.assertEqual(response.status_code, 400)
