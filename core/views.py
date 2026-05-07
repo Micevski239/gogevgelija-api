@@ -172,7 +172,7 @@ class ListingViewSet(viewsets.ModelViewSet):
         queryset = Listing.objects.filter(is_active=True) \
             .select_related('category') \
             .order_by('random_order') \
-            .prefetch_related('promotions', 'events')
+            .prefetch_related('promotions', 'events', 'user_permissions')
 
         # Filter by category — accepts single id or comma-separated list (e.g. "1,2,3").
         category = self.request.query_params.get('category', None)

@@ -231,12 +231,8 @@ class ListingSerializer(serializers.ModelSerializer):
 
             working_hours = obj.working_hours
             if not working_hours or not isinstance(working_hours, dict):
-                print(f"[is_open] Listing {obj.id} ({obj.title}): No working hours defined")
-                # If no working hours, check manual status
                 if hasattr(obj, 'manual_open_status') and obj.manual_open_status is not None:
-                    manual_status = obj.manual_open_status
-                    print(f"[is_open] Listing {obj.id} ({obj.title}): Using manual status = {manual_status}")
-                    return manual_status
+                    return obj.manual_open_status
                 return None
 
             # Unwrap nested working_hours structure if present
@@ -251,29 +247,19 @@ class ListingSerializer(serializers.ModelSerializer):
                 tz = pytz.timezone('Europe/Skopje')
                 now = datetime.now(tz)
             except:
-                # Fallback to UTC if timezone not available
                 now = datetime.now()
 
-            # Get current day name in lowercase
             day_name = now.strftime('%A').lower()
             day_name_short = now.strftime('%a').lower()
 
-            # Debug: print the working_hours structure
-            print(f"[is_open] Listing {obj.id} ({obj.title}): working_hours keys = {list(working_hours.keys())}")
-            print(f"[is_open] Looking for day: {day_name} or {day_name_short}")
-
-            # Check if today's hours exist in working_hours
             if day_name not in working_hours and day_name_short not in working_hours:
-                print(f"[is_open] Listing {obj.id} ({obj.title}): No hours for {day_name}")
-                return False  # No hours defined for today
+                return False
 
             hours_str = working_hours.get(day_name) or working_hours.get(day_name_short)
             if not hours_str or not isinstance(hours_str, str):
-                print(f"[is_open] Listing {obj.id} ({obj.title}): Invalid hours format: {hours_str}")
                 return False
 
             if hours_str.lower() in ['closed', 'затворено']:
-                print(f"[is_open] Listing {obj.id} ({obj.title}): CLOSED (marked as closed)")
                 return False
 
             # Parse the hours string (e.g., "09:00-18:00" or "09:00 - 18:00")
@@ -287,22 +273,14 @@ class ListingSerializer(serializers.ModelSerializer):
                 open_time = open_hour * 60 + open_min
                 close_time = close_hour * 60 + close_min
 
-                # Handle cases where closing time is after midnight
                 if close_time < open_time:
-                    # e.g., 22:00-02:00
-                    is_open = current_time >= open_time or current_time < close_time
-                else:
-                    is_open = open_time <= current_time < close_time
+                    return current_time >= open_time or current_time < close_time
+                return open_time <= current_time < close_time
 
-                status = "OPEN" if is_open else "CLOSED"
-                print(f"[is_open] Listing {obj.id} ({obj.title}): {status} (hours: {hours_str}, current: {now.strftime('%H:%M')})")
-                return is_open
-
-            print(f"[is_open] Listing {obj.id} ({obj.title}): Invalid hours format (no dash): {hours_str}")
             return False
         except Exception as e:
-            # If any error occurs, return None instead of crashing
-            print(f"[is_open] Listing {obj.id} ERROR: {str(e)}")
+            import logging
+            logging.getLogger(__name__).exception("Error in get_is_open for listing %s", getattr(obj, 'id', '?'))
             return None
 
     def get_can_edit(self, obj):
@@ -310,8 +288,12 @@ class ListingSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
-        
-        # Check if user has permission to edit this specific listing
+        # Use prefetched user_permissions when available to avoid N+1
+        if hasattr(obj, '_prefetched_objects_cache') and 'user_permissions' in obj._prefetched_objects_cache:
+            return any(
+                p.user_id == request.user.id and p.can_edit
+                for p in obj.user_permissions.all()
+            )
         return UserPermission.objects.filter(
             user=request.user,
             listing=obj,
@@ -881,6 +863,25 @@ class EditListingSerializer(serializers.ModelSerializer):
             "menu_label", "menu_label_mk", "menu_icon", "menu", "menu_mk"
         ]
     
+    def _validate_image_field(self, image):
+        max_size = 10 * 1024 * 1024  # 10 MB
+        allowed_types = {'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'}
+        if image is None:
+            return image
+        if hasattr(image, 'size') and image.size > max_size:
+            raise serializers.ValidationError("Image must be under 10 MB.")
+        content_type = getattr(image, 'content_type', None)
+        if content_type and content_type not in allowed_types:
+            raise serializers.ValidationError(f"Unsupported image type: {content_type}.")
+        return image
+
+    def validate_image(self, value): return self._validate_image_field(value)
+    def validate_image_1(self, value): return self._validate_image_field(value)
+    def validate_image_2(self, value): return self._validate_image_field(value)
+    def validate_image_3(self, value): return self._validate_image_field(value)
+    def validate_image_4(self, value): return self._validate_image_field(value)
+    def validate_image_5(self, value): return self._validate_image_field(value)
+
     def to_representation(self, instance):
         """Include current bilingual field values in response."""
         data = super().to_representation(instance)
