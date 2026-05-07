@@ -1,10 +1,13 @@
 """
 Custom email backend for Resend API
 """
+import logging
 import requests
 from django.conf import settings
 from django.core.mail.backends.base import BaseEmailBackend
 from django.core.mail import EmailMessage
+
+logger = logging.getLogger(__name__)
 
 
 class ResendEmailBackend(BaseEmailBackend):
@@ -71,17 +74,17 @@ class ResendEmailBackend(BaseEmailBackend):
             )
 
             if response.status_code in (200, 201):
-                print(f"✅ Email sent via Resend to {email_message.to}")
+                logger.info("Email sent via Resend to %s", email_message.to)
                 return True
             else:
                 error_msg = f"Resend API error: {response.status_code} - {response.text}"
-                print(f"⚠️ {error_msg}")
+                logger.error(error_msg)
                 if not self.fail_silently:
                     raise Exception(error_msg)
                 return False
 
         except Exception as e:
-            print(f"⚠️ Failed to send email via Resend: {str(e)}")
+            logger.exception("Failed to send email via Resend: %s", str(e))
             if not self.fail_silently:
                 raise
             return False

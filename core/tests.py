@@ -1,9 +1,10 @@
-from django.test import TestCase
+from django.test import TestCase, Client
+from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 from unittest.mock import MagicMock
 from core.assistant_parser import HeuristicAssistantQueryParser
-from core.models import Category, Event, Listing, Promotion
+from core.models import Category, Event, Listing, Promotion, Blog
 
 
 class AssistantV2Tests(TestCase):
@@ -149,3 +150,55 @@ class AssistantV2Tests(TestCase):
         self.assertIsNotNone(response)
         result_types = [r['type'] for r in response['results']]
         self.assertIn('promotion', result_types)
+
+
+class PublicContentWritePermissionTests(TestCase):
+    """
+    Confirm that all public content endpoints are read-only.
+    Unauthenticated POST/PUT/PATCH/DELETE must return 405 Method Not Allowed.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.category = Category.objects.create(name="Food", slug="food", is_active=True)
+        self.listing = Listing.objects.create(
+            title="Test Listing", title_en="Test Listing", title_mk="Тест",
+            is_active=True, category=self.category,
+        )
+        self.event = Event.objects.create(
+            title="Test Event", title_en="Test Event", title_mk="Тест настан",
+            location="Park", date_time="2026-12-01 20:00", is_active=True,
+        )
+        self.promotion = Promotion.objects.create(
+            title="Test Promo", title_en="Test Promo", title_mk="Тест промо",
+            is_active=True,
+        )
+        self.blog = Blog.objects.create(
+            title="Test Blog", title_en="Test Blog", title_mk="Тест блог",
+            is_active=True, published=True,
+        )
+
+    def _assert_read_only(self, base_url, detail_url):
+        # GETs must succeed
+        self.assertIn(self.client.get(base_url).status_code, [200, 301, 302])
+        self.assertIn(self.client.get(detail_url).status_code, [200, 301, 302])
+        # Writes must be blocked
+        self.assertEqual(self.client.post(base_url, {}, content_type='application/json').status_code, 405)
+        self.assertEqual(self.client.put(detail_url, {}, content_type='application/json').status_code, 405)
+        self.assertEqual(self.client.patch(detail_url, {}, content_type='application/json').status_code, 405)
+        self.assertEqual(self.client.delete(detail_url).status_code, 405)
+
+    def test_categories_are_read_only(self):
+        self._assert_read_only('/api/categories/', f'/api/categories/{self.category.pk}/')
+
+    def test_listings_are_read_only(self):
+        self._assert_read_only('/api/listings/', f'/api/listings/{self.listing.pk}/')
+
+    def test_events_are_read_only(self):
+        self._assert_read_only('/api/events/', f'/api/events/{self.event.pk}/')
+
+    def test_promotions_are_read_only(self):
+        self._assert_read_only('/api/promotions/', f'/api/promotions/{self.promotion.pk}/')
+
+    def test_blogs_are_read_only(self):
+        self._assert_read_only('/api/blogs/', f'/api/blogs/{self.blog.pk}/')

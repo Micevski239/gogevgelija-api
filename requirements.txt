@@ -9,7 +9,9 @@ django-storages==1.14.4
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
 Pillow==10.3.0
+pillow-heif==0.18.0
 psycopg2-binary==2.9.10
 python-dotenv==1.0.0
+pytz==2024.1
 requests==2.32.3
 whitenoise==6.11.0

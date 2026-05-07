@@ -1,8 +1,16 @@
 node_modules/
 .expo/
 .venv/
+.venv-api-check311/
 __pycache__/
+*.pyc
 db.sqlite3
 .env
 mobile/
 .DS_Store
+staticfiles/
+media/
+logs/
+*.egg-info/
+dist/
+build/

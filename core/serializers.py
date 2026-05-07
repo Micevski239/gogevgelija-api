@@ -1035,7 +1035,7 @@ class AssistantQuerySerializer(serializers.Serializer):
 
     message = serializers.CharField(max_length=300)
     context = AssistantContextSerializer(required=False)
-    history = AssistantHistoryItemSerializer(many=True, required=False)
+    history = AssistantHistoryItemSerializer(many=True, required=False, max_length=20)
 
 
 

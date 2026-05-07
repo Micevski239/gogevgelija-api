@@ -87,7 +87,10 @@ TEMPLATES = [{
 WSGI_APPLICATION = "api.wsgi.application"
 
 # -------------------- Database --------------------
-db_url = os.getenv("DATABASE_URL", "sqlite:///" + str(BASE_DIR / "db.sqlite3"))
+_raw_db_url = os.getenv("DATABASE_URL")
+if not DEBUG and not _raw_db_url:
+    raise ValueError("DATABASE_URL must be set in production")
+db_url = _raw_db_url or "sqlite:///" + str(BASE_DIR / "db.sqlite3")
 ssl_require = not DEBUG and "sqlite" not in db_url.lower()
 DATABASES = {"default": dj_database_url.parse(db_url, conn_max_age=600, ssl_require=ssl_require, conn_health_checks=True)}
 if not DEBUG and "postgres" in db_url.lower():
@@ -257,6 +260,11 @@ HEALTH_CHECK_ENABLED = os.getenv("HEALTH_CHECK_ENABLED", "1") == "1"
 CURRENCY_RATES_URL = os.getenv("CURRENCY_RATES_URL", "https://open.er-api.com/v6/latest/MKD")
 CURRENCY_RATES_TIMEOUT_SECONDS = float(os.getenv("CURRENCY_RATES_TIMEOUT_SECONDS", "5"))
 
+# -------------------- App version config --------------------
+APP_MIN_SUPPORTED_VERSION = os.getenv("APP_MIN_SUPPORTED_VERSION", "1.0.0")
+APP_LATEST_VERSION = os.getenv("APP_LATEST_VERSION", "1.0.0")
+APP_FORCE_UPDATE = os.getenv("APP_FORCE_UPDATE", "0") == "1"
+
 # -------------------- Email --------------------
 # Use Resend API backend (no SMTP needed)
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "core.email_backend.ResendEmailBackend")
@@ -284,6 +292,8 @@ if not DEBUG:
 # Redis URL must be set in .env file for security
 # Format: redis://username:password@host:port
 REDIS_URL = os.getenv("REDIS_URL")
+if not DEBUG and not REDIS_URL:
+    raise ValueError("REDIS_URL must be set in production")
 
 if REDIS_URL:
     # Use Redis cache if REDIS_URL is configured

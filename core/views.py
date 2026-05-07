@@ -74,7 +74,7 @@ class IsSuperUser(permissions.BasePermission):
         return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.filter(is_active=True)
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
@@ -156,7 +156,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)
 
-class ListingViewSet(viewsets.ModelViewSet):
+class ListingViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Listing.objects.filter(is_active=True)
     serializer_class = ListingSerializer
     permission_classes = [permissions.AllowAny]
@@ -211,7 +211,7 @@ class ListingViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(trending_listings, many=True)
         return Response(serializer.data)
 
-class EventViewSet(viewsets.ModelViewSet):
+class EventViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Event.objects.filter(is_active=True)
     serializer_class = EventSerializer
     permission_classes = [permissions.AllowAny]
@@ -337,7 +337,7 @@ class EventViewSet(viewsets.ModelViewSet):
             'event': serializer.data
         }, status=status.HTTP_200_OK)
 
-class PromotionViewSet(viewsets.ModelViewSet):
+class PromotionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Promotion.objects.filter(is_active=True)
     serializer_class = PromotionSerializer
     permission_classes = [permissions.AllowAny]
@@ -371,7 +371,7 @@ class PromotionViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(featured_promotions, many=True)
         return Response(serializer.data)
 
-class BlogViewSet(viewsets.ModelViewSet):
+class BlogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Blog.objects.filter(published=True, is_active=True)
     serializer_class = BlogSerializer
     permission_classes = [permissions.AllowAny]
@@ -413,23 +413,18 @@ def health(_request):
 def app_config(_request):
     """
     Returns app configuration including version requirements.
-    Can be updated without deploying new app version.
-    Backend-controlled feature flags and force update settings.
+    Controlled via environment variables — no redeploy needed to toggle force_update.
+      APP_MIN_SUPPORTED_VERSION, APP_LATEST_VERSION, APP_FORCE_UPDATE
     """
     return Response({
         "status": "ok",
-        "min_supported_version": "1.0.0",  # Start with current version (no forced update yet)
-        "latest_version": "1.1.0",          # New version with HomeSection feature
-        "force_update": False,              # Toggle this to force users to update
+        "min_supported_version": settings.APP_MIN_SUPPORTED_VERSION,
+        "latest_version": settings.APP_LATEST_VERSION,
+        "force_update": settings.APP_FORCE_UPDATE,
         "update_message": {
-            "en": "A new version of GoGevgelija is available! Update now to see personalized content sections.",
-            "mk": "Нова верзија на GoGevgelija е достапна! Ажурирајте сега за персонализирани секции со содржина."
+            "en": "A new version of GoGevgelija is available! Update now for the latest features.",
+            "mk": "Нова верзија на GoGevgelija е достапна! Ажурирајте сега за најновите функции.",
         },
-        "features": [
-            "Dynamic home sections",
-            "Mixed content cards",
-            "Better performance"
-        ]
     })
 
 
@@ -674,24 +669,14 @@ class VerifyCode(APIView):
 
 
 class Register(APIView):
-    """Legacy endpoint - kept for backwards compatibility"""
+    """Legacy endpoint — disabled. Use /api/auth/send-code/ + /api/auth/verify-code/ instead."""
     permission_classes = [permissions.AllowAny]
+
     def post(self, request):
-        s = UserSerializer(data = request.data)
-        s.is_valid(raise_exception=True)
-        user = s.save()
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email
-            },
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-        }, status = status.HTTP_201_CREATED)
+        return Response(
+            {"error": "This endpoint is no longer available. Please use the verification code flow: POST /api/auth/send-code/ then POST /api/auth/verify-code/"},
+            status=status.HTTP_410_GONE,
+        )
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -3424,12 +3409,11 @@ class TourismScreenView(APIView):
             is_active=True
         ).select_related('category').order_by('button_size', 'order')
 
-        # Debug logging
-        if __debug__:
-            print(f"🔍 Tourism API Debug:")
-            print(f"  Total carousel items: {carousel_items.count()}")
-            print(f"  Total category buttons: {category_buttons.count()}")
-            print(f"  Category buttons: {list(category_buttons.values('id', 'label', 'button_size', 'is_active'))}")
+        if settings.DEBUG:
+            core_logger.debug(
+                "Tourism API: carousel_items=%d category_buttons=%d",
+                carousel_items.count(), category_buttons.count(),
+            )
 
         # Get dynamic sections (filtered by display_on field for tourism screen)
         sections = HomeSection.objects.filter(
