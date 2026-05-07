@@ -8,10 +8,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Remove the index on level+order before dropping the level column (SQLite requires this)
-        migrations.RemoveIndex(
-            model_name='category',
-            name='core_catego_level_ede8af_idx',
+        # Drop the index on level+order before the column is removed.
+        # RunSQL (not RemoveIndex) because Django 5.x RemoveField already handles state cleanup,
+        # and RemoveIndex would fail if the state doesn't track the index separately.
+        # IF EXISTS handles both fresh DBs (PostgreSQL) and existing dev DBs (SQLite).
+        migrations.RunSQL(
+            sql='DROP INDEX IF EXISTS "core_catego_level_ede8af_idx"',
+            reverse_sql='',
         ),
         # Hierarchy fields (removed from model earlier)
         migrations.RemoveField(
