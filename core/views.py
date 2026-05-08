@@ -143,7 +143,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes (consistent with trending listings)
+    @method_decorator(cache_page(60 * 15))  # Cache for 5 minutes (consistent with trending listings)
     @action(detail=False, methods=['get'])
     def trending(self, request):
         """Get trending categories"""
@@ -178,14 +178,14 @@ class ListingViewSet(viewsets.ReadOnlyModelViewSet):
             .order_by('random_order') \
             .prefetch_related('promotions', 'events', 'user_permissions')
 
-        # Filter by category — accepts single id or comma-separated list (e.g. "1,2,3").
+        # Filter by category — accepts id, slug, or comma-separated ids (e.g. "1,2,3").
         category = self.request.query_params.get('category', None)
         if category:
-            ids = [i for i in category.split(',') if i.strip().isdigit()]
-            if len(ids) > 1:
-                queryset = queryset.filter(category_id__in=ids)
-            elif ids:
-                queryset = queryset.filter(category_id=ids[0])
+            ids = [i.strip() for i in category.split(',') if i.strip().isdigit()]
+            if ids:
+                queryset = queryset.filter(category_id__in=ids) if len(ids) > 1 else queryset.filter(category_id=ids[0])
+            else:
+                queryset = queryset.filter(category__slug=category)
 
         # Order: featured first, then random order for fair rotation
         return queryset.order_by('-featured', 'random_order')
@@ -205,7 +205,7 @@ class ListingViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(featured_listings, many=True)
         return Response(serializer.data)
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    @method_decorator(cache_page(60 * 15))  # Cache for 5 minutes
     @action(detail=False, methods=['get'])
     def trending(self, request):
         """Get only trending listings (no pagination for trending items)"""
@@ -230,6 +230,14 @@ class EventViewSet(viewsets.ReadOnlyModelViewSet):
             .select_related('category') \
             .prefetch_related('listings')
 
+        # Filter by category — accepts id or slug.
+        category = self.request.query_params.get('category', None)
+        if category:
+            if category.isdigit():
+                queryset = queryset.filter(category_id=category)
+            else:
+                queryset = queryset.filter(category__slug=category)
+
         # Prefetch user's event joins if authenticated
         if self.request.user.is_authenticated:
             from django.db.models import Prefetch
@@ -248,12 +256,12 @@ class EventViewSet(viewsets.ReadOnlyModelViewSet):
         context['language'] = get_preferred_language(self.request)
         return context
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    @method_decorator(cache_page(60 * 15))  # Cache for 5 minutes
     def list(self, request, *args, **kwargs):
         """Get all events with caching"""
         return super().list(request, *args, **kwargs)
 
-    @method_decorator(cache_page(60 * 3))  # Cache for 3 minutes (events change more frequently)
+    @method_decorator(cache_page(60 * 15))  # Cache for 3 minutes (events change more frequently)
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get only featured events (no pagination for featured items)"""
@@ -347,12 +355,12 @@ class PromotionViewSet(viewsets.ReadOnlyModelViewSet):
         context['language'] = get_preferred_language(self.request)
         return context
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    @method_decorator(cache_page(60 * 15))  # Cache for 5 minutes
     def list(self, request, *args, **kwargs):
         """Get all promotions with caching"""
         return super().list(request, *args, **kwargs)
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    @method_decorator(cache_page(60 * 15))  # Cache for 5 minutes
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get only featured promotions (no pagination for featured items)"""
@@ -380,12 +388,12 @@ class BlogViewSet(viewsets.ReadOnlyModelViewSet):
         context['language'] = get_preferred_language(self.request)
         return context
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    @method_decorator(cache_page(60 * 15))  # Cache for 5 minutes
     def list(self, request, *args, **kwargs):
         """Get all blogs with caching"""
         return super().list(request, *args, **kwargs)
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    @method_decorator(cache_page(60 * 15))  # Cache for 5 minutes
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """Get only featured blogs (no pagination for featured items)"""
@@ -3438,7 +3446,7 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
         context['language'] = get_preferred_language(self.request)
         return context
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes (most requested endpoint)
+    @method_decorator(cache_page(60 * 30))  # Cache for 30 minutes
     def list(self, request, *args, **kwargs):
         """Get all active home sections with caching"""
         response = super().list(request, *args, **kwargs)
@@ -3467,7 +3475,7 @@ class TourismScreenView(APIView):
     """
     permission_classes = [permissions.AllowAny]
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    @method_decorator(cache_page(60 * 15))  # Cache for 5 minutes
     def get(self, request):
         """Return complete tourism screen data"""
         language = get_preferred_language(request)
@@ -3560,7 +3568,7 @@ class EventsScreenView(APIView):
     """
     permission_classes = [permissions.AllowAny]
 
-    @method_decorator(cache_page(60 * 5))
+    @method_decorator(cache_page(60 * 15))
     def get(self, request):
         language = get_preferred_language(request)
 
