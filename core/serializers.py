@@ -1249,7 +1249,13 @@ class HomeSectionSerializer(serializers.ModelSerializer):
     def get_items(self, obj):
         """Return active items from HomeSectionItem + events linked via M2M"""
         # Items added via HomeSectionItem (inline in section admin)
-        active_items = obj.items.filter(is_active=True).select_related("content_type")
+        # View prefetches items filtered to is_active=True with content_type + content_object.
+        # .all() uses the prefetch cache; fall back to queryset if called without prefetch.
+        if hasattr(obj, '_prefetched_objects_cache') and 'items' in obj._prefetched_objects_cache:
+            active_items = obj.items.all()
+        else:
+            active_items = obj.items.filter(is_active=True).select_related("content_type")
+
         serializer = HomeSectionItemSerializer(
             active_items,
             many=True,
@@ -1257,44 +1263,43 @@ class HomeSectionSerializer(serializers.ModelSerializer):
         )
         items = [item for item in serializer.data if item["data"] is not None]
 
-        # Items linked directly via M2M (from listing/event/promotion admin)
         existing_ids = {
             (item["type"], item["data"]["id"]) for item in items
         }
 
-        for listing in obj.direct_listings.filter(is_active=True):
+        for listing in getattr(obj, 'prefetched_listings', None) or obj.direct_listings.filter(is_active=True):
             if ("listing", listing.id) not in existing_ids:
                 items.append({
                     "id": f"m2m-listing-{listing.id}",
                     "type": "listing",
-                    "data": ListingSerializer(listing, context=self.context).data,
+                    "data": SimplifiedListingSerializer(listing, context=self.context).data,
                     "order": 999,
                 })
 
-        for event in obj.direct_events.filter(is_active=True):
+        for event in getattr(obj, 'prefetched_events', None) or obj.direct_events.filter(is_active=True):
             if ("event", event.id) not in existing_ids:
                 items.append({
                     "id": f"m2m-event-{event.id}",
                     "type": "event",
-                    "data": EventSerializer(event, context=self.context).data,
+                    "data": SimplifiedEventSerializer(event, context=self.context).data,
                     "order": 999,
                 })
 
-        for promo in obj.direct_promotions.filter(is_active=True):
+        for promo in getattr(obj, 'prefetched_promotions', None) or obj.direct_promotions.filter(is_active=True):
             if ("promotion", promo.id) not in existing_ids:
                 items.append({
                     "id": f"m2m-promotion-{promo.id}",
                     "type": "promotion",
-                    "data": PromotionSerializer(promo, context=self.context).data,
+                    "data": SimplifiedPromotionSerializer(promo, context=self.context).data,
                     "order": 999,
                 })
 
-        for blog in obj.direct_blogs.filter(is_active=True, published=True):
+        for blog in getattr(obj, 'prefetched_blogs', None) or obj.direct_blogs.filter(is_active=True, published=True):
             if ("blog", blog.id) not in existing_ids:
                 items.append({
                     "id": f"m2m-blog-{blog.id}",
                     "type": "blog",
-                    "data": BlogSerializer(blog, context=self.context).data,
+                    "data": SimplifiedBlogSerializer(blog, context=self.context).data,
                     "order": 999,
                 })
 

@@ -1,3 +1,17 @@
+# Setup Commands
+
+## Set Sentry auth token for EAS
+```bash
+eas env:create --scope project --name SENTRY_AUTH_TOKEN --value "7d0cede24ac711f195201688ddeabf1c"
+```
+
+## Rebuild preview APK
+```bash
+eas build --profile preview --platform android
+```
+
+---
+
 # Assistant Debug Commands
 
 ## 1. Test OpenAI key directly

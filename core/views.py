@@ -16,6 +16,8 @@ from django.views.decorators.cache import cache_page
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.prefetch import GenericPrefetch
+from django.db.models import Prefetch
 from django.contrib.auth import authenticate
 from django.db import models
 from django.db import transaction
@@ -3405,8 +3407,18 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
             is_active=True,
             display_on__contains='home',
         ).prefetch_related(
-            "items",
-            "items__content_type"
+            Prefetch('items', queryset=HomeSectionItem.objects.filter(is_active=True).select_related('content_type').prefetch_related(
+                GenericPrefetch('content_object', [
+                    Listing.objects.select_related('category'),
+                    Event.objects.select_related('category'),
+                    Promotion.objects.all(),
+                    Blog.objects.all(),
+                ])
+            )),
+            Prefetch('direct_listings', queryset=Listing.objects.filter(is_active=True).select_related('category'), to_attr='prefetched_listings'),
+            Prefetch('direct_events', queryset=Event.objects.filter(is_active=True).select_related('category'), to_attr='prefetched_events'),
+            Prefetch('direct_promotions', queryset=Promotion.objects.filter(is_active=True), to_attr='prefetched_promotions'),
+            Prefetch('direct_blogs', queryset=Blog.objects.filter(is_active=True, published=True), to_attr='prefetched_blogs'),
         ).order_by("order", "-created_at")
 
     def get_serializer_context(self):
@@ -3451,7 +3463,13 @@ class TourismScreenView(APIView):
         # Get carousel items
         carousel_items = TourismCarousel.objects.filter(
             is_active=True
-        ).select_related('content_type').order_by('order')
+        ).select_related('content_type').prefetch_related(
+            GenericPrefetch('content_object', [
+                Listing.objects.select_related('category'),
+                Event.objects.select_related('category'),
+                Blog.objects.all(),
+            ])
+        ).order_by('order')
 
         # Get category buttons
         category_buttons = TourismCategoryButton.objects.filter(
@@ -3469,8 +3487,18 @@ class TourismScreenView(APIView):
             is_active=True,
             display_on__contains='tourism',
         ).prefetch_related(
-            "items",
-            "items__content_type"
+            Prefetch('items', queryset=HomeSectionItem.objects.filter(is_active=True).select_related('content_type').prefetch_related(
+                GenericPrefetch('content_object', [
+                    Listing.objects.select_related('category'),
+                    Event.objects.select_related('category'),
+                    Promotion.objects.all(),
+                    Blog.objects.all(),
+                ])
+            )),
+            Prefetch('direct_listings', queryset=Listing.objects.filter(is_active=True).select_related('category'), to_attr='prefetched_listings'),
+            Prefetch('direct_events', queryset=Event.objects.filter(is_active=True).select_related('category'), to_attr='prefetched_events'),
+            Prefetch('direct_promotions', queryset=Promotion.objects.filter(is_active=True), to_attr='prefetched_promotions'),
+            Prefetch('direct_blogs', queryset=Blog.objects.filter(is_active=True, published=True), to_attr='prefetched_blogs'),
         ).order_by("tourism_order", "-created_at")
 
         # Build context for serializers
