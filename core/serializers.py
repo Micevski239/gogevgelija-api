@@ -1138,7 +1138,7 @@ class AssistantQuerySerializer(serializers.Serializer):
         text = serializers.CharField(max_length=1000)
 
     message = serializers.CharField(max_length=300)
-    context = AssistantContextSerializer(required=False)
+    context = AssistantContextSerializer(required=False, allow_null=True)
     history = AssistantHistoryItemSerializer(many=True, required=False, max_length=20)
 
     _INJECTION_PATTERNS = [
