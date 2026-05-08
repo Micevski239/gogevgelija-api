@@ -30,6 +30,8 @@ from django.utils import timezone
 from django.utils.crypto import constant_time_compare, salted_hmac
 from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -3253,8 +3255,18 @@ class _AssistantUserThrottle(__import__('rest_framework.throttling', fromlist=['
     scope = 'assistant_user'
 
 
+class _SilentJWTAuthentication(JWTAuthentication):
+    """JWT auth that treats expired/invalid tokens as anonymous instead of raising 401."""
+    def authenticate(self, request):
+        try:
+            return super().authenticate(request)
+        except (InvalidToken, TokenError):
+            return None
+
+
 class AssistantQueryView(APIView):
     """In-app assistant. Groq understands; our code speaks."""
+    authentication_classes = [_SilentJWTAuthentication]
     permission_classes = [permissions.AllowAny]
     parser_classes = [JSONParser]
     throttle_classes = [_AssistantAnonThrottle, _AssistantUserThrottle]
