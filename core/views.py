@@ -3553,6 +3553,7 @@ class EventsScreenView(APIView):
 class GalleryView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @method_decorator(cache_page(60 * 30))  # Cache for 30 minutes (photos rarely change)
     def get(self, request):
         language = get_preferred_language(request)
         # Only city-level photos (not assigned to a specific listing)
