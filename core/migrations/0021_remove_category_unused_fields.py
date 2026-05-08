@@ -8,13 +8,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Drop the index on level+order before the column is removed.
-        # RunSQL (not RemoveIndex) because Django 5.x RemoveField already handles state cleanup,
-        # and RemoveIndex would fail if the state doesn't track the index separately.
-        # IF EXISTS handles both fresh DBs (PostgreSQL) and existing dev DBs (SQLite).
-        migrations.RunSQL(
-            sql='DROP INDEX IF EXISTS "core_catego_level_ede8af_idx"',
-            reverse_sql='',
+        # Remove index from state AND db — RunSQL only dropped from db, leaving state stale.
+        # Stale state caused _remake_table (triggered by RemoveField) to re-create the index,
+        # which then made RemoveField(level) fail on SQLite.
+        migrations.RemoveIndex(
+            model_name='category',
+            name='core_catego_level_ede8af_idx',
         ),
         # Hierarchy fields (removed from model earlier)
         migrations.RemoveField(

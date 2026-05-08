@@ -1,5 +1,32 @@
 # Setup Commands
 
+## Check token status for all users
+
+```bash
+cd /srv/app/gogevgelija-api && python3 -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
+django.setup()
+from core.models import User
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+from datetime import datetime, timezone
+
+now = datetime.now(timezone.utc)
+users = User.objects.filter(is_active=True).order_by('email')
+
+for u in users:
+    latest = OutstandingToken.objects.filter(user=u).order_by('-created_at').first()
+    if latest:
+        expired = latest.expires_at < now
+        status = 'EXPIRED' if expired else 'VALID'
+        print(f'{status} | {u.email} | expires: {latest.expires_at.strftime(\"%Y-%m-%d %H:%M\")}')
+    else:
+        print(f'NO TOKEN | {u.email}')
+"
+```
+
+---
+
 ## Rebuild preview APK
 
 ```bash
@@ -87,6 +114,26 @@ print(AccessToken.for_user(u))
 curl -s -X POST https://admin.gogevgelija.com/api/assistant/query/ \
   -H "Content-Type: application/json" \
   -d '{"message": "hello"}' | python3 -m json.tool
+```
+
+## 10. Check token expiry for a specific user
+
+```bash
+cd /srv/app/gogevgelija-api && python3 -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
+django.setup()
+from core.models import User
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+from datetime import datetime, timezone
+
+email = 'dragana.petkova04@gmail.com'
+u = User.objects.get(email=email)
+tokens = OutstandingToken.objects.filter(user=u).order_by('-created_at')[:5]
+for t in tokens:
+    expired = t.expires_at < datetime.now(timezone.utc)
+    print(f'jti: {t.jti} | expires: {t.expires_at} | expired: {expired}')
+"
 ```
 
 ## 9. Test endpoint with real token (paste token from step 7)
