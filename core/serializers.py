@@ -1135,7 +1135,7 @@ class AssistantQuerySerializer(serializers.Serializer):
 
     class AssistantHistoryItemSerializer(serializers.Serializer):
         role = serializers.ChoiceField(choices=['user', 'assistant'])
-        text = serializers.CharField(max_length=1000)
+        text = serializers.CharField(max_length=1000, allow_blank=True)
 
     message = serializers.CharField(max_length=300)
     context = AssistantContextSerializer(required=False, allow_null=True)

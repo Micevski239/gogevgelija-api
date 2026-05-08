@@ -3298,8 +3298,9 @@ class AssistantQueryView(APIView):
         # Step 2: Greetings/identity — no LLM needed at all.
         if parsed.tool == 'chat':
             core_logger.info("assistant.metric route=chat_no_llm")
+            greeting = 'Здраво! Прашај ме за места, настани, промоции или помош со апликацијата.' if language == 'mk' else 'Hi! Ask me about places, events, promotions, or app help.'
             chat_resp = _assistant_response(
-                answer='',
+                answer=greeting,
                 intent='chat',
                 confidence='high',
                 suggestions=_assistant_default_suggestions(language),

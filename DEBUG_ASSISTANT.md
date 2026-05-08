@@ -71,6 +71,80 @@ The `sleep 3` waits for workers to start, then warms the home sections cache for
 
 # Assistant Debug Commands
 
+## 0. Diagnose why assistant stopped working (run in order)
+
+### Step 1 — test endpoint without token (fastest check)
+
+```bash
+curl -s -X POST https://admin.gogevgelija.com/api/assistant/query/ \
+  -H "Content-Type: application/json" \
+  -d '{"message": "hello"}' | python3 -m json.tool
+```
+
+Expected: JSON with `answer` field. If you get `429` → rate limit/fail2ban. If `500` → server error. If `{"detail": ...}` → auth issue.
+
+### Step 2 — check gunicorn logs for errors
+
+```bash
+sudo journalctl -u gunicorn -n 100 --no-pager | grep -iE "assistant|Error|Exception|Traceback" | tail -50
+```
+
+### Step 3 — check if your IP is banned by fail2ban
+
+```bash
+fail2ban-client status nginx-limit-req
+fail2ban-client status nginx-bad-host
+```
+
+If your IP is listed under "Banned IP list" — unban it:
+
+```bash
+fail2ban-client set nginx-limit-req unbanip <YOUR_IP>
+```
+
+### Step 4 — check nginx is returning 429 or 503 for assistant
+
+```bash
+curl -v -X POST https://admin.gogevgelija.com/api/assistant/query/ \
+  -H "Content-Type: application/json" \
+  -d '{"message": "hello"}' 2>&1 | grep -E "< HTTP|{|answer|detail"
+```
+
+### Step 5 — check what model/key is active on the server
+
+```bash
+cd /srv/app/gogevgelija-api && grep -E "OPENAI_API_KEY|ASSISTANT_OPENAI_MODEL" .env
+```
+
+### Step 6 — test OpenAI key directly
+
+```bash
+cd /srv/app/gogevgelija-api && curl -s https://api.openai.com/v1/models \
+  -H "Authorization: Bearer $(grep OPENAI_API_KEY .env | cut -d'=' -f2 | tr -d ' \r\n')" | python3 -m json.tool | head -30
+```
+
+If you get `{"error": ...}` → key is invalid or quota exceeded.
+
+### Step 7 — stream live logs while sending a test message
+
+Open two terminals. Terminal 1:
+
+```bash
+sudo journalctl -u gunicorn -f
+```
+
+Terminal 2 (send request):
+
+```bash
+curl -s -X POST https://admin.gogevgelija.com/api/assistant/query/ \
+  -H "Content-Type: application/json" \
+  -d '{"message": "what hotels are in gevgelija"}' | python3 -m json.tool
+```
+
+Watch terminal 1 for tracebacks.
+
+---
+
 ## 1. Test OpenAI key directly
 
 ```bash
