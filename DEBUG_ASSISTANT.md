@@ -14,6 +14,12 @@ Add this line:
 */12 * * * * BASE=https://admin.gogevgelija.com/api; for EP in home/sections categories listings events promotions blogs billboard; do curl -s "$BASE/$EP/" > /dev/null; curl -s "$BASE/$EP/?lang=mk" > /dev/null; done
 ```
 
+Manually trigger cache warm-up (to test or after deploy):
+
+```bash
+BASE=https://admin.gogevgelija.com/api; for EP in home/sections categories listings events promotions blogs billboard; do curl -s "$BASE/$EP/" > /dev/null; curl -s "$BASE/$EP/?lang=mk" > /dev/null; echo "$EP warmed"; done
+```
+
 ---
 
 ## Check token status for all users
@@ -134,6 +140,42 @@ curl -s -X POST https://admin.gogevgelija.com/api/assistant/query/ \
   -d '{"message": "hello"}' | python3 -m json.tool
 ```
 
+## 12. Fix user first_name/last_name split (when full name is in first_name field)
+
+```bash
+cd /srv/app/gogevgelija-api && python3 -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
+django.setup()
+from core.models import User
+u = User.objects.get(email='ilijaatanasov04@gmail.com')
+u.first_name = 'Ilija'
+u.last_name = 'Atanasov'
+u.save()
+print('done')
+"
+```
+
+---
+
+## 11. Check user account data
+
+```bash
+cd /srv/app/gogevgelija-api && python3 -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
+django.setup()
+from core.models import User
+u = User.objects.get(email='ilijaatanasov04@gmail.com')
+print('username:', u.username)
+print('first_name:', u.first_name)
+print('last_name:', u.last_name)
+print('is_active:', u.is_active)
+"
+```
+
+---
+
 ## 10. Check token expiry for a specific user
 
 ```bash
@@ -206,4 +248,116 @@ Test real domain still works:
 curl -v https://admin.gogevgelija.com/api/health/
 ```
 
-grep -E "CACHES|REDIS|cache" /srv/app/gogevgelija-api/api/settings.py | head -20
+---
+
+# Fail2ban — Auto-ban Malicious IPs
+
+## Install
+
+```bash
+apt install fail2ban
+```
+
+## Configure — create jail.local
+
+```bash
+nano /etc/fail2ban/jail.local
+```
+
+```ini
+[DEFAULT]
+bantime = 1h
+findtime = 10m
+maxretry = 50
+
+[sshd]
+enabled = true
+port = ssh
+logpath = /var/log/auth.log
+
+[nginx-bad-host]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/error.log
+filter = nginx-bad-host
+maxretry = 10
+bantime = 24h
+
+[nginx-limit-req]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/error.log
+filter = nginx-limit-req
+maxretry = 10
+bantime = 1h
+```
+
+## Create custom filter
+
+```bash
+nano /etc/fail2ban/filter.d/nginx-bad-host.conf
+```
+
+```ini
+[Definition]
+failregex = .*\[error\].*client: <HOST>,.*invalid host.*
+            .*\[error\].*client: <HOST>,.*disallowed host.*
+ignoreregex =
+```
+
+## Start
+
+```bash
+systemctl enable fail2ban && systemctl restart fail2ban && fail2ban-client status
+```
+
+## Check banned IPs
+
+```bash
+fail2ban-client status nginx-bad-host
+fail2ban-client status sshd
+```
+
+## Unban an IP
+
+```bash
+fail2ban-client set nginx-bad-host unbanip <IP>
+```
+
+---
+
+# Nginx — Rate Limiting
+
+Prevents flood attacks by limiting requests per IP.
+
+## 1. Add rate limit zone to `/etc/nginx/nginx.conf` inside `http {}`
+
+```bash
+nano /etc/nginx/nginx.conf
+```
+
+Add this line inside `http {}` before the closing `}`:
+
+```nginx
+limit_req_zone $binary_remote_addr zone=api:10m rate=20r/s;
+```
+
+## 2. Apply rate limit in `/etc/nginx/sites-enabled/gogevgelija`
+
+```bash
+nano /etc/nginx/sites-enabled/gogevgelija
+```
+
+Add inside `location / {}` in **both** server blocks (port 80 and 443):
+
+```nginx
+limit_req zone=api burst=40 nodelay;
+```
+
+## 3. Test and reload
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+20 requests/sec per IP, burst to 40, then nginx returns 429. Fail2ban will auto-ban IPs that trigger too many 429s via the `nginx-limit-req` jail.
