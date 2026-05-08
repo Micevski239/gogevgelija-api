@@ -89,6 +89,7 @@ class SimplifiedListingSerializer(serializers.ModelSerializer):
     """Simplified listing serializer without nested relationships to avoid circular references."""
     title = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     image_thumbnail = serializers.SerializerMethodField()
@@ -96,7 +97,7 @@ class SimplifiedListingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Listing
-        fields = ["id", "title", "address", "category", "image", "image_thumbnail", "image_medium", "phone_number"]
+        fields = ["id", "title", "address", "description", "category", "image", "image_thumbnail", "image_medium", "blurhash", "phone_number"]
 
     def get_title(self, obj):
         language = self.context.get('language', 'en')
@@ -106,18 +107,20 @@ class SimplifiedListingSerializer(serializers.ModelSerializer):
         language = self.context.get('language', 'en')
         return getattr(obj, f'address_{language}', obj.address_en or obj.address)
 
+    def get_description(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'description_{language}', obj.description_en or obj.description)
+
     def get_image(self, obj):
         request = self.context.get('request')
         images = _build_image_urls(obj, request, ["image"])
         return images[0] if images else None
 
     def get_image_thumbnail(self, obj):
-        """Return optimized thumbnail URL (54x54px)"""
         request = self.context.get('request')
         return _get_optimized_image_url(obj, 'image_thumbnail', request)
 
     def get_image_medium(self, obj):
-        """Return optimized medium URL (600x400px WebP)"""
         request = self.context.get('request')
         return _get_optimized_image_url(obj, 'image_medium', request)
 
@@ -126,6 +129,7 @@ class SimplifiedEventSerializer(serializers.ModelSerializer):
     """Simplified event serializer without nested relationships to avoid circular references."""
     title = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     image = serializers.SerializerMethodField()
     image_thumbnail = serializers.SerializerMethodField()
@@ -133,7 +137,7 @@ class SimplifiedEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Event
-        fields = ["id", "title", "date_time", "location", "category", "image", "image_thumbnail", "image_medium", "entry_price"]
+        fields = ["id", "title", "date_time", "location", "description", "category", "image", "image_thumbnail", "image_medium", "blurhash", "entry_price"]
 
     def get_title(self, obj):
         language = self.context.get('language', 'en')
@@ -143,20 +147,108 @@ class SimplifiedEventSerializer(serializers.ModelSerializer):
         language = self.context.get('language', 'en')
         return getattr(obj, f'location_{language}', obj.location_en or obj.location)
 
+    def get_description(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'description_{language}', obj.description_en or obj.description)
+
     def get_image(self, obj):
         request = self.context.get('request')
         images = _build_image_urls(obj, request, ["image"])
         return images[0] if images else None
 
     def get_image_thumbnail(self, obj):
-        """Return optimized thumbnail URL (54x54px)"""
         request = self.context.get('request')
         return _get_optimized_image_url(obj, 'image_thumbnail', request)
 
     def get_image_medium(self, obj):
-        """Return optimized medium URL (600x400px WebP)"""
         request = self.context.get('request')
         return _get_optimized_image_url(obj, 'image_medium', request)
+
+
+class SimplifiedPromotionSerializer(serializers.ModelSerializer):
+    """Simplified promotion serializer for section/card display."""
+    title = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
+    image_medium = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Promotion
+        fields = ["id", "title", "description", "tags", "image", "image_thumbnail", "image_medium", "blurhash", "valid_until", "has_discount_code"]
+
+    def get_title(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'title_{language}', obj.title_en or obj.title)
+
+    def get_description(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'description_{language}', obj.description_en or obj.description)
+
+    def get_tags(self, obj):
+        language = self.context.get('language', 'en')
+        if language == 'mk' and obj.tags_mk:
+            return obj.tags_mk
+        return obj.tags or []
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        images = _build_image_urls(obj, request, ["image"])
+        return images[0] if images else None
+
+    def get_image_thumbnail(self, obj):
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_thumbnail', request)
+
+    def get_image_medium(self, obj):
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_medium', request)
+
+
+class SimplifiedBlogSerializer(serializers.ModelSerializer):
+    """Simplified blog serializer for section/card display."""
+    title = serializers.SerializerMethodField()
+    subtitle = serializers.SerializerMethodField()
+    author = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
+    image_medium = serializers.SerializerMethodField()
+    cover_image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Blog
+        fields = ["id", "title", "subtitle", "author", "category", "image", "image_thumbnail", "image_medium", "cover_image", "blurhash", "read_time_minutes"]
+
+    def get_title(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'title_{language}', obj.title_en or obj.title)
+
+    def get_subtitle(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'subtitle_{language}', obj.subtitle_en or obj.subtitle)
+
+    def get_author(self, obj):
+        language = self.context.get('language', 'en')
+        return getattr(obj, f'author_{language}', obj.author_en or obj.author)
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        images = _build_image_urls(obj, request, ["image"])
+        return images[0] if images else None
+
+    def get_image_thumbnail(self, obj):
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_thumbnail', request)
+
+    def get_image_medium(self, obj):
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image_medium', request)
+
+    def get_cover_image(self, obj):
+        request = self.context.get('request')
+        images = _build_image_urls(obj, request, ["image"])
+        return images[0] if images else None
 
 
 class ListingSerializer(serializers.ModelSerializer):
@@ -1117,15 +1209,15 @@ class HomeSectionItemSerializer(serializers.ModelSerializer):
         if hasattr(content_object, "is_active") and not content_object.is_active:
             return None
 
-        # Serialize based on content type - pass full context to preserve language
+        # Use simplified serializers — detail screens fetch full data on tap
         if obj.content_type.model == "listing":
-            return ListingSerializer(content_object, context=self.context).data
+            return SimplifiedListingSerializer(content_object, context=self.context).data
         elif obj.content_type.model == "event":
-            return EventSerializer(content_object, context=self.context).data
+            return SimplifiedEventSerializer(content_object, context=self.context).data
         elif obj.content_type.model == "promotion":
-            return PromotionSerializer(content_object, context=self.context).data
+            return SimplifiedPromotionSerializer(content_object, context=self.context).data
         elif obj.content_type.model == "blog":
-            return BlogSerializer(content_object, context=self.context).data
+            return SimplifiedBlogSerializer(content_object, context=self.context).data
 
         return None
 
