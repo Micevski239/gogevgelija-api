@@ -1,5 +1,181 @@
 # Setup Commands
 
+## BetterStack — Log Monitoring (nginx + gunicorn)
+
+Ships nginx and gunicorn logs to BetterStack in real time using Vector.
+
+### Source details
+
+- Source token: `LidNY314bEEzagKcGw8EbBL8`
+- Ingesting host: `s2424994.eu-fsn-3.betterstackdata.com`
+
+### Step 1 — test connectivity
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer LidNY314bEEzagKcGw8EbBL8' \
+  -d '{"dt":"'"$(date -u +'%Y-%m-%d %T UTC')"'","message":"Hello from Better Stack!"}' \
+  --insecure \
+  https://s2424994.eu-fsn-3.betterstackdata.com
+```
+
+Should return `{}` or empty — check BetterStack → Logs → Live tail for the message.
+
+### Step 2 — install Vector
+
+```bash
+curl -L https://github.com/vectordotdev/vector/releases/download/v0.43.1/vector_0.43.1-1_amd64.deb -o vector.deb && sudo dpkg -i vector.deb && rm vector.deb
+```
+
+Verify:
+
+```bash
+vector --version
+```
+
+### Step 3 — configure Vector
+
+```bash
+nano /etc/vector/vector.yaml
+```
+
+Paste this config:
+
+```yaml
+sources:
+  nginx_access:
+    type: file
+    include:
+      - /var/log/nginx/access.log
+
+  nginx_error:
+    type: file
+    include:
+      - /var/log/nginx/error.log
+
+  gunicorn:
+    type: journald
+    include_units:
+      - gunicorn.service
+
+sinks:
+  betterstack:
+    type: http
+    inputs:
+      - nginx_access
+      - nginx_error
+      - gunicorn
+    uri: https://s2424994.eu-fsn-3.betterstackdata.com
+    encoding:
+      codec: json
+    auth:
+      strategy: bearer
+      token: LidNY314bEEzagKcGw8EbBL8
+    headers:
+      Content-Type: application/json
+```
+
+### Step 4 — fix config and start Vector
+
+```bash
+sed -i 's/    units:/    include_units:/' /etc/vector/vector.yaml
+```
+
+```bash
+vector validate /etc/vector/vector.yaml && sudo systemctl enable vector && sudo systemctl start vector && sudo systemctl status vector
+```
+
+### Step 5 — verify logs are flowing
+
+```bash
+sudo journalctl -u vector -f
+```
+
+Should show Vector reading files and sending to BetterStack. Check BetterStack → Logs → Live tail to see nginx and gunicorn logs streaming in.
+
+---
+
+## BetterStack — Error Tracking + Log Monitoring
+
+BetterStack captures Django exceptions AND streams nginx/gunicorn logs. Uses the Sentry SDK protocol — no code changes needed, just swap the DSN. Sentry stays for the mobile frontend only.
+
+### Setup (one time)
+
+Create a Django application at **betterstack.com → Error Tracking → Connect Application → Django**. Copy the DSN it gives you.
+
+### Swap DSN on server
+
+```bash
+sed -i 's|SENTRY_DSN=.*|SENTRY_DSN=https://TkoE8ioJn7Y5b5RUDDYYztb2@s2424979.eu-nbg-2.betterstackdata.com/2424981|' /srv/app/gogevgelija-api/.env
+```
+
+Current BetterStack DSN:
+
+```
+https://TkoE8ioJn7Y5b5RUDDYYztb2@s2424979.eu-nbg-2.betterstackdata.com/2424981
+```
+
+### Restart gunicorn
+
+```bash
+sudo systemctl restart gunicorn
+```
+
+### Test connection
+
+```bash
+cd /srv/app/gogevgelija-api && source venv/bin/activate && python3 -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
+django.setup()
+import sentry_sdk
+sentry_sdk.capture_message('Hello Better Stack, this is a test message from Python!')
+print('done')
+"
+```
+
+Check BetterStack → Errors — the test message should appear. From now on every Django error lands there automatically.
+
+---
+
+## Sentry Backend — Error Monitoring (replaced by BetterStack)
+
+~~Captures every Django exception, 500 error, and unhandled crash in real time. No frontend build needed.~~
+
+### 1. Create Sentry project
+
+Go to **Sentry → Projects → New Project → Python → Django**, name it `gogevgelija-api`, copy the DSN.
+
+### 2. Add DSN to server .env
+
+```bash
+echo 'SENTRY_DSN=https://YOUR_DSN_HERE' >> /srv/app/gogevgelija-api/.env
+```
+
+### 3. Deploy
+
+```bash
+cd /srv/app/gogevgelija-api && git pull && pip install -r requirements.txt && sudo systemctl restart gunicorn
+```
+
+### 4. Test connection
+
+```bash
+cd /srv/app/gogevgelija-api && source venv/bin/activate && python3 -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
+django.setup()
+import sentry_sdk
+sentry_sdk.capture_message('Sentry backend connected', level='info')
+print('done')
+"
+```
+
+If the message appears in Sentry Issues → connected. From now on every backend error lands there automatically.
+
+---
+
 ## Cron job — keep all API caches warm
 
 Runs every 2 minutes (shortest cache TTL is 3 min for events). Warms both language variants for all main endpoints so no real user ever hits a cold cache.
