@@ -1,13 +1,19 @@
 # Setup Commands
 
-## Set Sentry auth token for EAS
-```bash
-eas env:create --scope project --name SENTRY_AUTH_TOKEN --value "7d0cede24ac711f195201688ddeabf1c"
-```
-
 ## Rebuild preview APK
+
 ```bash
 eas build --profile preview --platform android
+```
+
+---
+
+# Deploy Backend Changes
+
+## Pull latest code and restart
+
+```bash
+cd /srv/app/gogevgelija-api && git pull && sudo systemctl restart gunicorn
 ```
 
 ---
@@ -62,6 +68,7 @@ print(s.errors)
 ```
 
 ## 7. Get a real access token
+
 ```bash
 python3 -c "
 import os, django
@@ -74,10 +81,19 @@ print(AccessToken.for_user(u))
 "
 ```
 
-## 8. Test endpoint with real token (paste token from step 7)
+## 8. Test endpoint WITHOUT token (AllowAny - should still work)
+
 ```bash
 curl -s -X POST https://admin.gogevgelija.com/api/assistant/query/ \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzc4MjM4NjgzLCJpYXQiOjE3NzgyMzc3ODMsImp0aSI6IjExNzljMTgwODRlZTQzZjJiZGNjZjNkZDgyZTE3ZTcyIiwidXNlcl9pZCI6IjI1In0.M0vJbXrY7K9aCDWk5DBEpIPVkmxnMaYLuvMYH1GmAI4" \
+  -d '{"message": "hello"}' | python3 -m json.tool
+```
+
+## 9. Test endpoint with real token (paste token from step 7)
+
+```bash
+curl -s -X POST https://admin.gogevgelija.com/api/assistant/query/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzc4MjQ3Njc3LCJpYXQiOjE3NzgyNDY3NzcsImp0aSI6IjU5M2QyODZiMDM3ZTRkM2U5ZWM0MDZhZWE5Mzk3ODhjIiwidXNlcl9pZCI6IjI1In0.FjDRTpuSIXxcQH9s9pTe8sD2LctZ-jn9bKD2od6Vc2A" \
   -d '{"message": "hello"}' | python3 -m json.tool
 ```
