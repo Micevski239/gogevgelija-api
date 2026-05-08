@@ -398,7 +398,7 @@ import os, django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 django.setup()
 from core.models import User
-u = User.objects.get(email='ilijaatanasov04@gmail.com')
+u = User.objects.get(email='dragana.petkova04@gmail.com')
 u.first_name = 'Ilija'
 u.last_name = 'Atanasov'
 u.save()
@@ -416,7 +416,7 @@ import os, django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 django.setup()
 from core.models import User
-u = User.objects.get(email='ilijaatanasov04@gmail.com')
+u = User.objects.get(email='dragana.petkova04@gmail.com')
 print('username:', u.username)
 print('first_name:', u.first_name)
 print('last_name:', u.last_name)
@@ -611,3 +611,30 @@ nginx -t && systemctl reload nginx
 ```
 
 20 requests/sec per IP, burst to 40, then nginx returns 429. Fail2ban will auto-ban IPs that trigger too many 429s via the `nginx-limit-req` jail.
+
+## Fix — Random Logouts (JWT Rotation Race Condition)
+
+Production `.env` had rotation + blacklisting enabled with a 15-minute access token.
+Every refresh invalidated the old refresh token — any in-flight request using the old token got a 401 → logged out.
+
+### Step 1 — patch the env vars
+
+```bash
+sed -i 's/JWT_ROTATE_REFRESH_TOKENS=1/JWT_ROTATE_REFRESH_TOKENS=0/' /srv/app/gogevgelija-api/.env
+sed -i 's/JWT_BLACKLIST_AFTER_ROTATION=1/JWT_BLACKLIST_AFTER_ROTATION=0/' /srv/app/gogevgelija-api/.env
+sed -i 's/JWT_ACCESS_TOKEN_LIFETIME_MINUTES=15/JWT_ACCESS_TOKEN_LIFETIME_MINUTES=60/' /srv/app/gogevgelija-api/.env
+```
+
+### Step 2 — deploy and restart
+
+```bash
+cd /srv/app/gogevgelija-api && git pull && sudo systemctl restart gunicorn
+```
+
+### Step 3 — verify
+
+```bash
+cat /srv/app/gogevgelija-api/.env | grep JWT
+```
+
+Expected: `JWT_ROTATE_REFRESH_TOKENS=0`, `JWT_BLACKLIST_AFTER_ROTATION=0`, `JWT_ACCESS_TOKEN_LIFETIME_MINUTES=60`
