@@ -3,7 +3,6 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.views.decorators.cache import cache_page
-from django.views.generic import TemplateView
 from rest_framework.routers import DefaultRouter
 from core.views import (
     CategoryViewSet,
@@ -75,8 +74,6 @@ urlpatterns = [
     path("api/gallery/", GalleryView.as_view(), name="gallery"),
     path("api/listings/<int:listing_id>/gallery/", ListingGalleryView.as_view(), name="listing-gallery"),
     path("api/health/", health, name="health"),
-    path("privacy-policy", TemplateView.as_view(template_name="legal/privacy_policy.html"), name="privacy_policy"),
-    path("privacy-policy/", TemplateView.as_view(template_name="legal/privacy_policy.html"), name="privacy_policy_slash"),
 ]
 
 # Conditionally include admin — non-guessable path reduces scan exposure
