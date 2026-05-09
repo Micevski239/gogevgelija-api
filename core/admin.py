@@ -403,8 +403,8 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'description': 'Select blog articles related to this listing (optional)',
         }),
         ('Menu / Price List Configuration', {
-            'fields': ('menu_icon', 'menu_label', 'menu_label_mk'),
-            'description': 'Configure the button that opens the price list. Set a label (e.g. "Memberships", "Services") and choose an icon. Leave label blank to use the default "Menu / Мени".',
+            'fields': ('menu_icon', 'menu_label', 'menu_label_mk', 'menu_url'),
+            'description': 'Configure the button that opens the price list. Set a label (e.g. "Memberships", "Services") and choose an icon. Leave label blank to use the default "Menu / Мени". Set Menu URL to link to an external menu (PDF, website) — when set, this overrides the in-app menu sections.',
         }),
         ('English Content', {
             'fields': ('title', 'description', 'address', 'tags', 'amenities_title', 'amenities', 'working_hours', 'show_open_status', 'manual_open_status', 'menu'),

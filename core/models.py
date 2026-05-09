@@ -293,6 +293,12 @@ class Listing(models.Model):
         null=True,
         help_text='Menu sections in Macedonian, same structure as menu field',
     )
+    menu_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text='Optional external menu link (e.g. PDF, restaurant website, Instagram). When set, the menu button opens this URL instead of the in-app menu overlay.',
+    )
     image = models.ImageField(
         upload_to=listing_image_upload_to,
         blank=True,

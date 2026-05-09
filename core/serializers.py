@@ -282,7 +282,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "images_medium", "blurhash", "phone_number",
             "facebook_url", "instagram_url", "website_url", "google_maps_url",
             "featured", "trending", "is_active", "promotions", "events",
-            "menu_label", "menu_label_mk", "menu_icon", "menu", "menu_mk",
+            "menu_label", "menu_label_mk", "menu_icon", "menu", "menu_mk", "menu_url",
             "created_at", "updated_at", "can_edit"
         ]
     
@@ -964,7 +964,7 @@ class EditListingSerializer(serializers.ModelSerializer):
             "title_en", "title_mk", "description_en", "description_mk",
             "address_en", "address_mk",
             "working_hours_mk", "tags_mk", "amenities_mk",
-            "menu_label", "menu_label_mk", "menu_icon", "menu", "menu_mk"
+            "menu_label", "menu_label_mk", "menu_icon", "menu", "menu_mk", "menu_url"
         ]
     
     def _validate_image_field(self, image):
@@ -1017,6 +1017,7 @@ class EditListingSerializer(serializers.ModelSerializer):
         data['menu_icon'] = getattr(instance, 'menu_icon', None) or 'restaurant-outline'
         data['menu'] = getattr(instance, 'menu', None) or []
         data['menu_mk'] = getattr(instance, 'menu_mk', None) or []
+        data['menu_url'] = getattr(instance, 'menu_url', None) or ''
 
         return data
     
