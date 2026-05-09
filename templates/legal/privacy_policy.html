@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — GoGevgelija</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px 20px 60px; line-height: 1.55; color: #333; background: #fff; }
+  h1 { font-size: 26px; font-weight: 700; color: #111; margin: 0 0 8px; }
+  h2 { font-size: 18px; font-weight: 700; color: #111; margin-top: 32px; margin-bottom: 12px; }
+  p { margin: 0 0 16px; }
+  ul { padding-left: 20px; margin: 0 0 16px; }
+  li { margin: 6px 0; }
+  .lang-switch { text-align: right; margin-bottom: 16px; }
+  .lang-switch a { color: #B91C1C; text-decoration: none; font-weight: 600; }
+  .lang-switch a.active { color: #999; pointer-events: none; }
+  .updated { color: #666; font-style: italic; text-align: center; margin-bottom: 24px; font-size: 14px; }
+  .contact { color: #B91C1C; font-weight: 500; }
+  .lang { display: none; }
+  .lang.active { display: block; }
+  a { color: #B91C1C; }
+</style>
+</head>
+<body>
+
+<div class="lang-switch">
+  <a href="#en" onclick="showLang('en'); return false;" id="link-en" class="active">English</a> ·
+  <a href="#mk" onclick="showLang('mk'); return false;" id="link-mk">Македонски</a>
+</div>
+
+<!-- ENGLISH -->
+<div id="lang-en" class="lang active">
+<h1>Privacy Policy</h1>
+<p class="updated">Effective date: May 2026 | Last updated: May 2026</p>
+
+<h2>1. Introduction</h2>
+<p>GoGevgelija is a mobile application developed by GoDevLab, available on Android and iOS. This Privacy Policy explains in detail what information is collected, why it is collected, who it is shared with, and what rights users have.</p>
+<p>By using the App, you agree to the collection and use of information as described in this policy.</p>
+
+<h2>2. Information We Collect</h2>
+<p>We collect the following categories of information:</p>
+<ul>
+  <li>Account information: email address, name, username, and language preference. Your email is used for passwordless authentication — we send a one-time 6-digit verification code instead of storing a password.</li>
+  <li>Profile information: avatar selection (from 10 predefined options) and language setting (Macedonian or English).</li>
+  <li>User-generated content: wishlist items (saved places, events, promotions, and blogs) stored on our servers.</li>
+  <li>Support and collaboration submissions: when you submit a help request or collaboration inquiry we collect your contact name, email, phone (optional), company name (optional), and message text.</li>
+  <li>Anonymous sessions: if you use the App without registering, we store an anonymous UUID identifier (guest ID) to enable navigation. This is not linked to any personal information.</li>
+  <li>Technical information: device type, operating system version, and device locale are detected to display content correctly.</li>
+</ul>
+
+<h2>3. Authentication &amp; Account Security</h2>
+<p>We use passwordless authentication. When you sign in, we send a 6-digit verification code to your email address. The code is valid for 15 minutes and stored in hashed form on our servers.</p>
+<p>After verification you receive a JWT access token and a refresh token. Both tokens are stored on your device in the operating system's secure storage (Expo SecureStore — Keychain on iOS, Keystore on Android).</p>
+<p>Access tokens expire after 15 minutes; refresh tokens expire after 7 days. Neither token contains a password.</p>
+
+<h2>4. Device Permissions</h2>
+<p>The App may request the following permissions:</p>
+<ul>
+  <li>Location (while using the app) — only when you activate navigation to a venue (linking to Google Maps or Apple Maps). Your precise location is not stored or tracked by us.</li>
+  <li>Calendar &amp; Reminders (iOS only) — only if you choose to save an event to your personal calendar or set a reminder. We do not read or store the contents of your calendar.</li>
+</ul>
+<p>All permissions are optional. You can deny or revoke them through your device settings without losing access to the App's core features.</p>
+
+<h2>5. Image Uploads &amp; Storage</h2>
+<p>Venue, event, promotion, blog, and gallery images are stored on DigitalOcean Spaces, an S3-compatible cloud storage service. Images are automatically optimized (WEBP format, 162×162 thumbnail and 430×430 medium variants) and served publicly via CDN.</p>
+<p>File names are generated using a random UUID for security.</p>
+
+<h2>6. Wishlist &amp; Behavioral Data</h2>
+<p>When you add a place, event, promotion, or blog to your wishlist, that information is saved on our servers linked to your account, allowing us to sync your wishlist across sessions.</p>
+<p>We also record the aggregate count of users who have joined a specific event (a count only — not individual identities).</p>
+
+<h2>7. Third-Party Services We Use</h2>
+<p>We work with the following external services:</p>
+<ul>
+  <li>Resend — email delivery service used to send verification codes and support reply emails. Your email address is transmitted to Resend solely for this purpose.</li>
+  <li>DigitalOcean Spaces — cloud image storage. Media content is stored on their servers.</li>
+  <li>OpenAI (optional) — if you use the AI assistant feature, your query is sent to the OpenAI API. Queries may be logged on our servers for diagnostics.</li>
+</ul>
+<p>We do NOT sell, rent, or trade your personal information. Sharing with the above services is strictly technical and necessary for the App to function.</p>
+
+<h2>8. Data Retention</h2>
+<p>We retain your data for as long as your account is active or as needed to provide the service.</p>
+<ul>
+  <li>Verification codes expire after 15 minutes.</li>
+  <li>JWT refresh tokens expire after 7 days.</li>
+  <li>Sessions expire after 14 days.</li>
+</ul>
+<p>To request account or data deletion, contact us at <a href="mailto:godevlabagency@gmail.com">godevlabagency@gmail.com</a>. We will process your request within 30 days.</p>
+
+<h2>9. Security</h2>
+<p>We apply the following technical safeguards:</p>
+<ul>
+  <li>Tokens and guest IDs are stored in the device's secure storage (Keychain / Keystore)</li>
+  <li>Verification codes are salted and hashed before storage</li>
+  <li>All server communication is encrypted via HTTPS/TLS</li>
+  <li>No passwords are stored — we use passwordless authentication</li>
+  <li>Rate limiting: maximum 5 verification codes per hour per address</li>
+</ul>
+<p>While we take reasonable measures, no electronic storage is 100% secure.</p>
+
+<h2>10. Analytics &amp; Logging</h2>
+<p>We do not integrate any third-party analytics SDKs (Google Analytics, Firebase, Mixpanel, Sentry, etc.) — your in-app behaviour is not tracked.</p>
+<p>On the server side we log standard technical events (errors, security events) solely for diagnostics. These logs do not contain personal content.</p>
+
+<h2>11. Children's Privacy</h2>
+<p>The App is intended for general audiences and is not directed to children under 13. We do not knowingly collect personal information from minors. If you believe we have inadvertently collected such information, contact us at <a href="mailto:godevlabagency@gmail.com">godevlabagency@gmail.com</a> and we will delete it promptly.</p>
+
+<h2>12. Your Rights</h2>
+<p>You have the right to:</p>
+<ul>
+  <li>Request access to the personal information we hold about you</li>
+  <li>Request correction of inaccurate information</li>
+  <li>Request deletion of your account and associated data</li>
+  <li>Withdraw consent at any time</li>
+  <li>Request a copy of your data in a machine-readable format</li>
+</ul>
+<p>Submit all requests to <a href="mailto:godevlabagency@gmail.com">godevlabagency@gmail.com</a>. We will respond within 30 days.</p>
+
+<h2>13. Changes to This Policy</h2>
+<p>We may update this Privacy Policy as needed. The latest version will always be available within the App. For material changes we will notify you through the App. Your continued use after the notification means you accept the changes.</p>
+
+<h2>14. Contact Us</h2>
+<p>For privacy-related questions or concerns:</p>
+<p class="contact">Email: <a href="mailto:godevlabagency@gmail.com">godevlabagency@gmail.com</a><br>
+Owner: GoDevLab<br>
+GoGevgelija — Gevgelija, North Macedonia</p>
+</div>
+
+<!-- MACEDONIAN -->
+<div id="lang-mk" class="lang">
+<h1>Политика за приватност</h1>
+<p class="updated">Датум на влегување во сила: Мај 2026 | Последно ажурирано: Мај 2026</p>
+
+<h2>1. Вовед</h2>
+<p>GoGevgelija е мобилна апликација развиена од GoDevLab, достапна на Android и iOS. Оваа Политика за приватност детално објаснува кои информации се собираат, зошто се собираат, со кого се споделуваат и кои права ги имате корисниците.</p>
+<p>Со користење на Апликацијата, се согласувате со собирањето и користењето на информации опишани во оваа политика.</p>
+
+<h2>2. Информации што ги собираме</h2>
+<p>Собираме следните категории на информации:</p>
+<ul>
+  <li>Информации за сметка: емаил адреса, име, корисничко име и јазична преференца. Емаил адресата се користи за автентикација без лозинка — испраќаме шестцифрен код за верификација наместо да складираме лозинка.</li>
+  <li>Информации за профил: избор на аватар (од 10 однапред дефинирани опции) и поставки за јазик (македонски или англиски).</li>
+  <li>Содржина генерирана од корисникот: листи на желби (омилени места, настани, промоции и блогови) зачувани на нашите сервери.</li>
+  <li>Поддршка и соработка: кога поднесувате барање за поддршка или соработка, собираме ваше контакт име, емаил, телефон (опционално), назив на компанија (опционално) и текстот на пораката.</li>
+  <li>Анонимни сесии: ако ја користите Апликацијата без регистрација, зачувуваме анонимен UUID идентификатор (гостин ИД) за да ви овозможиме навигација. Ова не е поврзано со лична информација.</li>
+  <li>Технички информации: тип на уред, верзија на оперативен систем и локала на уредот се детектираат за правилно прикажување на содржината.</li>
+</ul>
+
+<h2>3. Автентикација и безбедност на сметка</h2>
+<p>Го користиме моделот за автентикација без лозинка. Кога се најавувате, испраќаме шестцифрен код за верификација на вашата емаил адреса. Кодот е валиден 15 минути и е зачуван во хаширан формат на нашите сервери.</p>
+<p>По верификацијата, добивате пристапен токен (JWT) и токен за освежување. Двата токени се зачувани на вашиот уред во безбедното складиште на оперативниот систем (Expo SecureStore — Keychain на iOS, Keystore на Android).</p>
+<p>Пристапните токени истекуваат по 15 минути; токените за освежување истекуваат по 7 дена. Ниту еден токен не содржи лозинка.</p>
+
+<h2>4. Дозволи за уред</h2>
+<p>Апликацијата може да побара следните дозволи:</p>
+<ul>
+  <li>Локација (кога ја користите апликацијата) — само кога ја активирате навигацијата до место (поврзување со Google Maps или Apple Maps). Вашата прецизна локација не се зачувува или следи.</li>
+  <li>Календар и потсетници (само iOS) — само ако изберете да зачувате настан во вашиот личен календар или да додадете потсетник. Содржината на вашиот календар не ја читаме и не ја зачувуваме.</li>
+</ul>
+<p>Сите дозволи се опционални. Можете да ги одбиете или повлечете преку поставките на вашиот уред без да го изгубите пристапот до основните функции.</p>
+
+<h2>5. Качување и складирање на слики</h2>
+<p>Слики на места, настани, промоции, блогови и галерија се зачувуваат на DigitalOcean Spaces, S3-компатибилна услуга за складирање во облак. Сликите се оптимизираат автоматски (WEBP формат, 162×162 thumb и 430×430 средна резолуција) и се јавно достапни преку CDN.</p>
+<p>Имињата на датотеките се генерираат со случаен UUID за безбедност.</p>
+
+<h2>6. Листа на желби и однесување</h2>
+<p>Кога додавате место, настан, промоција или блог во вашата листа на желби, тие информации се зачувуваат на нашите сервери поврзани со вашата сметка. Ова ни овозможува синхронизација на листата низ сесии.</p>
+<p>Исто така го евидентираме агрегираниот број на корисници кои се придружиле на одреден настан (само број, не поединечни идентитети).</p>
+
+<h2>7. Трети страни со кои споделуваме податоци</h2>
+<p>Работиме со следните надворешни услуги:</p>
+<ul>
+  <li>Resend — услуга за испраќање на емаил, користена за пренесување на кодови за верификација и одговори на барања за поддршка. Вашата емаил адреса се пренесува на Resend исклучиво за оваа намена.</li>
+  <li>DigitalOcean Spaces — складирање на слики во облак. Содржините се зачувуваат на нивните сервери.</li>
+  <li>OpenAI (опционално) — ако користите функција за AI асистент, вашиот упит се испраќа до OpenAI API. Упитите може да се евидентираат на нашите сервери за дијагностика.</li>
+</ul>
+<p>НЕ продаваме, изнајмуваме или тргуваме со ваши лични информации. Споделувањето со горенаведените услуги е строго техничко и неопходно за функционирање на Апликацијата.</p>
+
+<h2>8. Задржување на податоци</h2>
+<p>Ги задржуваме вашите податоци додека е активна вашата сметка или додека е потребно за обезбедување на услугата.</p>
+<ul>
+  <li>Кодовите за верификација истекуваат по 15 минути.</li>
+  <li>JWT токените за освежување истекуваат по 7 дена.</li>
+  <li>Сесиите истекуваат по 14 дена.</li>
+</ul>
+<p>За бришење на сметка или податоци, контактирајте нè на <a href="mailto:godevlabagency@gmail.com">godevlabagency@gmail.com</a>. Ќе обработиме барање во рок од 30 дена.</p>
+
+<h2>9. Безбедност</h2>
+<p>Применуваме следните технички мерки за заштита:</p>
+<ul>
+  <li>Токените и гостинскиот ИД се зачувани во безбедното складиште на уредот (Keychain / Keystore)</li>
+  <li>Кодовите за верификација се хашираат со сол пред зачувување</li>
+  <li>Сета комуникација со серверот е шифрирана преку HTTPS/TLS</li>
+  <li>Нема складирање на лозинки — користиме автентикација без лозинка</li>
+  <li>Ограничување на барањата: максимум 5 кода за верификација на час</li>
+</ul>
+<p>Иако преземаме разумни мерки, ниедно електронско складирање не е 100% безбедно.</p>
+
+<h2>10. Аналитика и евиденција</h2>
+<p>Не интегрираме SDK-и за аналитика на трети страни (Google Analytics, Firebase, Mixpanel, Sentry и сл.) — вашето однесување во апликацијата не се следи.</p>
+<p>На страната на серверот евидентираме стандардни технички настани (грешки, безбедносни настани) исклучиво за дијагностика. Овие логови не содржат лична содржина.</p>
+
+<h2>11. Приватност на деца</h2>
+<p>Апликацијата е наменета за општа публика и не е насочена кон деца под 13 години. Не собираме свесно лични информации од малолетници. Ако верувате дека ненамерно сме собрале такви информации, контактирајте нè на <a href="mailto:godevlabagency@gmail.com">godevlabagency@gmail.com</a> и ќе ги избришеме веднаш.</p>
+
+<h2>12. Вашите права</h2>
+<p>Имате право да:</p>
+<ul>
+  <li>Побарате пристап до личните информации што ги чуваме за вас</li>
+  <li>Побарате исправка на неточни информации</li>
+  <li>Побарате бришење на вашата сметка и поврзаните податоци</li>
+  <li>Повлечете ја согласноста во секое време</li>
+  <li>Побарате копија на вашите податоци во машински читлив формат</li>
+</ul>
+<p>Сите барања поднесете ги на <a href="mailto:godevlabagency@gmail.com">godevlabagency@gmail.com</a>. Ќе одговориме во рок од 30 дена.</p>
+
+<h2>13. Промени на оваа политика</h2>
+<p>Може да ја ажурираме оваа Политика за приватност кога е потребно. Ажурираната верзија секогаш ќе биде достапна во Апликацијата. За суштествени промени ќе ве известиме преку Апликацијата. Вашето продолжено користење по известувањето значи дека ги прифаќате промените.</p>
+
+<h2>14. Контактирајте нè</h2>
+<p>За прашања или грижи поврзани со приватноста:</p>
+<p class="contact">Емаил: <a href="mailto:godevlabagency@gmail.com">godevlabagency@gmail.com</a><br>
+Сопственик: GoDevLab<br>
+GoGevgelija — Гевгелија, Северна Македонија</p>
+</div>
+
+<script>
+function showLang(code) {
+  document.getElementById('lang-en').classList.toggle('active', code === 'en');
+  document.getElementById('lang-mk').classList.toggle('active', code === 'mk');
+  document.getElementById('link-en').classList.toggle('active', code === 'en');
+  document.getElementById('link-mk').classList.toggle('active', code === 'mk');
+  document.documentElement.lang = code;
+}
+if (window.location.hash === '#mk') showLang('mk');
+</script>
+
+</body>
+</html>

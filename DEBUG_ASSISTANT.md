@@ -638,3 +638,52 @@ cat /srv/app/gogevgelija-api/.env | grep JWT
 ```
 
 Expected: `JWT_ROTATE_REFRESH_TOKENS=0`, `JWT_BLACKLIST_AFTER_ROTATION=0`, `JWT_ACCESS_TOKEN_LIFETIME_MINUTES=60`
+
+sudo journalctl -u gunicorn --since "2026-05-08 22:00" --until "2026-05-09 09:00" --no-pager | grep -iE "401|token|blacklist|refresh" | tail -30
+
+awk '/08\/May\/2026:22/,/09\/May\/2026:09/' /var/log/nginx/access.log | grep "token/refresh"
+
+grep "193.36.90\|31.11.88\|31.11.82" /var/log/nginx/access.log | head -20
+
+---
+
+## Fix — Blacklisted Tokens Causing Overnight Logout
+
+Even after disabling rotation, old blacklisted tokens from the previous system stay in the database.
+When the phone switches networks overnight, the app refreshes from a new IP using a blacklisted token → 401 → logged out.
+
+### Clear the blacklist (one time)
+
+```bash
+cd /srv/app/gogevgelija-api && source venv/bin/activate && python3 manage.py shell -c "
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
+count = BlacklistedToken.objects.count()
+BlacklistedToken.objects.all().delete()
+print(f'Cleared {count} blacklisted tokens')
+"
+```
+
+After running this, log in fresh on the phone. With rotation disabled, the new token will never be blacklisted and stays valid for 30 days.
+
+---
+
+## Check all token statuses (read-only, changes nothing)
+
+```bash
+cd /srv/app/gogevgelija-api && source venv/bin/activate && python3 manage.py shell -c "
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+from datetime import datetime, timezone
+
+now = datetime.now(timezone.utc)
+print(f'Total blacklisted: {BlacklistedToken.objects.count()}')
+print()
+
+for t in OutstandingToken.objects.all().order_by('user__email', '-created_at'):
+    is_blacklisted = BlacklistedToken.objects.filter(token=t).exists()
+    expired = t.expires_at < now
+    status = 'BLACKLISTED' if is_blacklisted else ('EXPIRED' if expired else 'VALID')
+    print(f'{status} | {t.user.email} | created: {t.created_at.strftime(\"%m-%d %H:%M\")} | expires: {t.expires_at.strftime(\"%m-%d %H:%M\")}')
+"
+```
+
+Shows every token per user — VALID means safe, BLACKLISTED means next refresh will fail and log out, EXPIRED means token is past its lifetime.
