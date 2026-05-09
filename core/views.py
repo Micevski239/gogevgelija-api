@@ -3410,6 +3410,72 @@ def global_search(request):
 # HOME SECTION VIEWSET - Backend-driven homescreen sections
 # ============================================================================
 
+HOME_SECTIONS_CACHE_KEY = "home_sections:v1:{lang}"
+HOME_SECTIONS_CACHE_TTL = 60 * 30  # 30 minutes
+
+
+def _home_sections_queryset():
+    return HomeSection.objects.filter(
+        is_active=True,
+        display_on__contains='home',
+    ).prefetch_related(
+        Prefetch('items', queryset=HomeSectionItem.objects.filter(is_active=True).select_related('content_type').prefetch_related(
+            GenericPrefetch('content_object', [
+                Listing.objects.select_related('category'),
+                Event.objects.select_related('category'),
+                Promotion.objects.all(),
+                Blog.objects.all(),
+            ])
+        )),
+        Prefetch('direct_listings', queryset=Listing.objects.filter(is_active=True).select_related('category'), to_attr='prefetched_listings'),
+        Prefetch('direct_events', queryset=Event.objects.filter(is_active=True).select_related('category'), to_attr='prefetched_events'),
+        Prefetch('direct_promotions', queryset=Promotion.objects.filter(is_active=True), to_attr='prefetched_promotions'),
+        Prefetch('direct_blogs', queryset=Blog.objects.filter(is_active=True, published=True), to_attr='prefetched_blogs'),
+    ).order_by("order", "-created_at")
+
+
+def build_home_sections_payload(language: str, request=None) -> dict:
+    """Build the /api/home/sections/ payload for a given language.
+
+    Callable from a request context (passes the real request) or from a
+    signal/management command (synthesizes a request via RequestFactory so
+    image URLs resolve to absolute URLs).
+    """
+    from django.test import RequestFactory
+    from django.utils import translation
+
+    if request is None:
+        factory = RequestFactory()
+        request = factory.get('/api/home/sections/', HTTP_HOST='admin.gogevgelija.com', secure=True)
+
+    with translation.override(language):
+        sections = list(_home_sections_queryset())
+        serialized = HomeSectionSerializer(
+            sections,
+            many=True,
+            context={'request': request, 'language': language},
+        ).data
+
+    results = [s for s in serialized if s.get('items')]
+    return {
+        'count': len(results),
+        'next': None,
+        'previous': None,
+        'results': results,
+    }
+
+
+def warm_home_sections_cache():
+    """Rebuild and store the /api/home/sections/ payload for every supported language."""
+    for lang_code, _ in settings.LANGUAGES:
+        payload = build_home_sections_payload(lang_code)
+        cache.set(
+            HOME_SECTIONS_CACHE_KEY.format(lang=lang_code),
+            payload,
+            HOME_SECTIONS_CACHE_TTL,
+        )
+
+
 class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for HomeSection - read-only for mobile clients.
@@ -3423,38 +3489,21 @@ class HomeSectionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = HomeSectionSerializer
 
     def get_queryset(self):
-        """Return only active sections for home screen with their items prefetched"""
-        return HomeSection.objects.filter(
-            is_active=True,
-            display_on__contains='home',
-        ).prefetch_related(
-            Prefetch('items', queryset=HomeSectionItem.objects.filter(is_active=True).select_related('content_type').prefetch_related(
-                GenericPrefetch('content_object', [
-                    Listing.objects.select_related('category'),
-                    Event.objects.select_related('category'),
-                    Promotion.objects.all(),
-                    Blog.objects.all(),
-                ])
-            )),
-            Prefetch('direct_listings', queryset=Listing.objects.filter(is_active=True).select_related('category'), to_attr='prefetched_listings'),
-            Prefetch('direct_events', queryset=Event.objects.filter(is_active=True).select_related('category'), to_attr='prefetched_events'),
-            Prefetch('direct_promotions', queryset=Promotion.objects.filter(is_active=True), to_attr='prefetched_promotions'),
-            Prefetch('direct_blogs', queryset=Blog.objects.filter(is_active=True, published=True), to_attr='prefetched_blogs'),
-        ).order_by("order", "-created_at")
+        return _home_sections_queryset()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['language'] = get_preferred_language(self.request)
         return context
 
-    @method_decorator(cache_page(60 * 30))  # Cache for 30 minutes
     def list(self, request, *args, **kwargs):
-        """Get all active home sections with caching"""
-        response = super().list(request, *args, **kwargs)
-        # Drop sections with no renderable items so the frontend never shows a blank screen
-        if isinstance(response.data, dict) and 'results' in response.data:
-            response.data['results'] = [s for s in response.data['results'] if s.get('items')]
-            response.data['count'] = len(response.data['results'])
+        language = get_preferred_language(request)
+        cache_key = HOME_SECTIONS_CACHE_KEY.format(lang=language)
+        payload = cache.get(cache_key)
+        if payload is None:
+            payload = build_home_sections_payload(language, request=request)
+            cache.set(cache_key, payload, HOME_SECTIONS_CACHE_TTL)
+        response = Response(payload)
         response['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
         return response
 
