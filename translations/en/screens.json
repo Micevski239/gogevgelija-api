@@ -66,6 +66,7 @@
     "eventLoadError": "Unable to load event details",
     "menuCategories": "category",
     "menuCategoriesPlural": "categories",
+    "menuExternalLink": "Opens external link",
     "amenities": "Amenities",
     "events": "Events",
     "hoursLabel": "Hours",
