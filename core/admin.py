@@ -1012,8 +1012,8 @@ class HomeSectionItemInline(admin.TabularInline):
 @admin.register(HomeSection, site=admin_site)
 class HomeSectionAdmin(admin.ModelAdmin):
     """Admin interface for HomeSection with inline items"""
-    list_display = ("label", "card_type", "display_on", "item_count", "order", "tourism_order", "is_active", "is_pinned", "created_at")
-    list_editable = ("order", "tourism_order", "is_active", "is_pinned")
+    list_display = ("label", "card_type", "display_on", "item_count", "order", "tourism_order", "events_order", "is_active", "is_pinned", "created_at")
+    list_editable = ("order", "tourism_order", "events_order", "is_active", "is_pinned")
     list_filter = ("card_type", "display_on", "is_active", "is_pinned", "created_at")
     search_fields = ("label", "label_en", "label_mk")
     ordering = ("order", "-created_at")
@@ -1023,7 +1023,7 @@ class HomeSectionAdmin(admin.ModelAdmin):
             "fields": ("label", "label_en", "label_mk", "card_type")
         }),
         ("Display Settings", {
-            "fields": ("display_on", "order", "tourism_order", "is_active", "is_pinned")
+            "fields": ("display_on", "order", "tourism_order", "events_order", "is_active", "is_pinned")
         }),
         ("Metadata", {
             "fields": ("created_at", "updated_at"),

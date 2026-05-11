@@ -978,6 +978,11 @@ class HomeSection(models.Model):
         help_text="Display order on TourismScreen (lower numbers appear first)"
     )
 
+    events_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order on EventsScreen (lower numbers appear first)"
+    )
+
     is_active = models.BooleanField(
         default=True,
         help_text="Show this section on the HomeScreen"

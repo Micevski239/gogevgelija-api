@@ -3632,7 +3632,7 @@ class EventsScreenView(APIView):
         ).prefetch_related(
             "items",
             "items__content_type"
-        ).order_by("order", "-created_at")
+        ).order_by("events_order", "-created_at")
 
         context = {
             'request': request,
