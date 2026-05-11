@@ -9,6 +9,7 @@ import requests as http_requests
 
 from django.contrib import admin
 from django.utils import timezone
+from django.utils.html import format_html
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
@@ -1012,7 +1013,7 @@ class HomeSectionItemInline(admin.TabularInline):
 @admin.register(HomeSection, site=admin_site)
 class HomeSectionAdmin(admin.ModelAdmin):
     """Admin interface for HomeSection with inline items"""
-    list_display = ("label", "card_type", "display_on", "item_count", "order", "tourism_order", "events_order", "is_active", "is_pinned", "created_at")
+    list_display = ("label", "card_type", "screens_badge", "item_count", "order", "tourism_order", "events_order", "is_active", "is_pinned", "created_at")
     list_editable = ("order", "tourism_order", "events_order", "is_active", "is_pinned")
     list_filter = ("card_type", "display_on", "is_active", "is_pinned", "created_at")
     search_fields = ("label", "label_en", "label_mk")
@@ -1034,6 +1035,25 @@ class HomeSectionAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
     inlines = [HomeSectionItemInline]
     
+    SCREEN_STYLES = {
+        'home':    ('🏠', '#1d4ed8', '#dbeafe'),
+        'tourism': ('🧭', '#15803d', '#dcfce7'),
+        'events':  ('📣', '#b91c1c', '#fee2e2'),
+    }
+
+    def screens_badge(self, obj):
+        screens = [s.strip() for s in obj.display_on.split(',') if s.strip()]
+        pills = []
+        for screen in screens:
+            icon, color, bg = self.SCREEN_STYLES.get(screen, ('', '#555', '#eee'))
+            pills.append(
+                f'<span style="display:inline-block;padding:2px 8px;margin:1px;border-radius:12px;'
+                f'background:{bg};color:{color};font-size:11px;font-weight:600;">'
+                f'{icon} {screen.capitalize()}</span>'
+            )
+        return format_html(''.join(pills))
+    screens_badge.short_description = "Screens"
+
     def item_count(self, obj):
         """Display number of items in this section"""
         return obj.item_count
