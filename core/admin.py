@@ -305,7 +305,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name_en', 'name_mk', 'name', 'icon', 'slug'),
+            'fields': ('name_en', 'name_mk', 'name', 'icon', 'slug', 'image'),
             'classes': ('wide',),
             'description': 'Name fields: English (en), Macedonian (mk), and fallback name.',
         }),

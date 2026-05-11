@@ -45,13 +45,14 @@ class CategorySerializer(serializers.ModelSerializer):
         required=False,
         help_text="List of content types this category applies to"
     )
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
         fields = [
             "id", "name", "name_en", "name_mk", "slug", "icon",
             "order", "is_active", "trending", "featured",
-            "applies_to", "item_count", "created_at", "updated_at"
+            "applies_to", "item_count", "image_url", "created_at", "updated_at"
         ]
         read_only_fields = ["id", "slug", "created_at", "updated_at"]
 
@@ -74,6 +75,10 @@ class CategorySerializer(serializers.ModelSerializer):
         if self.context.get('include_item_count', False):
             return obj.get_item_count()
         return 0
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        return _get_optimized_image_url(obj, 'image', request)
 
     def to_representation(self, instance):
         """Convert applies_to from CharField to list"""

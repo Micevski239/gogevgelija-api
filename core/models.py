@@ -123,6 +123,12 @@ class Category(models.Model):
     name = models.CharField(max_length=100, help_text="Category name (will be translated by modeltranslation)")
     slug = models.SlugField(max_length=120, blank=True, null=True, help_text="URL-friendly identifier (auto-generated from name if empty)")
     icon = models.CharField(max_length=50, help_text="Ionicon name (e.g., 'restaurant-outline')")
+    image = models.ImageField(
+        upload_to=category_image_upload_to,
+        blank=True,
+        null=True,
+        help_text="Background image for this category card on the Events screen (recommended: 400x400px)"
+    )
 
     order = models.PositiveIntegerField(default=0, help_text="Display order")
 
