@@ -13,6 +13,7 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.throttling import AnonRateThrottle
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.contrib.admin.views.decorators import staff_member_required
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -416,9 +417,23 @@ def health(_request):
     return Response({"status": "ok"})
 
 
-@cache_page(60 * 30)  # cache 30 min
+# ── Fill these in before the ad goes live ──────────────────────────────────
+_BEFORE_STATS = {
+    'users':       0,
+    'guests':      0,
+    'listings':    0,
+    'events':      0,
+    'promotions':  0,
+    'blogs':       0,
+    'event_joins': 0,
+    'wishlists':   0,
+}
+# ───────────────────────────────────────────────────────────────────────────
+
+@staff_member_required
+@cache_page(60 * 30)
 def app_stats(request):
-    stats = {
+    after = {
         'users':       User.objects.filter(is_active=True, is_staff=False).count(),
         'guests':      GuestUser.objects.count(),
         'listings':    Listing.objects.filter(is_active=True).count(),
@@ -428,7 +443,27 @@ def app_stats(request):
         'event_joins': EventJoin.objects.count(),
         'wishlists':   Wishlist.objects.count(),
     }
-    return render(request, 'stats/app_stats.html', stats)
+    _META = [
+        ('users',       '👤', 'Registered Users'),
+        ('guests',      '🧭', 'Guest Sessions'),
+        ('listings',    '🏛️', 'Listings'),
+        ('events',      '📅', 'Events'),
+        ('promotions',  '🏷️', 'Promotions'),
+        ('blogs',       '📰', 'Blog Posts'),
+        ('event_joins', '🎟️', 'Event Participations'),
+        ('wishlists',   '❤️', 'Wishlist Saves'),
+    ]
+    rows = [
+        {
+            'icon':   icon,
+            'label':  label,
+            'before': _BEFORE_STATS[key],
+            'after':  after[key],
+            'delta':  after[key] - _BEFORE_STATS[key],
+        }
+        for key, icon, label in _META
+    ]
+    return render(request, 'stats/app_stats.html', {'rows': rows})
 
 
 @api_view(['GET'])

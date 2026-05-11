@@ -14,7 +14,6 @@
     min-height: 100vh;
   }
 
-  /* Header */
   .header {
     background: #B91C1C;
     padding: 32px 24px 28px;
@@ -24,109 +23,86 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 52px;
-    height: 52px;
+    width: 52px; height: 52px;
     background: rgba(255,255,255,0.2);
     border-radius: 50%;
-    font-size: 24px;
-    font-weight: 800;
+    font-size: 24px; font-weight: 800;
     color: #fff;
     margin-bottom: 12px;
   }
-  .header h1 {
-    font-size: 26px;
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: -0.3px;
-  }
-  .header p {
-    margin-top: 6px;
-    font-size: 14px;
-    color: rgba(255,255,255,0.8);
-  }
+  .header h1 { font-size: 26px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+  .header p  { margin-top: 6px; font-size: 13px; color: rgba(255,255,255,0.8); }
 
-  /* Main */
-  .container {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 32px 20px 60px;
-  }
+  .container { max-width: 760px; margin: 0 auto; padding: 32px 20px 60px; }
 
-  .section-title {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: #999;
-    margin-bottom: 14px;
-  }
-
-  /* Stat grid */
-  .grid {
+  /* Column headers */
+  .col-headers {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 32px;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 8px;
+    padding: 0 4px;
   }
-  @media (min-width: 480px) {
-    .grid { grid-template-columns: repeat(3, 1fr); }
+  .col-headers span { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #999; text-align: center; }
+  .col-headers span:first-child { text-align: left; }
+
+  /* Rows */
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
   }
 
-  .stat-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 20px 16px 18px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  .stat-label-cell {
     display: flex;
-    flex-direction: column;
     align-items: center;
+    gap: 10px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .stat-icon { font-size: 22px; flex-shrink: 0; }
+  .stat-name { font-size: 13px; font-weight: 700; color: #111; }
+
+  .stat-value-cell {
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     text-align: center;
   }
-  .stat-icon {
-    font-size: 26px;
-    margin-bottom: 8px;
-    line-height: 1;
-  }
-  .stat-number {
-    font-size: 32px;
+  .stat-value-cell .num {
+    font-size: 28px;
     font-weight: 800;
-    color: #B91C1C;
     letter-spacing: -1px;
     line-height: 1;
   }
-  .stat-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #666;
-    margin-top: 5px;
+  .stat-value-cell.before .num { color: #aaa; }
+  .stat-value-cell.after  .num { color: #B91C1C; }
+
+  /* Delta badge */
+  .delta {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+  }
+  .delta.up   { background: #dcfce7; color: #16a34a; }
+  .delta.same { background: #f3f4f6; color: #9ca3af; }
+
+  .section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #999;
+    margin: 24px 0 10px;
   }
 
-  /* Engagement grid — 2 wide cards */
-  .grid-wide {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 32px;
-  }
-  .stat-card-wide {
-    background: #fff;
-    border-radius: 16px;
-    padding: 20px 20px 18px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .stat-card-wide .stat-icon { font-size: 28px; margin: 0; flex-shrink: 0; }
-  .stat-card-wide .stat-number { font-size: 28px; }
-  .stat-card-wide .stat-label { margin-top: 2px; }
-
-  /* Footer note */
   .footer-note {
-    text-align: center;
-    font-size: 12px;
-    color: #aaa;
-    margin-top: 40px;
+    text-align: center; font-size: 12px; color: #aaa; margin-top: 40px;
   }
   .footer-note a { color: #B91C1C; text-decoration: none; }
 </style>
@@ -136,71 +112,42 @@
 <div class="header">
   <div class="header-logo">G</div>
   <h1>GoGevgelija</h1>
-  <p>Live platform statistics</p>
+  <p>Platform statistics — ad campaign overview</p>
 </div>
 
 <div class="container">
 
-  <p class="section-title">Community</p>
-  <div class="grid">
-    <div class="stat-card">
-      <div class="stat-icon">👤</div>
-      <div class="stat-number">{{ users }}</div>
-      <div class="stat-label">Registered Users</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🧭</div>
-      <div class="stat-number">{{ guests }}</div>
-      <div class="stat-label">Guest Sessions</div>
-    </div>
+  <!-- Column headers -->
+  <div class="col-headers">
+    <span>Metric</span>
+    <span>Before Ad</span>
+    <span>After Ad 🚀</span>
   </div>
 
-  <p class="section-title">Content</p>
-  <div class="grid">
-    <div class="stat-card">
-      <div class="stat-icon">🏛️</div>
-      <div class="stat-number">{{ listings }}</div>
-      <div class="stat-label">Listings</div>
+  {% for row in rows %}
+  <div class="stat-row">
+    <div class="stat-label-cell">
+      <span class="stat-icon">{{ row.icon }}</span>
+      <span class="stat-name">{{ row.label }}</span>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">📅</div>
-      <div class="stat-number">{{ events }}</div>
-      <div class="stat-label">Events</div>
+    <div class="stat-value-cell before">
+      <div class="num">{{ row.before }}</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">🏷️</div>
-      <div class="stat-number">{{ promotions }}</div>
-      <div class="stat-label">Promotions</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">📰</div>
-      <div class="stat-number">{{ blogs }}</div>
-      <div class="stat-label">Blog Posts</div>
+    <div class="stat-value-cell after">
+      <div class="num">{{ row.after }}</div>
+      {% if row.delta > 0 %}
+        <span class="delta up">+{{ row.delta }}</span>
+      {% else %}
+        <span class="delta same">—</span>
+      {% endif %}
     </div>
   </div>
-
-  <p class="section-title">Engagement</p>
-  <div class="grid-wide">
-    <div class="stat-card-wide">
-      <div class="stat-icon">🎟️</div>
-      <div>
-        <div class="stat-number">{{ event_joins }}</div>
-        <div class="stat-label">Event Participations</div>
-      </div>
-    </div>
-    <div class="stat-card-wide">
-      <div class="stat-icon">❤️</div>
-      <div>
-        <div class="stat-number">{{ wishlists }}</div>
-        <div class="stat-label">Wishlist Saves</div>
-      </div>
-    </div>
-  </div>
+  {% endfor %}
 
 </div>
 
 <p class="footer-note">
-  Stats update every 30 minutes &nbsp;·&nbsp;
+  Live numbers update every 30 min &nbsp;·&nbsp;
   <a href="https://gogevgelija.com">gogevgelija.com</a>
 </p>
 
