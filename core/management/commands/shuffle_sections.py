@@ -9,15 +9,29 @@ class Command(BaseCommand):
     help = 'Shuffle section order on home screen and item order within each section'
 
     def _interleave(self, small, big):
-        """Place small-card sections into big-card slots so no two smalls are adjacent."""
-        if len(small) > len(big) + 1:
-            # More smalls than available gaps — just concatenate and shuffle
+        """Interleave small-card sections into big-card slots.
+
+        Rules:
+        - No two smalls are adjacent.
+        - A small card can never be first.
+        """
+        if not big:
+            return small
+        if not small:
+            return big
+
+        if len(small) > len(big):
+            # More smalls than available post-first gaps — shuffle then ensure first is big.
             combined = small + big
             random.shuffle(combined)
+            first_big = next((i for i, s in enumerate(combined) if s.card_type != 'small'), None)
+            if first_big:
+                combined[0], combined[first_big] = combined[first_big], combined[0]
             return combined
 
-        # Pick len(small) distinct slot indices out of len(big)+1 available slots
-        slots = sorted(random.sample(range(len(big) + 1), len(small)))
+        # Slot i means "insert after the i-th big card".
+        # range(1, len(big)+1) excludes slot 0 (before the first big card).
+        slots = sorted(random.sample(range(1, len(big) + 1), len(small)))
         result = list(big)
         for i, slot in enumerate(slots):
             result.insert(slot + i, small[i])
