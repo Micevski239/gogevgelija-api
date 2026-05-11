@@ -3638,7 +3638,7 @@ class EventsScreenView(APIView):
                     Blog.objects.all(),
                 ])
             )),
-        ).order_by("events_order", "-created_at")
+        ).order_by("events_order", "created_at")
 
         context = {
             'request': request,
