@@ -3630,8 +3630,14 @@ class EventsScreenView(APIView):
             is_active=True,
             display_on__contains='events',
         ).prefetch_related(
-            "items",
-            "items__content_type"
+            Prefetch('items', queryset=HomeSectionItem.objects.filter(is_active=True).select_related('content_type').prefetch_related(
+                GenericPrefetch('content_object', [
+                    Listing.objects.select_related('category'),
+                    Event.objects.select_related('category'),
+                    Promotion.objects.all(),
+                    Blog.objects.all(),
+                ])
+            )),
         ).order_by("events_order", "-created_at")
 
         context = {
