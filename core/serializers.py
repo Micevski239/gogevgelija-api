@@ -78,7 +78,10 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         request = self.context.get('request')
-        return _get_optimized_image_url(obj, 'image', request)
+        return (
+            _get_optimized_image_url(obj, 'image_thumbnail', request)
+            or _get_optimized_image_url(obj, 'image', request)
+        )
 
     def to_representation(self, instance):
         """Convert applies_to from CharField to list"""

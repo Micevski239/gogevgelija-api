@@ -117,14 +117,15 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='for-events')
     def for_events(self, request):
-        """Get categories applicable to events, excluding those with no active events"""
+        """Get categories applicable to events/promos, excluding those with no active content"""
         categories = Category.objects.filter(
             applies_to__in=['event', 'both'],
             is_active=True
         ).annotate(
-            active_event_count=Count('event', filter=Q(event__is_active=True))
+            active_event_count=Count('event', filter=Q(event__is_active=True)),
+            active_promo_count=Count('promotions', filter=Q(promotions__is_active=True))
         ).filter(
-            active_event_count__gt=0
+            Q(active_event_count__gt=0) | Q(active_promo_count__gt=0)
         ).order_by('order', 'name')
 
         page = self.paginate_queryset(categories)

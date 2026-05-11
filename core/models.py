@@ -129,6 +129,12 @@ class Category(models.Model):
         null=True,
         help_text="Background image for this category card on the Events screen (recommended: 400x400px)"
     )
+    image_thumbnail = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(400, 400)],
+        format='WEBP',
+        options={'quality': 85}
+    )
 
     order = models.PositiveIntegerField(default=0, help_text="Display order")
 
