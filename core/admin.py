@@ -1053,7 +1053,11 @@ class HomeSectionAdmin(admin.ModelAdmin):
     deactivate_sections.short_description = "❌ Deactivate selected sections"
 
     def _clear_home_cache(self):
-        cache.delete_pattern('*home/sections*') if hasattr(cache, 'delete_pattern') else cache.clear()
+        if hasattr(cache, 'delete_pattern'):
+            cache.delete_pattern('*home/sections*')
+            cache.delete_pattern('*events-screen*')
+        else:
+            cache.clear()
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
