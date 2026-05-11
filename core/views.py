@@ -346,13 +346,17 @@ class PromotionViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        """
-        PERFORMANCE FIX: Added prefetch_related to avoid N+1 queries.
-        Note: Promotion has no category ForeignKey, only CharField choices for Blog.
-        """
-        return Promotion.objects.filter(is_active=True) \
+        queryset = Promotion.objects.filter(is_active=True) \
+            .select_related('category') \
             .prefetch_related('listings') \
             .order_by('-created_at')
+        category = self.request.query_params.get('category', None)
+        if category:
+            if category.isdigit():
+                queryset = queryset.filter(category_id=category)
+            else:
+                queryset = queryset.filter(category__slug=category)
+        return queryset
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

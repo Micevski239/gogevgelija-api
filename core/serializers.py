@@ -597,13 +597,14 @@ class PromotionSerializer(serializers.ModelSerializer):
     image_thumbnail = serializers.SerializerMethodField()
     image_medium = serializers.SerializerMethodField()
     listings = serializers.SerializerMethodField()
+    category = CategorySerializer(read_only=True)
 
     class Meta:
         model = Promotion
         fields = [
             "id", "title", "description", "has_discount_code", "discount_code", "tags",
             "image", "images", "thumbnail_image", "image_thumbnail", "image_medium", "blurhash", "valid_until", "featured", "is_active", "website", "phone_number", "facebook_url",
-            "instagram_url", "address", "google_maps_url", "listings", "created_at", "updated_at"
+            "instagram_url", "address", "google_maps_url", "category", "listings", "created_at", "updated_at"
         ]
 
     def get_title(self, obj):

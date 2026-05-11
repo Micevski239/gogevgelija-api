@@ -575,6 +575,14 @@ class Promotion(models.Model):
         options={'quality': 90}
     )
 
+    category = models.ForeignKey(
+        'Category',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='promotions',
+        help_text="Category this promotion belongs to (used for filtering on Events screen)"
+    )
     valid_until = models.DateField(null=True, blank=True, help_text="Promotion expiry date")
     featured = models.BooleanField(default=False, help_text="Show in featured promotions")
     is_active = models.BooleanField(default=True, help_text="Show this promotion in the app. Uncheck to hide from users.")

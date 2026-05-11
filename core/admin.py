@@ -669,9 +669,9 @@ Rules:
 
 @admin.register(Promotion, site=admin_site)
 class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
-    list_display = ('id', 'title', 'discount_code', 'valid_until', 'featured', 'is_active', 'created_at')
-    list_filter = ('featured', 'is_active', 'has_discount_code', 'valid_until', 'created_at')
-    search_fields = ('title', 'discount_code', 'description')
+    list_display = ('id', 'title', 'category', 'discount_code', 'valid_until', 'featured', 'is_active', 'created_at')
+    list_filter = ('category', 'featured', 'is_active', 'has_discount_code', 'valid_until', 'created_at')
+    search_fields = ('title', 'discount_code', 'description', 'category__name')
     list_editable = ('featured', 'is_active')
     ordering = ('-created_at',)
     filter_horizontal = ('sections',)
@@ -681,6 +681,7 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             'fields': (
                 'featured',
                 'is_active',
+                'category',
                 'image', 'image_1', 'image_2', 'image_3', 'image_4', 'image_5',
                 'thumbnail_image',
                 'valid_until',
