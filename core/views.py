@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.prefetch import GenericPrefetch
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Count, Q
 from django.contrib.auth import authenticate
 from django.db import models
 from django.db import transaction
@@ -117,10 +117,14 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='for-events')
     def for_events(self, request):
-        """Get categories applicable to events"""
+        """Get categories applicable to events, excluding those with no active events"""
         categories = Category.objects.filter(
             applies_to__in=['event', 'both'],
             is_active=True
+        ).annotate(
+            active_event_count=Count('event', filter=Q(event__is_active=True))
+        ).filter(
+            active_event_count__gt=0
         ).order_by('order', 'name')
 
         page = self.paginate_queryset(categories)
