@@ -25,7 +25,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.core.validators import validate_email
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare, salted_hmac
 from django.core.exceptions import ValidationError
@@ -414,6 +414,22 @@ class BlogViewSet(viewsets.ReadOnlyModelViewSet):
 @permission_classes([permissions.AllowAny])
 def health(_request):
     return Response({"status": "ok"})
+
+
+@cache_page(60 * 30)  # cache 30 min
+def app_stats(request):
+    stats = {
+        'users':       User.objects.filter(is_active=True, is_staff=False).count(),
+        'guests':      GuestUser.objects.count(),
+        'listings':    Listing.objects.filter(is_active=True).count(),
+        'events':      Event.objects.filter(is_active=True).count(),
+        'promotions':  Promotion.objects.filter(is_active=True).count(),
+        'blogs':       Blog.objects.filter(is_active=True, published=True).count(),
+        'event_joins': EventJoin.objects.count(),
+        'wishlists':   Wishlist.objects.count(),
+    }
+    return render(request, 'stats/app_stats.html', stats)
+
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GoGevgelija — App Statistics</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f5f7;
+    color: #111;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: #B91C1C;
+    padding: 32px 24px 28px;
+    text-align: center;
+  }
+  .header-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .header p {
+    margin-top: 6px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+  }
+
+  /* Main */
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 14px;
+  }
+
+  /* Stat grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  @media (min-width: 480px) {
+    .grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .stat-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 16px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .stat-icon {
+    font-size: 26px;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+  .stat-number {
+    font-size: 32px;
+    font-weight: 800;
+    color: #B91C1C;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    margin-top: 5px;
+  }
+
+  /* Engagement grid — 2 wide cards */
+  .grid-wide {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .stat-card-wide {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 20px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .stat-card-wide .stat-icon { font-size: 28px; margin: 0; flex-shrink: 0; }
+  .stat-card-wide .stat-number { font-size: 28px; }
+  .stat-card-wide .stat-label { margin-top: 2px; }
+
+  /* Footer note */
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 40px;
+  }
+  .footer-note a { color: #B91C1C; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">G</div>
+  <h1>GoGevgelija</h1>
+  <p>Live platform statistics</p>
+</div>
+
+<div class="container">
+
+  <p class="section-title">Community</p>
+  <div class="grid">
+    <div class="stat-card">
+      <div class="stat-icon">👤</div>
+      <div class="stat-number">{{ users }}</div>
+      <div class="stat-label">Registered Users</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🧭</div>
+      <div class="stat-number">{{ guests }}</div>
+      <div class="stat-label">Guest Sessions</div>
+    </div>
+  </div>
+
+  <p class="section-title">Content</p>
+  <div class="grid">
+    <div class="stat-card">
+      <div class="stat-icon">🏛️</div>
+      <div class="stat-number">{{ listings }}</div>
+      <div class="stat-label">Listings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-number">{{ events }}</div>
+      <div class="stat-label">Events</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏷️</div>
+      <div class="stat-number">{{ promotions }}</div>
+      <div class="stat-label">Promotions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📰</div>
+      <div class="stat-number">{{ blogs }}</div>
+      <div class="stat-label">Blog Posts</div>
+    </div>
+  </div>
+
+  <p class="section-title">Engagement</p>
+  <div class="grid-wide">
+    <div class="stat-card-wide">
+      <div class="stat-icon">🎟️</div>
+      <div>
+        <div class="stat-number">{{ event_joins }}</div>
+        <div class="stat-label">Event Participations</div>
+      </div>
+    </div>
+    <div class="stat-card-wide">
+      <div class="stat-icon">❤️</div>
+      <div>
+        <div class="stat-number">{{ wishlists }}</div>
+        <div class="stat-label">Wishlist Saves</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="footer-note">
+  Stats update every 30 minutes &nbsp;·&nbsp;
+  <a href="https://gogevgelija.com">gogevgelija.com</a>
+</p>
+
+</body>
+</html>

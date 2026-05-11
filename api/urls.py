@@ -35,6 +35,7 @@ from core.views import (
     GalleryView,
     ListingGalleryView,
     AccountDataExportView,
+    app_stats,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -74,6 +75,7 @@ urlpatterns = [
     path("api/gallery/", GalleryView.as_view(), name="gallery"),
     path("api/listings/<int:listing_id>/gallery/", ListingGalleryView.as_view(), name="listing-gallery"),
     path("api/health/", health, name="health"),
+    path("stats/", app_stats, name="app_stats"),
 ]
 
 # Conditionally include admin — non-guessable path reduces scan exposure
