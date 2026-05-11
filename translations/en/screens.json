@@ -95,12 +95,12 @@
     "expectations": "What to expect",
     "pullToRefresh": "Pull to refresh",
     "slideshow": {
-      "discoverEvents": "Discover Amazing Events",
-      "joinBestEvents": "Join the best events in your city",
-      "liveMusic": "Live Music & Entertainment",
-      "unforgettablePerformances": "Experience unforgettable performances",
-      "foodCulture": "Food & Culture Festivals",
-      "tasteFlavors": "Taste the flavors of our community"
+      "discoverEvents": "Events & Deals",
+      "joinBestEvents": "Everything happening in Gevgelija",
+      "liveMusic": "Discover Amazing Events",
+      "unforgettablePerformances": "Join the best events in your city",
+      "foodCulture": "Hot Deals",
+      "tasteFlavors": "Exclusive offers from local businesses"
     },
     "categoryLoadError": "Could not load events for this category.",
     "wishlistUpdateFailed": "Failed to update wishlist"
