@@ -419,14 +419,14 @@ def health(_request):
 
 # ── Fill these in before the ad goes live ──────────────────────────────────
 _BEFORE_STATS = {
-    'users':       0,
-    'guests':      0,
-    'listings':    0,
-    'events':      0,
-    'promotions':  0,
-    'blogs':       0,
+    'users':       279,
+    'guests':      455,
+    'listings':    35,
+    'events':      3,
+    'promotions':  9,
+    'blogs':       1,
     'event_joins': 0,
-    'wishlists':   0,
+    'wishlists':   93,
 }
 # ───────────────────────────────────────────────────────────────────────────
 
