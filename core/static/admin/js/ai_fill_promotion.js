@@ -13,46 +13,45 @@
   var MODAL_HTML = [
     '<div id="ai-fill-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;',
     'background:rgba(0,0,0,0.7);z-index:9999;justify-content:center;align-items:center;">',
-    '<div style="background:#16213e;border:1px solid #2a2a4a;border-radius:12px;padding:32px;width:580px;',
-    'max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">',
+    '<div class="ai-fill-modal">',
 
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">',
-    '<h3 style="margin:0;font-size:17px;color:#e0e0f0;font-weight:600;">✨ AI Fill from Caption</h3>',
-    '<button id="ai-close" type="button" style="background:none;border:none;color:#9090b0;font-size:20px;cursor:pointer;padding:0;line-height:1;">×</button>',
+    '<div class="ai-fill-header">',
+    '<div>',
+    '<h3>AI Fill Promotion</h3>',
+    '<p>Choose a listing, paste the offer caption, then fill the promotion form in both languages.</p>',
+    '</div>',
+    '<button id="ai-close" type="button" aria-label="Close">×</button>',
     '</div>',
 
-    '<label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:#9090b0;text-transform:uppercase;letter-spacing:.05em;">Listing (optional — auto-fills contact info)</label>',
+    '<div class="ai-fill-grid">',
+    '<section class="ai-fill-panel">',
+    '<div class="ai-fill-panel-title">1. Listing <span>optional</span></div>',
     '<input id="ai-listing-search" type="text" placeholder="Search listings…"',
-    ' style="width:100%;padding:9px 12px;background:#0d1b2a;color:#e0e0f0;border:1px solid #2a2a4a;',
-    'border-radius:6px 6px 0 0;font-size:14px;box-sizing:border-box;font-family:inherit;">',
-    '<select id="ai-listing" size="4"',
-    ' style="width:100%;background:#0d1b2a;color:#e0e0f0;border:1px solid #2a2a4a;border-top:none;',
-    'border-radius:0 0 6px 6px;font-size:13px;margin-bottom:4px;">',
-    '<option value="">— none —</option>',
-    '</select>',
-    '<div id="ai-listing-preview" style="display:none;font-size:12px;color:#9090b0;margin-bottom:16px;',
-    'padding:8px 10px;background:#0d1b2a;border:1px solid #2a2a4a;border-radius:6px;line-height:1.8;"></div>',
+    ' autocomplete="off">',
+    '<div id="ai-listing-results" class="ai-listing-results"></div>',
+    '<div id="ai-listing-preview" class="ai-listing-preview"></div>',
+    '</section>',
 
-    '<label style="display:block;margin-bottom:6px;margin-top:16px;font-size:12px;font-weight:600;color:#9090b0;text-transform:uppercase;letter-spacing:.05em;">Platform</label>',
-    '<select id="ai-platform" style="width:100%;padding:9px 12px;background:#0d1b2a;color:#e0e0f0;',
-    'border:1px solid #2a2a4a;border-radius:6px;margin-bottom:16px;font-size:14px;">',
+    '<section class="ai-fill-panel">',
+    '<div class="ai-fill-panel-title">2. Caption</div>',
+    '<label for="ai-platform">Platform</label>',
+    '<select id="ai-platform">',
     '<option value="instagram">Instagram</option>',
     '<option value="facebook">Facebook</option>',
     '</select>',
 
-    '<label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:#9090b0;text-transform:uppercase;letter-spacing:.05em;">Post Caption</label>',
+    '<label for="ai-caption">Post Caption</label>',
     '<textarea id="ai-caption" rows="8" placeholder="Paste the social media post caption here…"',
-    ' style="width:100%;padding:10px 12px;background:#0d1b2a;color:#e0e0f0;border:1px solid #2a2a4a;',
-    'border-radius:6px;font-size:14px;box-sizing:border-box;resize:vertical;font-family:inherit;"></textarea>',
+    '></textarea>',
+    '<div class="ai-caption-meta"><span id="ai-caption-count">0 characters</span><span>Cmd/Ctrl + Enter</span></div>',
 
-    '<div id="ai-error" style="display:none;color:#e07070;font-size:13px;margin-top:8px;padding:8px 12px;',
-    'background:#3a1a1a;border-radius:6px;border:1px solid #c0392b;"></div>',
+    '<div id="ai-error" style="display:none;"></div>',
+    '</section>',
+    '</div>',
 
-    '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">',
-    '<button id="ai-cancel" type="button" style="padding:9px 20px;border:1px solid #2a2a4a;background:transparent;',
-    'color:#9090b0;border-radius:6px;cursor:pointer;font-size:14px;">Cancel</button>',
-    '<button id="ai-submit" type="button" style="padding:9px 20px;background:#417690;color:#fff;border:none;',
-    'border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;">Generate ✨</button>',
+    '<div class="ai-fill-footer">',
+    '<button id="ai-cancel" type="button">Cancel</button>',
+    '<button id="ai-submit" type="button">Generate & Fill Promotion</button>',
     '</div>',
 
     '</div></div>',
@@ -127,15 +126,51 @@
 
   /* ── Listing helpers ───────────────────────────────────────────── */
   function renderListingOptions(filter) {
-    var sel = document.getElementById("ai-listing");
-    while (sel.options.length > 1) sel.remove(1);
+    var box = document.getElementById("ai-listing-results");
+    while (box.firstChild) box.removeChild(box.firstChild);
     var term = (filter || "").toLowerCase();
-    allListings.forEach(function (l) {
-      if (term && l.title.toLowerCase().indexOf(term) === -1) return;
-      var opt = document.createElement("option");
-      opt.value = l.id;
-      opt.textContent = l.title;
-      sel.appendChild(opt);
+    var matches = allListings.filter(function (l) {
+      return !term || l.title.toLowerCase().indexOf(term) !== -1;
+    });
+
+    if (!matches.length) {
+      var empty = document.createElement("div");
+      empty.className = "ai-listing-empty";
+      empty.textContent = allListings.length ? "No listings found." : "Loading listings...";
+      box.appendChild(empty);
+      return;
+    }
+
+    matches.slice(0, 24).forEach(function (l) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ai-listing-result" + (selectedListing && selectedListing.id === l.id ? " selected" : "");
+
+      var title = document.createElement("span");
+      title.className = "ai-listing-result-title";
+      title.textContent = l.title;
+
+      var available = [
+        l.phone_number,
+        l.website_url,
+        l.facebook_url,
+        l.instagram_url,
+        l.address,
+        l.google_maps_url,
+      ].filter(Boolean).length;
+      var meta = document.createElement("span");
+      meta.className = "ai-listing-result-meta";
+      meta.textContent = available ? available + " contact fields available" : "No contact fields saved";
+
+      btn.appendChild(title);
+      btn.appendChild(meta);
+      btn.addEventListener("click", function () {
+        selectedListing = l;
+        document.getElementById("ai-listing-search").value = l.title;
+        renderListingOptions(l.title);
+        showListingPreview(l);
+      });
+      box.appendChild(btn);
     });
   }
 
@@ -160,7 +195,19 @@
 
   function showListingPreview(listing) {
     var box = document.getElementById("ai-listing-preview");
-    if (!listing) { box.style.display = "none"; return; }
+    if (!listing) {
+      while (box.firstChild) box.removeChild(box.firstChild);
+      var emptyTitle = document.createElement("div");
+      emptyTitle.className = "ai-listing-preview-title";
+      emptyTitle.textContent = "No listing selected";
+      var emptyNote = document.createElement("div");
+      emptyNote.className = "ai-listing-preview-note";
+      emptyNote.textContent = "The AI will only fill caption-based promotion fields. Contact fields stay unchanged.";
+      box.appendChild(emptyTitle);
+      box.appendChild(emptyNote);
+      box.style.display = "block";
+      return;
+    }
     while (box.firstChild) box.removeChild(box.firstChild);
 
     var title = document.createElement("div");
@@ -202,11 +249,21 @@
     var el = document.getElementById("ai-error");
     el.textContent = msg;
     el.style.display = "block";
+    el.scrollIntoView({ block: "nearest" });
   }
 
   function openModal() {
     $("#ai-fill-overlay").css("display", "flex");
     document.getElementById("ai-caption").focus();
+    updateCaptionCount();
+  }
+
+  function updateCaptionCount() {
+    var caption = document.getElementById("ai-caption");
+    var counter = document.getElementById("ai-caption-count");
+    if (!caption || !counter) return;
+    var count = caption.value.length;
+    counter.textContent = count + " character" + (count === 1 ? "" : "s");
   }
 
   function submit() {
@@ -284,23 +341,18 @@
     $("#ai-listing-search").on("input", function () {
       if (selectedListing && this.value !== selectedListing.title) {
         selectedListing = null;
-        document.getElementById("ai-listing").value = "";
         showListingPreview(null);
       }
       renderListingOptions(this.value);
-    });
-
-    $("#ai-listing").on("change", function () {
-      var id = parseInt(this.value, 10);
-      selectedListing = allListings.find(function (l) { return l.id === id; }) || null;
-      document.getElementById("ai-listing-search").value = selectedListing ? selectedListing.title : "";
-      showListingPreview(selectedListing);
     });
 
     $("#ai-submit").on("click", submit);
     $("#ai-caption").on("keydown", function (e) {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") submit();
     });
+    $("#ai-caption").on("input", updateCaptionCount);
+
+    showListingPreview(null);
 
     $("#ai-fill-btn").on("mouseenter", function () {
       $(this).css("background", "#2a5a70");

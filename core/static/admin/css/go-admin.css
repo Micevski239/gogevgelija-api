@@ -517,10 +517,59 @@ ul.messagelist li.info { background: #eff6ff !important; color: #1e40af !importa
     box-shadow: 0 24px 70px rgba(15, 23, 42, .25) !important;
     padding: 24px !important;
 }
+.ai-fill-modal {
+    width: min(920px, calc(100vw - 32px)) !important;
+}
+#ai-fill-overlay > .ai-fill-modal {
+    width: min(920px, calc(100vw - 32px)) !important;
+}
+.ai-fill-header {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 18px !important;
+    margin-bottom: 20px !important;
+    padding-bottom: 16px !important;
+    border-bottom: 1px solid var(--g200) !important;
+}
 #ai-fill-overlay h3 {
     color: var(--g900) !important;
     font-size: 18px !important;
     font-weight: 800 !important;
+    margin: 0 !important;
+}
+.ai-fill-header p {
+    margin: 4px 0 0 !important;
+    color: var(--g500) !important;
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+}
+.ai-fill-grid {
+    display: grid !important;
+    grid-template-columns: minmax(260px, .85fr) minmax(320px, 1.15fr) !important;
+    gap: 18px !important;
+    align-items: start !important;
+}
+.ai-fill-panel {
+    background: var(--g50) !important;
+    border: 1px solid var(--g200) !important;
+    border-radius: 8px !important;
+    padding: 14px !important;
+}
+.ai-fill-panel-title {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    color: var(--g900) !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    margin-bottom: 10px !important;
+}
+.ai-fill-panel-title span {
+    color: var(--g500) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
 }
 #ai-close {
     color: var(--g500) !important;
@@ -545,6 +594,10 @@ ul.messagelist li.info { background: #eff6ff !important; color: #1e40af !importa
     border-radius: 6px !important;
     box-shadow: none !important;
     line-height: 1.5 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 10px 12px !important;
+    font-family: inherit !important;
 }
 #ai-listing-search:focus,
 #ai-listing:focus,
@@ -557,23 +610,68 @@ ul.messagelist li.info { background: #eff6ff !important; color: #1e40af !importa
 #ai-caption {
     min-height: 190px !important;
     font-size: 14px !important;
+    resize: vertical !important;
 }
 #ai-caption::placeholder,
 #ai-listing-search::placeholder {
     color: var(--g400) !important;
 }
-#ai-listing {
-    min-height: 140px !important;
-    margin-bottom: 10px !important;
+.ai-caption-meta {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    margin-top: 6px !important;
+    color: var(--g500) !important;
+    font-size: 11px !important;
 }
-#ai-listing option {
+.ai-listing-results {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    max-height: 236px !important;
+    overflow-y: auto !important;
+    margin: 10px 0 !important;
+    padding-right: 4px !important;
+}
+.ai-listing-result {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    width: 100% !important;
     background: #fff !important;
+    border: 1px solid var(--g200) !important;
+    border-radius: 6px !important;
     color: var(--g900) !important;
-    padding: 8px 10px !important;
+    cursor: pointer !important;
+    padding: 9px 10px !important;
+    text-align: left !important;
+    transition: border-color .15s, box-shadow .15s, background .15s !important;
 }
-#ai-listing option:checked {
-    background: var(--gg) !important;
-    color: #fff !important;
+.ai-listing-result:hover {
+    border-color: #fca5a5 !important;
+    background: var(--gg-light) !important;
+}
+.ai-listing-result.selected {
+    border-color: var(--gg) !important;
+    box-shadow: 0 0 0 2px rgba(185, 28, 28, .12) !important;
+}
+.ai-listing-result-title {
+    color: var(--g900) !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+}
+.ai-listing-result-meta,
+.ai-listing-empty {
+    color: var(--g500) !important;
+    font-size: 11px !important;
+}
+.ai-listing-empty {
+    background: #fff !important;
+    border: 1px dashed var(--g300) !important;
+    border-radius: 6px !important;
+    padding: 12px !important;
+    text-align: center !important;
 }
 #ai-listing-preview {
     background: var(--g50) !important;
@@ -616,16 +714,39 @@ ul.messagelist li.info { background: #eff6ff !important; color: #1e40af !importa
     background: #fef2f2 !important;
     color: #991b1b !important;
     border: 1px solid #fecaca !important;
+    border-radius: 6px !important;
+    padding: 10px 12px !important;
+    margin-top: 12px !important;
+    font-size: 13px !important;
+}
+.ai-fill-footer {
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    margin-top: 18px !important;
+    padding-top: 16px !important;
+    border-top: 1px solid var(--g200) !important;
 }
 #ai-cancel {
     background: #fff !important;
     color: var(--g700) !important;
     border: 1px solid var(--g300) !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 9px 18px !important;
 }
 #ai-cancel:hover { background: var(--g50) !important; color: var(--g900) !important; }
 #ai-submit {
     background: var(--gg) !important;
     color: #fff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    padding: 9px 18px !important;
 }
 #ai-submit:hover { background: var(--gg-hover) !important; }
 #ai-submit:disabled {
@@ -741,4 +862,10 @@ ul.messagelist li.info { background: #eff6ff !important; color: #1e40af !importa
     #header { padding: 0 12px !important; }
     #content, #content-main { padding: 12px !important; }
     .gg-models-grid { grid-template-columns: 1fr; }
+    #ai-fill-overlay { padding: 10px !important; }
+    #ai-fill-overlay > div { margin: 10px auto !important; padding: 16px !important; }
+    .ai-fill-header { gap: 12px !important; }
+    .ai-fill-grid { grid-template-columns: 1fr !important; }
+    .ai-fill-footer { flex-direction: column-reverse !important; }
+    #ai-cancel, #ai-submit { width: 100% !important; }
 }
