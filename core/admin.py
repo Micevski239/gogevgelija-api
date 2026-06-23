@@ -303,6 +303,80 @@ class ListingAdmin(MultilingualAdminMixin, admin.ModelAdmin):
 
     readonly_fields = ('created_at', 'updated_at')
 
+    class Media:
+        js = ('admin/js/vendor/jquery/jquery.js', 'admin/js/multilang.js', 'admin/js/ai_fill_listing.js',)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('ai-fill/', self.admin_site.admin_view(self.ai_fill_view), name='listing_ai_fill'),
+        ]
+        return custom_urls + urls
+
+    LISTING_AI_SYSTEM_PROMPT = """You are an assistant that extracts structured business listing information from social media post captions for a tourism app in Gevgelija, North Macedonia.
+
+Your task:
+1. Extract listing details from the provided caption text
+2. Structure them into specific fields matching the Django Listing model
+3. Translate ALL text fields into natural Macedonian (not Google Translate quality — use proper Macedonian phrasing)
+
+Output a JSON object with these exact fields:
+- title: Business/venue name in English (concise)
+- description: Description of the business in English (2-4 sentences, engaging)
+- tags: Array of 3-6 short tag strings in English (e.g. ["restaurant", "pizza", "delivery"])
+- address: The venue address if mentioned, otherwise ""
+- title_mk, description_mk: Macedonian translations
+- tags_mk: Same array structure but tags in Macedonian
+- address_mk: Macedonian translation of the address if provided, otherwise ""
+
+Rules:
+- If information is missing, leave it as empty string ""
+- Macedonian translations must sound natural — as if written by a native speaker
+- ONLY output valid JSON, no markdown fences, no extra text"""
+
+    def ai_fill_view(self, request):
+        if request.method != 'POST':
+            return JsonResponse({'error': 'POST required'}, status=405)
+
+        try:
+            body = json.loads(request.body)
+            caption = body.get('caption', '')
+            platform = body.get('platform', 'instagram')
+        except (json.JSONDecodeError, AttributeError):
+            return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+
+        if not caption:
+            return JsonResponse({'error': 'Caption is required'}, status=400)
+
+        api_key = os.getenv('OPENAI_API_KEY', '')
+        if not api_key:
+            return JsonResponse({'error': 'OPENAI_API_KEY not configured'}, status=500)
+
+        try:
+            resp = http_requests.post(
+                'https://api.openai.com/v1/chat/completions',
+                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+                json={
+                    'model': 'gpt-4o-mini',
+                    'response_format': {'type': 'json_object'},
+                    'messages': [
+                        {'role': 'system', 'content': self.LISTING_AI_SYSTEM_PROMPT},
+                        {'role': 'user', 'content': f'Extract listing information from this {platform} post caption:\n\n{caption}'},
+                    ],
+                    'temperature': 0.3,
+                },
+                timeout=30,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return JsonResponse(json.loads(data['choices'][0]['message']['content']))
+        except http_requests.exceptions.Timeout:
+            return JsonResponse({'error': 'AI request timed out'}, status=504)
+        except http_requests.exceptions.RequestException as e:
+            return JsonResponse({'error': str(e)}, status=502)
+        except (KeyError, json.JSONDecodeError) as e:
+            return JsonResponse({'error': f'Failed to parse AI response: {e}'}, status=500)
+
     def change_view(self, request, object_id, form_url='', extra_context=None):
         if request.method == 'GET':
             from django.contrib.contenttypes.models import ContentType
@@ -637,6 +711,102 @@ class PromotionAdmin(MultilingualAdminMixin, admin.ModelAdmin):
                 order=0,
                 is_active=True,
             )
+
+    class Media:
+        js = ('admin/js/vendor/jquery/jquery.js', 'admin/js/multilang.js', 'admin/js/ai_fill_promotion.js',)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('ai-fill/', self.admin_site.admin_view(self.ai_fill_view), name='promotion_ai_fill'),
+            path('ai-listings/', self.admin_site.admin_view(self.ai_listings_view), name='promotion_ai_listings'),
+        ]
+        return custom_urls + urls
+
+    def ai_listings_view(self, request):
+        from .models import Listing
+        listings = list(
+            Listing.objects.filter(is_active=True)
+            .values('id', 'title', 'phone_number', 'website_url', 'facebook_url', 'instagram_url', 'address', 'google_maps_url')
+            .order_by('title')
+        )
+        return JsonResponse({'listings': listings})
+
+    PROMOTION_AI_SYSTEM_PROMPT = """You are an assistant that extracts structured promotion information from social media post captions for a tourism app in Gevgelija, North Macedonia.
+
+Your task:
+1. Extract promotion details from the provided caption text
+2. Structure them into specific fields matching the Django Promotion model
+3. Translate ALL text fields into natural Macedonian (not Google Translate quality — use proper Macedonian phrasing)
+
+Output a JSON object with these exact fields:
+- title: Promotion title in English (concise, catchy)
+- description: Promotion description in English (2-4 sentences, engaging)
+- tags: Array of 3-6 short tag strings in English (e.g. ["discount", "spa", "weekend"])
+- valid_until: Expiry date as "YYYY-MM-DD" if a specific date is mentioned, otherwise empty string ""
+- has_discount_code: true if a discount code is mentioned, false otherwise
+- discount_code: The discount code string if mentioned, otherwise ""
+- address: The venue address if mentioned, otherwise ""
+- title_mk, description_mk: Macedonian translations
+- tags_mk: Same array structure but tags in Macedonian
+
+Rules:
+- If information is missing, leave it as empty string "" or false — do not invent placeholder text
+- valid_until must be "YYYY-MM-DD" or "" — never "No expiry", "None", "N/A", or any other text
+- Macedonian translations must sound natural — as if written by a native speaker
+- ONLY output valid JSON, no markdown fences, no extra text"""
+
+    def ai_fill_view(self, request):
+        if request.method != 'POST':
+            return JsonResponse({'error': 'POST required'}, status=405)
+
+        try:
+            body = json.loads(request.body)
+            caption = body.get('caption', '')
+            platform = body.get('platform', 'instagram')
+        except (json.JSONDecodeError, AttributeError):
+            return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+
+        if not caption:
+            return JsonResponse({'error': 'Caption is required'}, status=400)
+
+        api_key = os.getenv('OPENAI_API_KEY', '')
+        if not api_key:
+            return JsonResponse({'error': 'OPENAI_API_KEY not configured'}, status=500)
+
+        try:
+            resp = http_requests.post(
+                'https://api.openai.com/v1/chat/completions',
+                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+                json={
+                    'model': 'gpt-4o-mini',
+                    'response_format': {'type': 'json_object'},
+                    'messages': [
+                        {'role': 'system', 'content': self.PROMOTION_AI_SYSTEM_PROMPT},
+                        {'role': 'user', 'content': f'Extract promotion information from this {platform} post caption:\n\n{caption}'},
+                    ],
+                    'temperature': 0.3,
+                },
+                timeout=30,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            result = json.loads(data['choices'][0]['message']['content'])
+            # Sanitize valid_until — never allow placeholder text
+            if 'valid_until' in result:
+                import re
+                placeholder = re.compile(r'^(no\s*expiry|none|n/a|ongoing|unlimited|permanent|indefinite)', re.IGNORECASE)
+                val = str(result['valid_until']).strip()
+                if placeholder.match(val) or not re.match(r'^\d{4}-\d{2}-\d{2}$', val):
+                    result['valid_until'] = ''
+            return JsonResponse(result)
+        except http_requests.exceptions.Timeout:
+            return JsonResponse({'error': 'AI request timed out'}, status=504)
+        except http_requests.exceptions.RequestException as e:
+            return JsonResponse({'error': str(e)}, status=502)
+        except (KeyError, json.JSONDecodeError) as e:
+            return JsonResponse({'error': f'Failed to parse AI response: {e}'}, status=500)
+
 
 class BlogSectionInline(admin.TabularInline):
     """Inline admin for collapsible blog sections"""
