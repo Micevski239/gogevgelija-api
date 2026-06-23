@@ -1,12 +1,13 @@
 (function ($) {
   "use strict";
 
-  if (!window.location.pathname.match(/\/admin\/core\/promotion\/(add|\d+\/change)\//)) {
+  if (!window.location.pathname.match(/\/core\/promotion\/(add|\d+\/change)\//)) {
     return;
   }
 
-  var FILL_URL    = "/admin/core/promotion/ai-fill/";
-  var LISTING_URL = "/admin/core/promotion/ai-listings/";
+  var _base       = window.location.pathname.replace(/\/core\/promotion\/.*$/, '/');
+  var FILL_URL    = _base + "core/promotion/ai-fill/";
+  var LISTING_URL = _base + "core/promotion/ai-listings/";
 
   /* ── Modal HTML ────────────────────────────────────────────────── */
   var MODAL_HTML = [

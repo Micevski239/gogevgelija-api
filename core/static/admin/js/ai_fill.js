@@ -1,12 +1,13 @@
 (function ($) {
   "use strict";
 
-  if (!window.location.pathname.match(/\/admin\/core\/event\/(add|\d+\/change)\//)) {
+  if (!window.location.pathname.match(/\/core\/event\/(add|\d+\/change)\//)) {
     return;
   }
 
-  var FILL_URL     = "/admin/core/event/ai-fill/";
-  var LISTING_URL  = "/admin/core/event/ai-listings/";
+  var _base        = window.location.pathname.replace(/\/core\/event\/.*$/, '/');
+  var FILL_URL     = _base + "core/event/ai-fill/";
+  var LISTING_URL  = _base + "core/event/ai-listings/";
 
   /* ── Static modal HTML (no user data injected here) ───────────────── */
   var MODAL_HTML = [

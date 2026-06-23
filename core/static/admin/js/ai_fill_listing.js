@@ -1,11 +1,12 @@
 (function ($) {
   "use strict";
 
-  if (!window.location.pathname.match(/\/admin\/core\/listing\/(add|\d+\/change)\//)) {
+  if (!window.location.pathname.match(/\/core\/listing\/(add|\d+\/change)\//)) {
     return;
   }
 
-  var FILL_URL = "/admin/core/listing/ai-fill/";
+  var _base    = window.location.pathname.replace(/\/core\/listing\/.*$/, '/');
+  var FILL_URL = _base + "core/listing/ai-fill/";
 
   /* ── Modal HTML ────────────────────────────────────────────────── */
   var MODAL_HTML = [
