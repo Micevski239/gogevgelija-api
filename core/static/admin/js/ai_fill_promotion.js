@@ -175,6 +175,11 @@
     el.style.display = "block";
   }
 
+  function openModal() {
+    $("#ai-fill-overlay").css("display", "flex");
+    document.getElementById("ai-caption").focus();
+  }
+
   function submit() {
     var caption  = document.getElementById("ai-caption").value.trim();
     var platform = document.getElementById("ai-platform").value;
@@ -235,10 +240,7 @@
 
     loadListings();
 
-    $("#ai-fill-btn").on("click", function () {
-      $("#ai-fill-overlay").css("display", "flex");
-      document.getElementById("ai-caption").focus();
-    });
+    $("#ai-fill-btn").on("click", openModal);
 
     $("#ai-close, #ai-cancel").on("click", function () {
       $("#ai-fill-overlay").hide();
@@ -270,6 +272,10 @@
     }).on("mouseleave", function () {
       $(this).css("background", "#417690");
     });
+
+    if (new URLSearchParams(window.location.search).get("ai") === "1") {
+      openModal();
+    }
   });
 
 })(django.jQuery);

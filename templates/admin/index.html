@@ -27,6 +27,11 @@
         <div class="gg-model-row">
           <a href="{{ model.admin_url }}" class="gg-model-name">{{ model.name }}</a>
           <div class="gg-model-links">
+            {% if model.add_url %}
+            {% if model.object_name == "Event" or model.object_name == "Promotion" %}
+            <a href="{{ model.add_url }}?ai=1" class="gg-model-ai">AI</a>
+            {% endif %}
+            {% endif %}
             {% if model.add_url %}<a href="{{ model.add_url }}" class="gg-model-add">+ Add</a>{% endif %}
             <a href="{{ model.admin_url }}" class="gg-model-change">View</a>
           </div>

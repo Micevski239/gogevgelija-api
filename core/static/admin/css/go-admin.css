@@ -587,10 +587,12 @@ ul.messagelist li.info { background: #eff6ff !important; color: #1e40af !importa
 }
 .gg-model-name:hover { color: var(--gg); }
 .gg-model-links { display: flex; gap: 6px; flex-shrink: 0; }
-.gg-model-add, .gg-model-change {
+.gg-model-ai, .gg-model-add, .gg-model-change {
     font-size: 11px; font-weight: 600; padding: 2px 8px;
     border-radius: 4px; text-decoration: none; transition: background .15s;
 }
+.gg-model-ai { color: #fff; background: var(--gg); }
+.gg-model-ai:hover { background: var(--gg-hover); color: #fff; }
 .gg-model-add { color: var(--gg); background: var(--gg-light); }
 .gg-model-add:hover { background: #fecaca; color: var(--gg-hover); }
 .gg-model-change { color: var(--g500); background: var(--g100); }
