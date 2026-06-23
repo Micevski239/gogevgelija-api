@@ -269,9 +269,9 @@
   $(document).ready(function () {
     $("body").append(MODAL_HTML);
 
-    var firstFieldset = $("fieldset").first();
-    if (firstFieldset.length) {
-      firstFieldset.before(BAR_HTML);
+    var pageTitle = $("#content h1").first();
+    if (pageTitle.length) {
+      pageTitle.after(BAR_HTML);
     } else {
       $("#content-main").prepend(BAR_HTML);
     }
