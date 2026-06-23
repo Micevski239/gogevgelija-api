@@ -523,7 +523,7 @@ class EventAdmin(MultilingualAdminMixin, admin.ModelAdmin):
             )
 
     class Media:
-        js = ('admin/js/vendor/jquery/jquery.js', 'admin/js/multilang.js', 'admin/js/ai_fill.js',)
+        js = ('admin/js/vendor/jquery/jquery.js', 'admin/js/multilang.js', 'admin/js/ai_fill_event.js',)
 
     def get_urls(self):
         urls = super().get_urls()

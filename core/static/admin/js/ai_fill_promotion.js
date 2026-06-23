@@ -139,10 +139,36 @@
     });
   }
 
+  function addPreviewRow(box, labelText, valueText) {
+    if (!valueText) return false;
+    var row = document.createElement("div");
+    row.className = "ai-listing-preview-row";
+
+    var label = document.createElement("div");
+    label.className = "ai-listing-preview-label";
+    label.textContent = labelText;
+
+    var value = document.createElement("div");
+    value.className = "ai-listing-preview-value";
+    value.textContent = valueText;
+
+    row.appendChild(label);
+    row.appendChild(value);
+    box.appendChild(row);
+    return true;
+  }
+
   function showListingPreview(listing) {
     var box = document.getElementById("ai-listing-preview");
     if (!listing) { box.style.display = "none"; return; }
     while (box.firstChild) box.removeChild(box.firstChild);
+
+    var title = document.createElement("div");
+    title.className = "ai-listing-preview-title";
+    title.textContent = "Selected listing: " + listing.title;
+    box.appendChild(title);
+
+    var hasRows = false;
     var fields = [
       ["Phone",     listing.phone_number],
       ["Website",   listing.website_url],
@@ -152,15 +178,18 @@
       ["Maps",      listing.google_maps_url],
     ];
     fields.forEach(function (pair) {
-      if (!pair[1]) return;
-      var row = document.createElement("span");
-      var label = document.createElement("strong");
-      label.textContent = pair[0] + ": ";
-      var val = document.createTextNode(pair[1] + "  ");
-      row.appendChild(label);
-      row.appendChild(val);
-      box.appendChild(row);
+      hasRows = addPreviewRow(box, pair[0], pair[1]) || hasRows;
     });
+
+    if (!hasRows) {
+      addPreviewRow(box, "Info", "No saved contact fields found for this listing.");
+    }
+
+    var note = document.createElement("div");
+    note.className = "ai-listing-preview-note";
+    note.textContent = "When you generate, these contact fields are copied into the promotion.";
+    box.appendChild(note);
+
     box.style.display = "block";
   }
 
@@ -253,12 +282,18 @@
     });
 
     $("#ai-listing-search").on("input", function () {
+      if (selectedListing && this.value !== selectedListing.title) {
+        selectedListing = null;
+        document.getElementById("ai-listing").value = "";
+        showListingPreview(null);
+      }
       renderListingOptions(this.value);
     });
 
     $("#ai-listing").on("change", function () {
       var id = parseInt(this.value, 10);
       selectedListing = allListings.find(function (l) { return l.id === id; }) || null;
+      document.getElementById("ai-listing-search").value = selectedListing ? selectedListing.title : "";
       showListingPreview(selectedListing);
     });
 

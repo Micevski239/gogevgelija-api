@@ -501,6 +501,138 @@ ul.messagelist li.info { background: #eff6ff !important; color: #1e40af !importa
 }
 #ai-fill-btn:hover { background: var(--gg-hover) !important; transform: translateY(-1px) !important; }
 
+#ai-fill-overlay {
+    background: rgba(17, 24, 39, .55) !important;
+    align-items: flex-start !important;
+    padding: 24px !important;
+    overflow-y: auto !important;
+}
+#ai-fill-overlay > div {
+    width: min(720px, calc(100vw - 32px)) !important;
+    margin: 28px auto !important;
+    background: #fff !important;
+    color: var(--g900) !important;
+    border: 1px solid var(--g200) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .25) !important;
+    padding: 24px !important;
+}
+#ai-fill-overlay h3 {
+    color: var(--g900) !important;
+    font-size: 18px !important;
+    font-weight: 800 !important;
+}
+#ai-close {
+    color: var(--g500) !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 6px !important;
+}
+#ai-close:hover { background: var(--g100) !important; color: var(--g900) !important; }
+#ai-fill-overlay label {
+    color: var(--g600) !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+}
+#ai-listing-search,
+#ai-listing,
+#ai-platform,
+#ai-caption {
+    background: #fff !important;
+    color: var(--g900) !important;
+    caret-color: var(--gg) !important;
+    border: 1px solid var(--g300) !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    line-height: 1.5 !important;
+}
+#ai-listing-search:focus,
+#ai-listing:focus,
+#ai-platform:focus,
+#ai-caption:focus {
+    border-color: var(--gg) !important;
+    box-shadow: 0 0 0 3px rgba(185, 28, 28, .12) !important;
+    outline: none !important;
+}
+#ai-caption {
+    min-height: 190px !important;
+    font-size: 14px !important;
+}
+#ai-caption::placeholder,
+#ai-listing-search::placeholder {
+    color: var(--g400) !important;
+}
+#ai-listing {
+    min-height: 140px !important;
+    margin-bottom: 10px !important;
+}
+#ai-listing option {
+    background: #fff !important;
+    color: var(--g900) !important;
+    padding: 8px 10px !important;
+}
+#ai-listing option:checked {
+    background: var(--gg) !important;
+    color: #fff !important;
+}
+#ai-listing-preview {
+    background: var(--g50) !important;
+    color: var(--g700) !important;
+    border: 1px solid var(--g200) !important;
+    border-left: 4px solid var(--gg) !important;
+    padding: 12px 14px !important;
+    line-height: 1.45 !important;
+}
+.ai-listing-preview-title {
+    color: var(--g900) !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    margin-bottom: 8px !important;
+}
+.ai-listing-preview-row {
+    display: grid !important;
+    grid-template-columns: 92px 1fr !important;
+    gap: 8px !important;
+    padding: 4px 0 !important;
+    font-size: 12px !important;
+}
+.ai-listing-preview-label {
+    color: var(--g500) !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+}
+.ai-listing-preview-value {
+    color: var(--g800) !important;
+    word-break: break-word !important;
+}
+.ai-listing-preview-note {
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--g200) !important;
+    color: var(--g600) !important;
+    font-size: 12px !important;
+}
+#ai-error {
+    background: #fef2f2 !important;
+    color: #991b1b !important;
+    border: 1px solid #fecaca !important;
+}
+#ai-cancel {
+    background: #fff !important;
+    color: var(--g700) !important;
+    border: 1px solid var(--g300) !important;
+}
+#ai-cancel:hover { background: var(--g50) !important; color: var(--g900) !important; }
+#ai-submit {
+    background: var(--gg) !important;
+    color: #fff !important;
+}
+#ai-submit:hover { background: var(--gg-hover) !important; }
+#ai-submit:disabled {
+    cursor: wait !important;
+    opacity: .75 !important;
+}
+
 /* ═══ MULTILINGUAL TABS ════════════════════════════════════════════ */
 .lang-tabs { margin-bottom: 20px; border-bottom: 2px solid var(--g200); padding: 0; }
 .lang-tab-header {
